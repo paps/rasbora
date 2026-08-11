@@ -1,7 +1,7 @@
 # Rasbora
 
-A single page app built with React, TypeScript, Vite, Mantine, ESLint and
-Prettier. Everything is bog standard and must stay that way. Follow best
+A single page app built with React, TypeScript, Vite, Mantine, sql.js, ESLint
+and Prettier. Everything is bog standard and must stay that way. Follow best
 practices at all times.
 
 See `readme.md` for what the app is meant to do, and
@@ -39,7 +39,11 @@ eslint.config.js        Flat config: typescript-eslint + @eslint-react +
 tsconfig.json           Strict, with the "@/*" -> "./src/*" path alias
 src/
   main.tsx              Mounts <App /> and imports the Mantine stylesheet
-  App.tsx               <MantineProvider> + router
+  App.tsx               <MantineProvider> + <DatabaseProvider> + router
+  database/             The data layer
+    plecoDatabase.ts    Opens and queries an export; knows the Pleco schema
+    context.ts          DatabaseContext + the useDatabase() hook
+    DatabaseProvider.tsx  Holds the imported export for the whole app
   pages/                One file per route
     Home.tsx
     NotFound.tsx
@@ -49,8 +53,23 @@ Routing lives entirely in `src/App.tsx`; adding a page means adding a file
 under `src/pages/` and a `<Route>`. Page titles are just a `<Title>` at the top
 of each page, so there is no title plumbing to keep in sync.
 
-The app is currently an empty shell — the two pages render a heading and
-nothing else. There is no Pleco parsing, no state and no data layer yet.
+`Home.tsx` imports an export and shows a summary of it. `NotFound.tsx` is still
+just a heading.
+
+## The data layer
+
+`src/database/` is the only place that knows SQL or the Pleco schema. Pages ask
+it for typed results and never run queries themselves — keep it that way, so
+`pleco-export-format.md` stays the single description of the file format.
+
+The imported database lives **in memory only**. Reloading the page drops it and
+the user has to pick the file again; there is deliberately no persistence yet.
+Nothing downstream depends on where the bytes came from, so caching them in
+IndexedDB later is a change to `DatabaseProvider` alone.
+
+sql.js needs its WebAssembly module at runtime. It is wired up with Vite's
+`?url` import in `plecoDatabase.ts`, which emits a hashed asset at build time —
+so there is no `public/` directory and nothing to copy by hand.
 
 ## Commands
 
