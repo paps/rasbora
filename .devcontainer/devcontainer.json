@@ -19,5 +19,16 @@
 
   "postCreateCommand": "bash .devcontainer/setup.sh",
 
-  "appPort": ["8002:8000"]
+  "appPort": ["8002:8000"],
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "dev.containers.dockerCredentialHelper": false,
+        "dev.containers.copyGitConfig": false,
+        "dev.containers.gitCredentialHelperConfigLocation": "none",
+        "dev.containers.mountWaylandSocket": false
+      }
+    }
+  }
 }

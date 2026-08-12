@@ -87,8 +87,6 @@ the job:
 
 Prettier has no config file on purpose — the defaults are fine.
 
-This app runs locally only. There is no deploy target and no hosting config.
-
 ## Why there are three React ESLint plugins
 
 They do not overlap by accident, so please do not try to consolidate them:
