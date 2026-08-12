@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import type { Database } from "sql.js";
 import { DatabaseContext, type DatabaseContextValue } from "@/database/context";
-import { openPlecoDatabase } from "@/database/plecoDatabase";
+import { openPlecoDatabase } from "@/database/plecoFile";
 
 interface DatabaseProviderProps {
   children: ReactNode;

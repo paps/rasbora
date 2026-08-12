@@ -8,11 +8,13 @@
     "check": "eslint . --max-warnings 0 && tsc --build --pretty false"
   },
   "dependencies": {
+    "@mantine/charts": "^9.5.1",
     "@mantine/core": "^9.5.1",
     "@mantine/hooks": "^9.5.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router": "^8.3.0",
+    "recharts": "^3.10.1",
     "sql.js": "^1.14.1"
   },
   "devDependencies": {

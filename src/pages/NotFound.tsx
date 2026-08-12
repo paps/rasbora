@@ -1,9 +1,5 @@
-import { Container, Title } from "@mantine/core";
+import { Title } from "@mantine/core";
 
-const NotFound = () => (
-  <Container p="xl">
-    <Title>Page not found</Title>
-  </Container>
-);
+const NotFound = () => <Title>Page not found</Title>;
 
 export default NotFound;

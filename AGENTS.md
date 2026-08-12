@@ -38,29 +38,73 @@ eslint.config.js        Flat config: typescript-eslint + @eslint-react +
                         react-hooks + react-refresh
 tsconfig.json           Strict, with the "@/*" -> "./src/*" path alias
 src/
-  main.tsx              Mounts <App /> and imports the Mantine stylesheet
+  main.tsx              Mounts <App /> and imports the Mantine stylesheets
   App.tsx               <MantineProvider> + <DatabaseProvider> + router
-  database/             The data layer
-    plecoDatabase.ts    Opens and queries an export; knows the Pleco schema
+  Layout.tsx            <AppShell>: the title bar and the sidebar
+  database/             What every page shares, and nothing more
+    plecoFile.ts        Opening an export, reading sql.js values, score tables
     context.ts          DatabaseContext + the useDatabase() hook
     DatabaseProvider.tsx  Holds the imported export for the whole app
-  pages/                One file per route
-    Home.tsx
+  pages/                One file per route, plus its queries
+    LoadFlashcards.tsx  + LoadFlashcards.db.ts
+    Statistics.tsx      + Statistics.db.ts
+    Recommendations.tsx
+    MostDifficultCards.tsx
     NotFound.tsx
 ```
 
 Routing lives entirely in `src/App.tsx`; adding a page means adding a file
-under `src/pages/` and a `<Route>`. Page titles are just a `<Title>` at the top
-of each page, so there is no title plumbing to keep in sync.
+under `src/pages/`, a `<Route>`, and an entry in `Layout.tsx`'s `PAGES` list.
+Page titles are just a `<Title>` at the top of each page, so there is no title
+plumbing to keep in sync.
 
-`Home.tsx` imports an export and shows a summary of it. `NotFound.tsx` is still
-just a heading.
+`Layout.tsx` wraps every route. Its `PAGES` list is the sidebar: each entry
+says whether the page needs an imported export, and those are disabled until
+one is. Disabling a link is a convenience, not a guard — the route still
+answers if it is typed in, so a page that needs data has to handle
+`database === null` itself.
+
+`LoadFlashcards.tsx` imports an export and shows a summary of it.
+`Statistics.tsx` charts cards over time. `Recommendations.tsx` and
+`MostDifficultCards.tsx` are deliberately empty placeholders, and
+`NotFound.tsx` is still just a heading.
 
 ## The data layer
 
-`src/database/` is the only place that knows SQL or the Pleco schema. Pages ask
-it for typed results and never run queries themselves — keep it that way, so
-`pleco-export-format.md` stays the single description of the file format.
+**Queries live with the page that asks them.** A page that needs data gets a
+`<Page>.db.ts` companion next to it, holding that page's SQL and returning
+typed results; the `.tsx` renders and never runs a query itself. Start there
+every time, including when a query looks reusable. Two pages running
+near-identical SQL is not a problem to fix — they will diverge as each page's
+question sharpens, and a shared helper bent to serve both is worse than two
+straightforward queries.
+
+`src/database/` holds only what is true of _any_ export, whatever page is
+looking at it, and `plecoFile.ts` is all of it:
+
+- **Opening an export** — the sql.js bootstrap, the cached WebAssembly
+  compilation, and the `FormatString` assertion. One compilation for the whole
+  app, and `DatabaseProvider` owns the lifecycle.
+- **Reading values** — `rowsOf`, `firstValueOf`, `asText`, `asCount`. SQLite is
+  dynamically typed and sql.js hands back `SqlValue[][]`, so every read is
+  narrowed by hand. These are shared so that a NULL means the same thing
+  everywhere; do not re-roll them per page.
+- **Score tables** — `listScorefiles()`. Review state lives in
+  `pleco_flash_scores_<N>`, ids are sparse, and the tables have to be found at
+  runtime. Hardcoding `pleco_flash_scores_1` does not fail, it silently ignores
+  the other scorefiles, which is exactly why this one is shared.
+
+Note what is _not_ a reason to add to `plecoFile.ts`: several pages needing it.
+Shared code here earns its place by correctness — **a per-page version would be
+wrong, not just repeated.** A query stays with its page however data-layerish
+it feels. Its predecessor `plecoDatabase.ts` filled up because "it belongs in
+the data layer" was reason enough, which is what a grab bag sounds like from
+the inside.
+
+`pleco-export-format.md` stays the authority on the schema, and its gotchas
+checklist now has to be respected in each `.db.ts` rather than in one place.
+`plecoFile.ts` implements only the traps that are too easy to walk into by
+hand; read the checklist before writing a new query.
 
 The imported database lives **in memory only**. Reloading the page drops it and
 the user has to pick the file again; there is deliberately no persistence yet.
@@ -68,8 +112,34 @@ Nothing downstream depends on where the bytes came from, so caching them in
 IndexedDB later is a change to `DatabaseProvider` alone.
 
 sql.js needs its WebAssembly module at runtime. It is wired up with Vite's
-`?url` import in `plecoDatabase.ts`, which emits a hashed asset at build time —
-so there is no `public/` directory and nothing to copy by hand.
+`?url` import in `plecoFile.ts`, which emits a hashed asset at build time — so
+there is no `public/` directory and nothing to copy by hand.
+
+Note that a query function cannot simply live in the `.tsx`:
+`react-refresh/only-export-components` fails the check when a file exports both
+a component and a function, which is the other reason for the companion file.
+
+## Charts
+
+`@mantine/charts` (and its `recharts` peer) is installed for the Statistics
+page. It is the only reason either package is here, so keep chart work on
+`<LineChart>` and friends rather than dropping to raw recharts.
+
+`Statistics.db.ts` shapes the data and names the series; `Statistics.tsx` picks
+the colours. Two things there are load-bearing:
+
+- **The series count is capped.** An export can hold dozens of categories, and
+  a line each would be unreadable, so the biggest six keep their own line and
+  the rest are summed into "Other categories" — named in the caption under the
+  chart, because a silently dropped category reads as a category with no cards.
+- **`CATEGORY_COLORS` was checked, not chosen by eye.** The order is
+  colourblind-safe as a set and every entry clears the lightness and chroma
+  bands against a white surface. Reordering it or adding to it silently
+  invalidates that, so re-check it if you do.
+
+The chart can only say when a card was _created_: the export keeps no history
+of category membership, so a card counts towards the categories it is in today.
+That caveat is in the caption and should stay there.
 
 ## Commands
 
@@ -112,7 +182,8 @@ hook problem get reported twice.
 - You are strictly not allowed to add dependencies, unless explicitly asked to
   do so by the humans controlling you. If you think a dependency is needed,
   explain why and ask for permission. This applies to `@mantine/*` packages too
-  — only `@mantine/core` and `@mantine/hooks` are installed, on purpose.
+  — only `@mantine/core`, `@mantine/hooks` and `@mantine/charts` are installed,
+  on purpose. `recharts` is here only because `@mantine/charts` needs it.
 - When you make visual changes, the humans controlling you appreciate a
   screenshot of the changed area. If you are working within a PR, put it in the
   PR description.
