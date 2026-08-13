@@ -1,14 +1,7 @@
-import {
-  Accordion,
-  Group,
-  Stack,
-  Table,
-  Text,
-  ThemeIcon,
-  Title,
-  Tooltip,
-} from "@mantine/core";
-import { useMemo } from "react";
+import { Accordion, Stack, Table, Text, Title } from "@mantine/core";
+import { useMemo, type ReactNode } from "react";
+import Explained from "@/components/Explained";
+import RelativeTime from "@/components/RelativeTime";
 import { useDatabase } from "@/database/context";
 import {
   readFileSummary,
@@ -18,17 +11,14 @@ import {
 
 interface DetailRow {
   label: string;
-  value: string;
+  /** Text for most rows, a `<RelativeTime>` for the ones holding a date. */
+  value: ReactNode;
   /**
    * Shown on an info bubble beside the label, for a row that would otherwise
    * read as something it is not. Most rows say what they are and have none.
    */
   info?: string;
 }
-
-/** A timestamp in the reader's locale, or a dash when the export has none. */
-const formatTime = (seconds: number | null): string =>
-  seconds === null ? "—" : new Date(seconds * 1000).toLocaleString();
 
 /** Reads a comma-**terminated** setting for display: `100,200,` is two values. */
 const formatList = (value: string): string =>
@@ -91,47 +81,17 @@ interface DetailTableProps {
   rows: DetailRow[];
 }
 
-/**
- * The bubble beside a label that a hover — or a keyboard focus, or a tap —
- * expands into a sentence. `aria-label` carries the same sentence, since the
- * bubble itself reads as nothing.
- */
-const InfoBubble = ({ info }: { info: string }) => (
-  <Tooltip
-    label={info}
-    multiline
-    w={300}
-    withArrow
-    // Below, so it does not cover the Categories row it refers to.
-    position="bottom-start"
-    events={{ hover: true, focus: true, touch: true }}
-  >
-    <ThemeIcon
-      size={16}
-      radius="xl"
-      variant="light"
-      color="gray"
-      tabIndex={0}
-      aria-label={info}
-      style={{ cursor: "help" }}
-    >
-      <Text fz={11} fw={700}>
-        i
-      </Text>
-    </ThemeIcon>
-  </Tooltip>
-);
-
 const DetailTable = ({ rows }: DetailTableProps) => (
   <Table withTableBorder verticalSpacing="xs">
     <Table.Tbody>
       {rows.map((row) => (
         <Table.Tr key={row.label}>
           <Table.Th w="45%">
-            <Group gap={6} wrap="nowrap">
-              {row.label}
-              {row.info !== undefined && <InfoBubble info={row.info} />}
-            </Group>
+            {row.info === undefined ? (
+              row.label
+            ) : (
+              <Explained info={row.info}>{row.label}</Explained>
+            )}
           </Table.Th>
           <Table.Td>{row.value}</Table.Td>
         </Table.Tr>
@@ -195,7 +155,7 @@ const ProfileInfo = () => {
     { label: "File", value: fileName ?? "—" },
     { label: "Format version", value: file.formatVersion },
     { label: "Written by", value: `${file.generator} on ${file.platform}` },
-    { label: "Created", value: formatTime(file.created) },
+    { label: "Created", value: <RelativeTime seconds={file.created} /> },
     { label: "Cards", value: file.cardCount.toLocaleString() },
     { label: "Categories", value: file.categoryCount.toLocaleString() },
     { label: "Profiles", value: file.profileCount.toLocaleString() },
@@ -255,13 +215,16 @@ const ProfileInfo = () => {
       value: details.cardCount.toLocaleString(),
       info: "Each card is counted once, however many of the profile's categories it is filed in, so this can be lower than the category counts added together. It is how many cards the profile can put in front of you.",
     },
-    { label: "Created", value: formatTime(details.created) },
-    { label: "Modified", value: formatTime(details.modified) },
+    { label: "Created", value: <RelativeTime seconds={details.created} /> },
+    { label: "Modified", value: <RelativeTime seconds={details.modified} /> },
     {
       label: "Last session started",
-      value: formatTime(details.lastSessionStart),
+      value: <RelativeTime seconds={details.lastSessionStart} />,
     },
-    { label: "Last session ended", value: formatTime(details.lastSessionEnd) },
+    {
+      label: "Last session ended",
+      value: <RelativeTime seconds={details.lastSessionEnd} />,
+    },
   ];
 
   return (

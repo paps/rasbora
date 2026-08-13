@@ -179,21 +179,30 @@ Range 50–132, mean 106.7. Moves in steps configured per profile
 
 ### `history` — a complete per-review log
 
-A digit-per-review string. Verified encoding:
+A digit-per-review string. The digits are Pleco's **six-point self-grading scale**, not a
+correct/incorrect flag: the user can grade an answer on the scale, and a plain right or wrong
+answer records the top or the second-from-bottom value. Verified encoding:
 
-| digit | meaning   | occurrences |
-| ----- | --------- | ----------: |
-| `6`   | correct   |     106,709 |
-| `2`   | incorrect |      56,422 |
-| `4`   | correct   |       5,909 |
-| `1`   | unknown   |          55 |
-| `3`   | unknown   |           8 |
-| `5`   | unknown   |           1 |
+| digit | meaning                                                                 | counts as | occurrences |
+| ----- | ----------------------------------------------------------------------- | --------- | ----------: |
+| `1`   | "don't know"                                                            | incorrect |          55 |
+| `2`   | "forgotten" — _and the default for any plain incorrect answer_          | incorrect |      56,422 |
+| `3`   | "almost remembered"                                                     | incorrect |           8 |
+| `4`   | "barely remembered"                                                     | correct   |       5,909 |
+| `5`   | "remembered"                                                            | correct   |           1 |
+| `6`   | "remembered perfectly" — _and the default for any plain correct answer_ | correct   |     106,709 |
 
-- `correct == count('6') + count('4')` holds for **14,606 of 14,607 rows**.
-- `incorrect == count('2')` holds for 14,555 of 14,607.
-- `reviewed == len(history)` holds for **all 14,607 rows**, max length 83 — so the log is
+That grouping is exact, not approximate:
+
+- `correct == count('4','5','6')` and `incorrect == count('1','2','3')` hold for **all 14,781
+  rows across all three scorefiles**, with no exceptions.
+- `reviewed == len(history)` likewise holds for every row, max length 83 — so the log is
   complete and, at least at this volume, never truncated.
+
+The lopsided distribution follows from the defaults: `2` and `6` dominate because they are
+what an ungraded answer records, and the four middle values only appear when the user
+reached for them. A tally of correct against incorrect therefore hides real signal — 5,909
+"barely remembered" answers count exactly like 106,709 perfect ones.
 
 **Ordering is newest-first.** Evidence: of the 12,006 cards whose most recent review raised
 the score, the _first_ character is a correct-marker 100% of the time; the last character
@@ -201,9 +210,8 @@ only 58%. The score-decrease group confirms it — of 2,601 such cards, the 1,56
 starts with `6` all sit at exactly 51,200, i.e. a correct answer at the ceiling is logged as
 a decrease event; all 1,035 starting with `2` are below the ceiling.
 
-`4` and `6` both count as correct and appear in long same-digit runs, suggesting they
-distinguish test type or session mode rather than degree of correctness **(inferred,
-unconfirmed)**. `1`/`3`/`5` are negligible and their semantics are unknown.
+Long same-digit runs of `4` are common, which reads as a stretch of sessions where the user
+graded honestly rather than as a different test type.
 
 ### No per-review timestamps
 
@@ -318,13 +326,15 @@ Referential integrity is clean in both directions despite no declared foreign ke
 4. **Multi-scorefile modelling.** A card has independent state per scorefile. Is a "card" in
    Rasbora the vocabulary item, or the (card, scorefile) pair? Dashboard statistics read very
    differently under each.
-5. **`4` vs `6` in `history`.** Worth confirming against a second export before building
-   anything that depends on the distinction.
+5. **Grading detail.** `history` carries a six-point grade per review, while `score`,
+   `difficulty` and the two tallies flatten it. Rasbora shows the grades on the flashcard;
+   anything that ranks or recommends cards could use them too, since "barely remembered"
+   thirty times and "perfect" thirty times count identically today.
 
 ## Appendix: gotchas checklist
 
 - [ ] Discover `scores_<N>` tables at runtime; never hardcode.
-- [ ] `history` reads **newest-first**.
+- [ ] `history` reads **newest-first**, and its digits are a six-point grade, not a flag.
 - [ ] Split `hw`/`althw`/`pron` on `@`; the three are index-aligned.
 - [ ] Multi-valued settings are comma-**terminated**.
 - [ ] Follow `pro_scorefile`; `profile.id != scorefile.id`.

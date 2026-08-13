@@ -114,6 +114,8 @@ src/
     ScriptProvider.tsx  Holds the choice app-wide, in localStorage
   components/           Reusable presentational pieces, shared across pages
     Flashcard.tsx       The card display, opened from any list of cards
+    Explained.tsx       Dotted-underlined text a hover/focus/tap explains
+    RelativeTime.tsx    "3 months ago", with the exact date on hover
     chinese.ts          Headword splitting and numbered-pinyin → tone marks
   pages/                One file per route, plus its queries
     ProfileInfo.tsx     + ProfileInfo.db.ts
@@ -141,6 +143,12 @@ All three belong here rather than on a page because every page depends on them.
 Fitting three controls costs the app's name below `xs`, where it is hidden and
 the mark alone identifies the app. That is the constraint to respect when adding
 a fourth: the title bar is full at 360 px.
+
+The control says what it is twice over, and both are needed: `VisuallyHidden`
+gives each button its accessible name, which a screen reader announces instead
+of a bare 繁, while the tooltip tells a sighted reader who cannot read the
+characters. A tooltip is not an accessible name and a hidden name never shows
+on screen, so neither one covers for the other.
 
 Its `PAGES` list is the sidebar, and **no link is ever disabled** — a page with
 nothing to read says so in a sentence instead. That is not a courtesy: routes
@@ -241,16 +249,67 @@ one place and pages hand it data.
 
 `Flashcard.tsx` is that display and is meant to be _the_ way a single card is
 shown app-wide: give it a `FlashcardData` and it renders the headword, pinyin,
-any note and the review tally, holding no state. Its `FlashcardData` is the
-vocabulary item plus the review counts read from the caller's profile scorefile.
-`score` and `difficulty` are left out because they only mean something next to
-the profile settings that bound them. A page that needs more can widen the
-contract; do not fork the component.
+any note, the review tally, the review log and the dates, holding no state. Its
+`FlashcardData` is the vocabulary item plus the review state read from the
+caller's profile scorefile. `score` and `difficulty` are left out because they
+only mean something next to the profile settings that bound them. A page that
+needs more can widen the contract; do not fork the component.
+
+Three things about the review section are load-bearing:
+
+- **The dates are grouped by what they are scoped to**, because mixing them
+  would be a lie: the four review times come from one profile's scorefile and
+  the same card reads differently under another profile, while `created` and
+  `modified` belong to the card and are the export's. Hence the two headings,
+  "In this profile" and "This card".
+- **The history strip is reversed.** Pleco stores the log newest-first, which
+  reads backwards as a timeline, so the strip runs oldest to newest and the
+  caption says so — a row of bars gives the reader no other way to tell. There
+  is no date on any single review, only the sequence, and the caption says that
+  too.
+- **Each review is drawn as a bar as tall as its grade**, on Pleco's six-point
+  scale, coloured on a red→green ramp and counted in the legend. Height, hue,
+  the per-bar tooltip and the counts all say the same thing, so no one channel
+  has to carry it. The two `0` counts a typical card shows are the point rather
+  than noise: they say the user never reached for that grade.
+- **The shades were checked, not chosen by eye.** Lightness runs outwards from
+  the middle of the scale, so the order survives as order without hue, and the
+  boundary that flips a card from wrong to right — "almost remembered" against
+  "barely remembered" — holds ΔE 39 under simulated protanopia, the worst of
+  the three simulations. Re-check it if you change a shade.
 
 The one thing it reads for itself is `useScript()`, which decides which form the
 big glyphs show and which is dimmed underneath. That is deliberately not a prop:
 see "The other global" above. It stays a rendering component either way — the
 script is the only thing it reaches for, and it still owns no state.
+
+`Explained.tsx` is the app's **only** "there is more here" affordance: dotted
+underlined text that a hover, a focus or a tap explains. It covers a label that
+would otherwise read as something it is not — the flashcard's "Score last
+fell", which is not always a failure, and the profile page's card count — and
+it is what shows a date's exact timestamp. One component, so a second shape of
+the same idea cannot appear; a mid-sentence tooltip and an underline saying
+different things is how that starts.
+
+Mantine has no equivalent to import. It ships `Tooltip` and `ThemeIcon` but no
+icons at all, and its own docs draw this pattern with `@tabler/icons-react`,
+which is a dependency we do not have. What is worth keeping here is small and
+easy to forget by hand: `events` opens the tooltip to a keyboard and a
+touchscreen where Mantine defaults to hover alone, `tabIndex` is what lets a
+keyboard reach it, and `maw` with `multiline` lets a sentence wrap while a
+short date still shrinks to its own width.
+
+`RelativeTime.tsx` is how **every** date in the app is written: "3 months ago",
+with the exact timestamp a hover away through `Explained`. "How long ago" is
+the question a reader has about a flashcard or a study session, and the exact
+moment is the rarer follow-up, so both are always there and neither reading is
+lost. It uses `Intl.RelativeTimeFormat`, which is in the browser and needs no
+dependency, with `numeric: "auto"` for the "yesterday" and "today" wordings.
+The clock is read once on mount rather than on every render — a re-render
+caused by something else must not silently reword a date, and the React
+Compiler's purity rule rejects the alternative anyway. Nothing ticks: a page
+left open overnight keeps yesterday's wording until it is mounted again, which
+is not worth a timer over a file the user imported by hand.
 
 `chinese.ts` is the pure text side of that: splitting a headword on `@` into
 aligned simplified/traditional/pinyin syllables, and turning numbered pinyin
