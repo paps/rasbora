@@ -37,6 +37,8 @@ vite.config.js          Vite config (JS on purpose, so it needs no @types/node)
 eslint.config.js        Flat config: typescript-eslint + @eslint-react +
                         react-hooks + react-refresh
 tsconfig.json           Strict, with the "@/*" -> "./src/*" path alias
+public/
+  favicon.svg           Served as-is at /favicon.svg; see "The data layer"
 src/
   main.tsx              Mounts <App /> and imports the Mantine stylesheets
   App.tsx               <MantineProvider> + <DatabaseProvider> + router
@@ -117,7 +119,12 @@ IndexedDB later is a change to `DatabaseProvider` alone.
 
 sql.js needs its WebAssembly module at runtime. It is wired up with Vite's
 `?url` import in `plecoFile.ts`, which emits a hashed asset at build time — so
-there is no `public/` directory and nothing to copy by hand.
+no asset the code refers to has to be copied by hand.
+
+`public/` holds only what has to keep a fixed URL and so cannot be hashed:
+today that is `favicon.svg` alone. Anything the code imports belongs in `src/`
+with a `?url` import instead, which is why the directory stayed empty until a
+favicon needed it.
 
 Note that a query function cannot simply live in the `.tsx`:
 `react-refresh/only-export-components` fails the check when a file exports both
