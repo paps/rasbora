@@ -126,13 +126,24 @@ const Statistics = () => {
         {measure === "cumulative"
           ? "Cards created up to the end of each month, counted against the categories they are in today."
           : "Cards created during each month, counted against the categories they are in today."}{" "}
-        Only the categories the {profile.name} profile draws from are counted.
-        Cards in several categories count towards each of them, so the category
-        lines can add up to more than the total.
-        {chart.groupedCategories.length > 0 &&
-          ` "Other categories" groups ${chart.groupedCategories.length.toLocaleString()} smaller categories: ${chart.groupedCategories.join(", ")}.`}
-        {chart.undatedCards > 0 &&
-          ` ${chart.undatedCards.toLocaleString()} cards have no creation date and are left out.`}
+        Only the categories the <b>{profile.name}</b> profile draws from are
+        counted. Cards in several categories count towards each of them, so the
+        category lines can add up to more than the total.
+        {chart.groupedCategories.length > 0 && (
+          <>
+            {" "}
+            “Other categories” groups{" "}
+            <b>{chart.groupedCategories.length.toLocaleString()}</b> smaller
+            categories: <b>{chart.groupedCategories.join(", ")}</b>.
+          </>
+        )}
+        {chart.undatedCards > 0 && (
+          <>
+            {" "}
+            <b>{chart.undatedCards.toLocaleString()}</b> cards have no creation
+            date and are left out.
+          </>
+        )}
       </Text>
     </Stack>
   );

@@ -4,6 +4,7 @@ import {
   Button,
   FileButton,
   Group,
+  Image,
   NavLink,
   Select,
   Text,
@@ -68,6 +69,15 @@ const Layout = ({ children }: LayoutProps) => {
       <AppShell.Header>
         <Group h="100%" px="md" gap="sm" wrap="nowrap">
           <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
+
+          {/*
+            The favicon doubles as the app's mark. It is referenced by its
+            fixed public URL rather than imported, so the tab icon and the one
+            beside the title can never drift apart. Decorative, hence the empty
+            alt: the title right next to it already names the app.
+          */}
+          <Image src="/favicon.svg" alt="" w={30} h={30} />
+
           <Title order={3}>Rasbora</Title>
 
           <Group gap="xs" wrap="nowrap" ml="auto">

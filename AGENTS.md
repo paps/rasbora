@@ -89,8 +89,9 @@ under `src/pages/`, a `<Route>`, and an entry in `Layout.tsx`'s `PAGES` list.
 Page titles are just a `<Title>` at the top of each page, so there is no title
 plumbing to keep in sync.
 
-`Layout.tsx` wraps every route, and its title bar holds the two controls that
-are global to the app: the imported file, and the profile everything is read
+`Layout.tsx` wraps every route, and its title bar holds the app's mark and name
+on the left and the two controls that are global to the app on the right: the
+imported file, and the profile everything is read
 through. Before an import it shows one button; after one it shows the file
 name, a subdued **Change** button that reopens the picker, and a `<Select>` of
 the export's profiles. Both belong here rather than on a page because every
@@ -174,7 +175,10 @@ no asset the code refers to has to be copied by hand.
 `public/` holds only what has to keep a fixed URL and so cannot be hashed:
 today that is `favicon.svg` alone. Anything the code imports belongs in `src/`
 with a `?url` import instead, which is why the directory stayed empty until a
-favicon needed it.
+favicon needed it. `Layout.tsx` showing the same file beside the title is not
+an exception to that: it writes the fixed `/favicon.svg` URL rather than
+importing it, so the tab icon and the one in the title bar stay the same
+picture and the file is served once.
 
 Note that a query function cannot simply live in the `.tsx`:
 `react-refresh/only-export-components` fails the check when a file exports both

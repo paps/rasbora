@@ -7,7 +7,7 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import Flashcard from "@/components/Flashcard";
 import { splitHeadword } from "@/components/chinese";
 import { useDatabase } from "@/database/context";
@@ -24,16 +24,27 @@ const PAGE_SIZE = 25;
  * nothing however much its scorefile holds, and only then does an empty list
  * mean the profile's cards have genuinely never been failed.
  */
-const emptyReason = (profile: Profile): string => {
+const emptyReason = (profile: Profile): ReactNode => {
+  const name = <b>{profile.name}</b>;
+
   if (profile.scorefile === null) {
-    return `The ${profile.name} profile writes to no scorefile, so it has no review history.`;
+    return (
+      <>
+        The {name} profile writes to no scorefile, so it has no review history.
+      </>
+    );
   }
 
   if (profile.categoryIds.length === 0) {
-    return `The ${profile.name} profile draws from no category, so it puts no card in front of you to fail.`;
+    return (
+      <>
+        The {name} profile draws from no category, so it puts no card in front
+        of you to fail.
+      </>
+    );
   }
 
-  return `No card has ever failed a review in the ${profile.name} profile.`;
+  return <>No card has ever failed a review in the {name} profile.</>;
 };
 
 const MostDifficultCards = () => {
@@ -80,10 +91,10 @@ const MostDifficultCards = () => {
       ) : (
         <>
           <Text size="sm" c="dimmed">
-            The {cards.length.toLocaleString()} cards the {profile.name} profile
-            failed most often, counting incorrect reviews in its “
-            {profile.scorefile?.name}” scorefile only. Select a card to see its
-            details.
+            The <b>{cards.length.toLocaleString()}</b> cards the{" "}
+            <b>{profile.name}</b> profile failed most often, counting incorrect
+            reviews in its “<b>{profile.scorefile?.name}</b>” scorefile only.
+            Select a card to see its details.
           </Text>
 
           <Table highlightOnHover withTableBorder verticalSpacing="xs">
