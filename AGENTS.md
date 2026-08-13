@@ -209,9 +209,6 @@ hook problem get reported twice.
   explain why and ask for permission. This applies to `@mantine/*` packages too
   — only `@mantine/core`, `@mantine/hooks` and `@mantine/charts` are installed,
   on purpose. `recharts` is here only because `@mantine/charts` needs it.
-- When you make visual changes, the humans controlling you appreciate a
-  screenshot of the changed area. If you are working within a PR, put it in the
-  PR description.
 - Mantine ships documentation written for LLMs at https://mantine.dev/llms.txt,
   which is an index of per-topic Markdown files under https://mantine.dev/llms/.
   Fetch the relevant one rather than answering from memory.
