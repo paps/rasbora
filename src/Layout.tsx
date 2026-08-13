@@ -98,7 +98,9 @@ const Layout = ({ children }: LayoutProps) => {
 
                 {profiles.length > 0 ? (
                   <Select
-                    w={220}
+                    // Narrow enough that a phone still fits the burger, the
+                    // title, Change and the picker on one row.
+                    w={{ base: 148, sm: 220 }}
                     aria-label="Profile"
                     placeholder="Profile"
                     allowDeselect={false}

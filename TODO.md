@@ -1,0 +1,1 @@
+- [ ] Add an analysis of the Profile's goal (reading comprehension, hearing comprehension, recall at least) depending on understanding the profile's settings. Used as a double check so that the user realizes the profile learning effect in case they didn't know
