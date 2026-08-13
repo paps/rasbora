@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Rasbora</title>
+
+  <!--
+    A harlequin rasbora (Trigonostigma heteromorpha): a lozenge-shaped body in
+    orange-pink, with the black wedge that gives the species its name — it
+    starts under the middle of the dorsal fin and tapers back to the caudal
+    peduncle.
+
+    The fish is rotated so that it lies along the square's diagonal. It is a
+    wide, shallow shape and a favicon is a square, so straight-on it would sit
+    in a thin band with the corners empty and read as a smudge in a tab; the
+    tilt buys it the room to stay legible down to 16px.
+  -->
+
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#EE8B35" />
+      <stop offset="0.5" stop-color="#F2A65E" />
+      <!-- The belly stays light but not near-white, or the underside of the
+           silhouette washes out against a white tab bar at 16px. -->
+      <stop offset="1" stop-color="#F6C592" />
+    </linearGradient>
+
+    <path
+      id="outline"
+      d="M3.5 32 Q13.5 20.5 28 18.5 Q41.5 20.5 51 28.5 L51 35.5 Q41.5 43.5 28 45.5 Q13.5 43.5 3.5 32 Z"
+    />
+
+    <clipPath id="inside"><use href="#outline" /></clipPath>
+  </defs>
+
+  <g transform="rotate(-13 32 32) translate(32 32) scale(1.12) translate(-32 -32)">
+    <!-- Fins, behind the body. Red-tinted on the real fish, caudal forked. -->
+    <g fill="#E05C2B">
+      <path d="M50 28.5 L62.5 17.5 L57 32 L62.5 46.5 L50 35.5 Z" />
+      <path d="M26 19.5 Q31 8.5 39.5 11 Q37.5 16 34.5 20 Z" />
+      <path d="M31.5 44 Q35 52 41 50.5 Q39 46.5 36.5 43.5 Z" />
+      <path d="M21.5 43.5 Q23 50.5 27.5 50 Q27 46 25.5 43 Z" />
+    </g>
+
+    <use href="#outline" fill="url(#body)" />
+
+    <!--
+      The wedge is drawn oversized and clipped to the body, so its upper margin
+      picks up the exact curve of the back rather than a straight edge cutting
+      across it. It reaches the full depth of the peduncle at the tail, which
+      is what keeps a stray hairline of body colour from showing between the
+      two once the whole thing is 16px wide.
+    -->
+    <path d="M26 1 L58 22 L53 36 L31 47 Z" fill="#231D1A" clip-path="url(#inside)" />
+
+    <!-- Pectoral fin, over the body. -->
+    <path d="M15.5 33.5 Q19.5 39.5 24 37.5 Q22 34.5 19 33 Z" fill="#E05C2B" opacity="0.9" />
+
+    <circle cx="11.5" cy="30" r="3.1" fill="#231D1A" />
+    <circle cx="12.5" cy="29" r="1" fill="#FFFFFF" />
+  </g>
+</svg>
