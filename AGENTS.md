@@ -255,23 +255,32 @@ caller's profile scorefile. `score` and `difficulty` are left out because they
 only mean something next to the profile settings that bound them. A page that
 needs more can widen the contract; do not fork the component.
 
-Three things about the review section are load-bearing:
+Five things about the review section are load-bearing:
 
 - **The dates are grouped by what they are scoped to**, because mixing them
-  would be a lie: the four review times come from one profile's scorefile and
-  the same card reads differently under another profile, while `created` and
-  `modified` belong to the card and are the export's. Hence the two headings,
-  "In this profile" and "This card".
-- **The history strip is reversed.** Pleco stores the log newest-first, which
-  reads backwards as a timeline, so the strip runs oldest to newest and the
-  caption says so — a row of bars gives the reader no other way to tell. There
-  is no date on any single review, only the sequence, and the caption says that
-  too.
-- **Each review is drawn as a bar as tall as its grade**, on Pleco's six-point
-  scale, coloured on a red→green ramp and counted in the legend. Height, hue,
+  would be a lie: the score and review times come from one profile's scorefile
+  and the same card reads differently under another profile, while `created`
+  and `modified` belong to the card and are the export's. Hence the two
+  headings, "In this profile" and "This card".
+- **The history is the last section, and runs down the page.** It is the one
+  part of the card with no fixed height — a card with hundreds of reviews is
+  hundreds of rows — so it goes at the bottom, where it can grow without
+  pushing anything off the screen, and stacks downwards rather than wrapping
+  into a block whose rows would mean nothing.
+- **It reads newest first, and the timeline says so.** That is the order Pleco
+  stores the log in, so nothing is reversed: the newest review is the top row.
+  The first and last review dates cap the strip — they are not in the date
+  table, where they would be two more rows rather than the ends of something —
+  and an arrow runs up the left side between them with the span it covers
+  written along it. There is still no date on any single review, only the
+  sequence, and the caption says that.
+- **Each review is drawn as a bar as long as its grade**, on Pleco's six-point
+  scale, coloured on a red→green ramp and counted in the legend. Length, hue,
   the per-bar tooltip and the counts all say the same thing, so no one channel
   has to carry it. The two `0` counts a typical card shows are the point rather
-  than noise: they say the user never reached for that grade.
+  than noise: they say the user never reached for that grade — which is also
+  why grades `2` and `6` are labelled "(default)": they are what a plain wrong
+  and a plain right answer record.
 - **The shades were checked, not chosen by eye.** Lightness runs outwards from
   the middle of the scale, so the order survives as order without hue, and the
   boundary that flips a card from wrong to right — "almost remembered" against
