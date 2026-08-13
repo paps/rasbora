@@ -27,3 +27,12 @@ Rasbora therefore reads the export through exactly one profile at a time. You im
 Pleco stores both written forms of every card, so you choose which one you read. The 繁/简 switch sits at the top of the window next to the profile, and applies everywhere a character is drawn — the card lists and the card details alike. Traditional is the default, and your choice is remembered between visits.
 
 Where a card has no traditional variant, both settings show the same characters. On a card's details, whichever form you did not choose is shown smaller underneath it.
+
+## Definitions
+
+A Pleco export barely contains meanings: it stores your own notes, which most cards don't have, and references into Pleco's own dictionaries whose text is not exported. So Rasbora fills the gap with [CC-CEDICT], a free community dictionary bundled with the app. Open a card and, below your own note if you wrote one, you'll see its dictionary definition — matched to the card's reading, so the right sense shows for a character that has more than one (行 as _xíng_ or _háng_).
+
+Multi-word phrases and cards you made yourself are often not in CC-CEDICT, and simply show no definition. CC-CEDICT is provided under [CC BY-SA 4.0] and is credited on every card that uses it.
+
+[CC-CEDICT]: https://www.mdbg.net/chinese/dictionary?page=cc-cedict
+[CC BY-SA 4.0]: https://creativecommons.org/licenses/by-sa/4.0/

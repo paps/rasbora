@@ -1,5 +1,6 @@
-import { Badge, Group, Stack, Text } from "@mantine/core";
+import { Badge, Group, List, Stack, Text } from "@mantine/core";
 import { splitHeadword } from "@/components/chinese";
+import { useDictionary } from "@/dictionary/context";
 import { otherScript, useScript } from "@/script/context";
 
 /**
@@ -37,14 +38,18 @@ interface FlashcardProps {
  * the review tally. Anything that lists cards opens this to show one, so it
  * takes a plain `FlashcardData` and renders.
  *
- * The one thing it reads for itself is the app-wide script. Threading that in
- * as a prop would let a page forget it and show a card in the script the rest
- * of the app is not using, which is exactly the inconsistency a global
- * preference exists to prevent. It still holds no state.
+ * It reads two things for itself. The app-wide script — threading that in as a
+ * prop would let a page forget it and show a card in the script the rest of the
+ * app is not using, the inconsistency a global preference exists to prevent.
+ * And the bundled dictionary: the export carries the user's own note but almost
+ * never a meaning, so the CC-CEDICT gloss is looked up here and shown below the
+ * note when there is one. Both are reads; it still holds no state.
  */
 const Flashcard = ({ card }: FlashcardProps) => {
   const { script } = useScript();
+  const { lookup } = useDictionary();
   const other = otherScript(script);
+  const entry = lookup(card.hw, card.althw, card.pron);
   // Position-prefixed so repeated syllables (妈妈, 谢谢) stay distinct keys.
   // Keyed on the simplified form whatever is displayed, so that switching
   // script re-renders the syllables it already has rather than replacing them.
@@ -80,7 +85,37 @@ const Flashcard = ({ card }: FlashcardProps) => {
         ))}
       </Group>
 
-      {card.defn && <Text style={{ whiteSpace: "pre-line" }}>{card.defn}</Text>}
+      {card.defn && (
+        <Stack gap={2}>
+          <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
+            Your note
+          </Text>
+          <Text style={{ whiteSpace: "pre-line" }}>{card.defn}</Text>
+        </Stack>
+      )}
+
+      {/*
+        The gloss comes from CC-CEDICT (CC BY-SA 4.0), which the app is obliged
+        to credit where it shows the data. `entry` is null while the dictionary
+        is still loading or when it has no headword for this card — both show
+        nothing rather than an error, since the note above already stands on its
+        own.
+      */}
+      {entry && (
+        <Stack gap={2}>
+          <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
+            Dictionary
+          </Text>
+          <List size="sm" spacing={2}>
+            {entry.senses.map((sense, index) => (
+              <List.Item key={`${String(index)}-${sense}`}>{sense}</List.Item>
+            ))}
+          </List>
+          <Text size="xs" c="dimmed">
+            CC-CEDICT · CC BY-SA 4.0
+          </Text>
+        </Stack>
+      )}
 
       <Group gap="xs">
         <Badge color="red" variant="light">
