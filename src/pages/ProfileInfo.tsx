@@ -1,4 +1,13 @@
-import { Accordion, Stack, Table, Text, Title } from "@mantine/core";
+import {
+  Accordion,
+  Group,
+  Stack,
+  Table,
+  Text,
+  ThemeIcon,
+  Title,
+  Tooltip,
+} from "@mantine/core";
 import { useMemo } from "react";
 import { useDatabase } from "@/database/context";
 import {
@@ -10,6 +19,11 @@ import {
 interface DetailRow {
   label: string;
   value: string;
+  /**
+   * Shown on an info bubble beside the label, for a row that would otherwise
+   * read as something it is not. Most rows say what they are and have none.
+   */
+  info?: string;
 }
 
 /** A timestamp in the reader's locale, or a dash when the export has none. */
@@ -77,12 +91,47 @@ interface DetailTableProps {
   rows: DetailRow[];
 }
 
+/**
+ * The bubble beside a label that a hover — or a keyboard focus, or a tap —
+ * expands into a sentence. `aria-label` carries the same sentence, since the
+ * bubble itself reads as nothing.
+ */
+const InfoBubble = ({ info }: { info: string }) => (
+  <Tooltip
+    label={info}
+    multiline
+    w={300}
+    withArrow
+    position="top-start"
+    events={{ hover: true, focus: true, touch: true }}
+  >
+    <ThemeIcon
+      size={16}
+      radius="xl"
+      variant="light"
+      color="gray"
+      tabIndex={0}
+      aria-label={info}
+      style={{ cursor: "help" }}
+    >
+      <Text fz={11} fw={700}>
+        i
+      </Text>
+    </ThemeIcon>
+  </Tooltip>
+);
+
 const DetailTable = ({ rows }: DetailTableProps) => (
   <Table withTableBorder verticalSpacing="xs">
     <Table.Tbody>
       {rows.map((row) => (
         <Table.Tr key={row.label}>
-          <Table.Th w="45%">{row.label}</Table.Th>
+          <Table.Th w="45%">
+            <Group gap={6} wrap="nowrap">
+              {row.label}
+              {row.info !== undefined && <InfoBubble info={row.info} />}
+            </Group>
+          </Table.Th>
           <Table.Td>{row.value}</Table.Td>
         </Table.Tr>
       ))}
@@ -203,6 +252,7 @@ const ProfileInfo = () => {
     {
       label: "Cards in the profile",
       value: details.cardCount.toLocaleString(),
+      info: "Each card is counted once, however many of the profile's categories it is filed in, so this can be lower than the category counts added together. It is how many cards the profile can put in front of you.",
     },
     { label: "Created", value: formatTime(details.created) },
     { label: "Modified", value: formatTime(details.modified) },
