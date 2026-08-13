@@ -10,6 +10,7 @@ import {
   Select,
   Text,
   Title,
+  Tooltip,
   VisuallyHidden,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
@@ -56,6 +57,21 @@ const SCRIPTS: { value: Script; label: ReactNode }[] = [
     ),
   },
 ];
+
+/**
+ * What the control's tooltip says, keyed by the form currently showing: the
+ * script in English, then the one a click switches to. 繁/简 only tells you
+ * which is which if you can already read them, which is not true of everyone
+ * learning to.
+ *
+ * Spelled out per script rather than built from `otherScript()` and a name
+ * table, because two literal sentences are easier to read and to reword than
+ * the code that would assemble them.
+ */
+const SCRIPT_TOOLTIPS: Record<Script, string> = {
+  traditional: "Traditional — click for simplified",
+  simplified: "Simplified — click for traditional",
+};
 
 interface LayoutProps {
   children: ReactNode;
@@ -175,13 +191,25 @@ const Layout = ({ children }: LayoutProps) => {
                   it changes: it is one choice for the whole app, and every page
                   that draws a character obeys it.
                 */}
-                <SegmentedControl<Script>
-                  size="xs"
-                  aria-label="Character script"
-                  value={script}
-                  onChange={setScript}
-                  data={SCRIPTS}
-                />
+                <Tooltip
+                  label={SCRIPT_TOOLTIPS[script]}
+                  withArrow
+                  // Below: the control sits in the header, where a tooltip
+                  // above it would open off the top of the window.
+                  position="bottom"
+                  // Hover and keyboard focus, but not touch: a tap already
+                  // flips the control and shows the answer, so a bubble on
+                  // top of it would only be in the way.
+                  events={{ hover: true, focus: true, touch: false }}
+                >
+                  <SegmentedControl<Script>
+                    size="xs"
+                    aria-label="Character script"
+                    value={script}
+                    onChange={setScript}
+                    data={SCRIPTS}
+                  />
+                </Tooltip>
               </>
             ) : (
               <FileButton accept=".pqb" onChange={importChosenFile}>
