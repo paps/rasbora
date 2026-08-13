@@ -7,13 +7,13 @@ import {
 } from "react";
 import type { Database } from "sql.js";
 import { openSqlite } from "@/database/plecoFile";
-import cedictUrl from "@/dictionary/cedict.sqlite?url";
+import cedictUrl from "@/cc-cedict/cedict.sqlite?url";
 import {
   DictionaryContext,
   lookupCard,
   type DictionaryContextValue,
   type DictionaryEntry,
-} from "@/dictionary/context";
+} from "@/cc-cedict/context";
 
 interface DictionaryProviderProps {
   children: ReactNode;

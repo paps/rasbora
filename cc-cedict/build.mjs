@@ -1,5 +1,5 @@
 // Builds the bundled dictionary the app serves: turns CC-CEDICT's text dump
-// into an indexed SQLite file at `src/dictionary/cedict.sqlite`, which is
+// into an indexed SQLite file at `src/cc-cedict/cedict.sqlite`, which is
 // committed and shipped as a static asset. Run it to refresh the dictionary:
 //
 //   node cc-cedict/build.mjs
@@ -20,14 +20,14 @@ import { fileURLToPath } from "node:url";
 const SOURCE =
   "https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.txt.gz";
 const OUTPUT = fileURLToPath(
-  new URL("../src/dictionary/cedict.sqlite", import.meta.url),
+  new URL("../src/cc-cedict/cedict.sqlite", import.meta.url),
 );
 
 /**
  * The canonical pinyin key both sides of the join reduce to. A card's `pron`
  * (`duan4@lian4`) and a CC-CEDICT reading (`[duan4 lian4]`) have to land on the
  * same string for the disambiguation-by-reading to work, so the rules here MUST
- * match `canonicalPinyin()` in `src/dictionary/context.ts`:
+ * match `canonicalPinyin()` in `src/cc-cedict/context.ts`:
  *
  *   - `u:` (CC-CEDICT's way of writing ü) becomes the literal `ü`,
  *   - everything is lowercased (proper nouns are capitalised on both sides),
@@ -72,7 +72,7 @@ const sourceDate = dateLine
   ? dateLine.slice("#! date=".length).trim()
   : "unknown";
 
-mkdirSync(fileURLToPath(new URL("../src/dictionary/", import.meta.url)), {
+mkdirSync(fileURLToPath(new URL("../src/cc-cedict/", import.meta.url)), {
   recursive: true,
 });
 rmSync(OUTPUT, { force: true });

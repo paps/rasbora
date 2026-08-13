@@ -2,7 +2,7 @@ import { MantineProvider } from "@mantine/core";
 import { BrowserRouter, Route, Routes } from "react-router";
 import Layout from "@/Layout";
 import DatabaseProvider from "@/database/DatabaseProvider";
-import DictionaryProvider from "@/dictionary/DictionaryProvider";
+import DictionaryProvider from "@/cc-cedict/DictionaryProvider";
 import MostDifficultCards from "@/pages/MostDifficultCards";
 import NotFound from "@/pages/NotFound";
 import ProfileInfo from "@/pages/ProfileInfo";

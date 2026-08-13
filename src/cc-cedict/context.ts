@@ -10,7 +10,7 @@
  *
  * It is app-wide reference data, like the script preference and unlike the
  * export: it is the same before any file is imported, no query over the export
- * touches it, and it outlives every import. Hence its own `src/dictionary/`
+ * touches it, and it outlives every import. Hence its own `src/cc-cedict/`
  * rather than a home in `src/database/`.
  *
  * The lookup is a whole-word join, not per-syllable: CC-CEDICT is keyed by the

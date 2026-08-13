@@ -14,7 +14,7 @@ node cc-cedict/build.mjs
 ```
 
 It downloads the latest CC-CEDICT from MDBG, parses it, and writes
-`src/dictionary/cedict.sqlite` — a table of `(simplified, traditional, pinyin,
+`src/cc-cedict/cedict.sqlite` — a table of `(simplified, traditional, pinyin,
 gloss)` indexed both ways. That file is committed and shipped as a static asset;
 re-run this to refresh it. Nothing here is imported by the app, and it is not
 part of the app's TypeScript project (ESLint ignores this folder), so it is free
@@ -26,7 +26,7 @@ app's no-new-dependencies rule is untouched. Node 22.5+ is required for
 `node:sqlite`.
 
 **The one invariant to keep.** `canonicalPinyin()` here and the function of the
-same name in `src/dictionary/context.ts` must reduce a reading to the identical
+same name in `src/cc-cedict/context.ts` must reduce a reading to the identical
 string, or the join stops matching. Change one, change both. Against a real
 14,887-card export the join resolves 91% of cards, 90% with an exact
 reading-level match that disambiguates homographs (行 xíng vs háng); the rest are

@@ -74,11 +74,11 @@ An export barely contains meanings. `defn` is a user's own note and is NULL on
 97.6% of cards; the real definitions are references into Pleco's licensed
 dictionaries, whose bytes are not in the file. So the meaning has to come from
 elsewhere, and that is **CC-CEDICT** — a free community dictionary shipped with
-the app as an indexed SQLite file, `src/dictionary/cedict.sqlite`.
+the app as an indexed SQLite file, `src/cc-cedict/cedict.sqlite`.
 
 Like the script preference and unlike the export, it is app-wide reference data:
 the same before any import, untouched by one, and read by no query over the
-export. Hence `src/dictionary/`, a `DictionaryProvider` beside `ScriptProvider`,
+export. Hence `src/cc-cedict/`, a `DictionaryProvider` beside `ScriptProvider`,
 its own `useScript`-shaped `useDictionary()` hook — and, like the script, read
 by `Flashcard` itself rather than passed in.
 
@@ -91,7 +91,7 @@ Four things to keep in mind when touching this:
   none matches, the first entry shows rather than nothing.
 - **`canonicalPinyin()` exists twice and must agree.** The card's `pron` and a
   CC-CEDICT reading only meet if both reduce to the same string. The reducer in
-  `src/dictionary/context.ts` and the one in `cc-cedict/build.mjs` are that
+  `src/cc-cedict/context.ts` and the one in `cc-cedict/build.mjs` are that
   contract; change one, change both. Against the sample export the join resolves
   91% of cards, 90% with an exact reading-level match.
 - **It loads lazily and fails soft.** A few megabytes, and no card is shown
@@ -135,7 +135,7 @@ eslint.config.js        Flat config: typescript-eslint + @eslint-react +
                         react-hooks + react-refresh
 tsconfig.json           Strict, with the "@/*" -> "./src/*" path alias
 cc-cedict/              Build tooling for the bundled dictionary (see its readme)
-  build.mjs             CC-CEDICT text dump → src/dictionary/cedict.sqlite
+  build.mjs             CC-CEDICT text dump → src/cc-cedict/cedict.sqlite
 public/
   favicon.svg           Served as-is at /favicon.svg; see "The data layer"
 src/
@@ -151,7 +151,7 @@ src/
   script/               The written form cards are shown in
     context.ts          Script, otherScript() + the useScript() hook
     ScriptProvider.tsx  Holds the choice app-wide, in localStorage
-  dictionary/           Where card meanings come from; see "The bundled dictionary"
+  cc-cedict/           Where card meanings come from; see "The bundled dictionary"
     cedict.sqlite       CC-CEDICT, committed and served as a static asset
     context.ts          lookupCard(), the useDictionary() hook
     DictionaryProvider.tsx  Loads the dictionary once, app-wide
@@ -266,7 +266,7 @@ other global" above.
 sql.js needs its WebAssembly module at runtime. It is wired up with Vite's
 `?url` import in `plecoFile.ts`, which emits a hashed asset at build time — so
 no asset the code refers to has to be copied by hand. The bundled dictionary,
-`src/dictionary/cedict.sqlite`, is the second such asset: a committed binary
+`src/cc-cedict/cedict.sqlite`, is the second such asset: a committed binary
 imported `?url` and fetched at runtime, hashed and cached like the wasm.
 
 `public/` holds only what has to keep a fixed URL and so cannot be hashed:

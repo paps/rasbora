@@ -1,6 +1,6 @@
 import { Badge, Group, List, Stack, Text } from "@mantine/core";
 import { splitHeadword } from "@/components/chinese";
-import { useDictionary } from "@/dictionary/context";
+import { useDictionary } from "@/cc-cedict/context";
 import { otherScript, useScript } from "@/script/context";
 
 /**
