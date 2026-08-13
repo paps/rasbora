@@ -102,7 +102,8 @@ const InfoBubble = ({ info }: { info: string }) => (
     multiline
     w={300}
     withArrow
-    position="top-start"
+    // Below, so it does not cover the Categories row it refers to.
+    position="bottom-start"
     events={{ hover: true, focus: true, touch: true }}
   >
     <ThemeIcon
