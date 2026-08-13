@@ -67,9 +67,6 @@ export const asCount = (value: SqlValue | null): number =>
  * use, so the whole app shares one compilation.
  * ---------------------------------------------------------------------- */
 
-/** Value of the `FormatString` property that identifies a Pleco export. */
-const PLECO_FORMAT_STRING = "Pleco SQL Flashcard Database";
-
 let sqlJs: Promise<SqlJsStatic> | undefined;
 
 const loadSqlJs = () => {
@@ -110,7 +107,7 @@ export const openPlecoDatabase = async (file: File): Promise<Database> => {
   const SQL = await loadSqlJs();
   const database = new SQL.Database(new Uint8Array(await file.arrayBuffer()));
 
-  if (readFormatString(database) !== PLECO_FORMAT_STRING) {
+  if (readFormatString(database) !== "Pleco SQL Flashcard Database") {
     database.close();
     throw new Error(`"${file.name}" is not a Pleco flashcard export.`);
   }
