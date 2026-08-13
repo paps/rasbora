@@ -133,8 +133,10 @@ on the left and the three controls that are global to the app on the right: the
 imported file, the profile everything is read through, and the script cards are
 written in. Before an import it shows one button; after one it shows the file
 name, a subdued **Change** button that reopens the picker, a `<Select>` of the
-export's profiles, and a 繁/简 `<SegmentedControl>`. All three belong here rather
-than on a page because every page depends on them.
+export's profiles, and a 繁/简 `<SegmentedControl>` whose tooltip names the
+current script in English and the one a click switches to, since the two
+characters only distinguish themselves to someone who can already read them.
+All three belong here rather than on a page because every page depends on them.
 
 Fitting three controls costs the app's name below `xs`, where it is hidden and
 the mark alone identifies the app. That is the constraint to respect when adding
