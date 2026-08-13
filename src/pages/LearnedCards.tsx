@@ -1,14 +1,16 @@
 import { Stack, Text, Title } from "@mantine/core";
 import { useMemo, type ReactNode } from "react";
-import CardList, { type CardColumn } from "@/components/CardList";
+import CardList, {
+  type CardColumn,
+  type CardListData,
+} from "@/components/CardList";
 import Explained from "@/components/Explained";
-import type { FlashcardData } from "@/components/Flashcard";
 import RelativeTime from "@/components/RelativeTime";
 import { useDatabase } from "@/database/context";
 import type { Profile } from "@/database/plecoFile";
 import { readLearnedCards } from "@/pages/LearnedCards.db";
 
-const COLUMNS: CardColumn<FlashcardData>[] = [
+const COLUMNS: CardColumn<CardListData>[] = [
   {
     key: "reviewed",
     header: "Reviewed",
@@ -93,7 +95,9 @@ const LearnedCards = () => {
       <Title>Learned cards</Title>
 
       {learned.cards.length === 0 ? (
-        <Text c="dimmed">{emptyReason(profile, learned.ceiling)}</Text>
+        <Text c="dimmed">
+          {emptyReason(profile, learned.scoreRange?.max ?? null)}
+        </Text>
       ) : (
         <>
           <Text size="sm" c="dimmed">
@@ -102,7 +106,7 @@ const LearnedCards = () => {
             <Explained info="The highest score the profile lets a card reach, from its pro_scoreautomax setting. A card there has no interval left to earn, so it comes back as rarely as this profile ever shows a card.">
               maximum score
             </Explained>{" "}
-            of <b>{learned.ceiling?.toLocaleString()}</b> in its “
+            of <b>{learned.scoreRange?.max.toLocaleString()}</b> in its “
             <b>{profile.scorefile?.name}</b>” scorefile.{" "}
             {learned.total > learned.cards.length && (
               <>
@@ -115,7 +119,11 @@ const LearnedCards = () => {
             card to see its details.
           </Text>
 
-          <CardList cards={learned.cards} columns={COLUMNS} />
+          <CardList
+            cards={learned.cards}
+            columns={COLUMNS}
+            scoreRange={learned.scoreRange}
+          />
         </>
       )}
     </Stack>

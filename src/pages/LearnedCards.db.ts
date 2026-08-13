@@ -1,16 +1,15 @@
 /** The query behind `LearnedCards.tsx`, and nothing else. */
 
 import type { Database, SqlValue } from "sql.js";
-import type { FlashcardData } from "@/components/Flashcard";
+import type { CardListData } from "@/components/CardList";
 import {
   asCount,
   asText,
   firstValueOf,
-  readProfileSetting,
-  readSettingNumbers,
+  readScoreRange,
   rowsOf,
 } from "@/database/plecoFile";
-import type { Profile } from "@/database/plecoFile";
+import type { Profile, ScoreRange } from "@/database/plecoFile";
 
 /**
  * How many cards the page lists. A profile can have thousands of cards at the
@@ -26,15 +25,19 @@ const asTime = (value: SqlValue | null): number | null => {
   return seconds > 0 ? seconds : null;
 };
 
+/** A score column, or null when the scorefile holds none for the card. */
+const asScore = (value: SqlValue | null): number | null =>
+  typeof value === "number" ? value : null;
+
 export interface LearnedCards {
   /**
-   * The score a card stops climbing at in this profile, from
-   * `pro_scoreautomax`. Null when the profile does not record one, which is
-   * the one case where the page cannot say what "learned" means.
+   * The bounds this profile scores against. Its `max` is the ceiling that
+   * defines the page; null when the profile records none, which is the one
+   * case where the page cannot say what "learned" means.
    */
-  ceiling: number | null;
+  scoreRange: ScoreRange | null;
   /** Cards at the ceiling, longest since last reviewed first. Capped. */
-  cards: FlashcardData[];
+  cards: CardListData[];
   /** How many there are in all, which may be more than were returned. */
   total: number;
 }
@@ -59,13 +62,11 @@ export const readLearnedCards = (
   profile: Profile,
 ): LearnedCards => {
   const table = profile.scorefile?.table ?? null;
-  const ceiling =
-    readSettingNumbers(
-      readProfileSetting(database, profile.id, "pro_scoreautomax"),
-    )[0] ?? null;
+  const scoreRange = readScoreRange(database, profile);
+  const ceiling = scoreRange?.max ?? null;
 
   if (table === null || ceiling === null || profile.categoryIds.length === 0) {
-    return { ceiling, cards: [], total: 0 };
+    return { scoreRange, cards: [], total: 0 };
   }
 
   const scope = `where s.score >= ?
@@ -73,14 +74,14 @@ export const readLearnedCards = (
                   where cat in (${profile.categoryIds.join(", ")}))`;
 
   return {
-    ceiling,
+    scoreRange,
     cards: rowsOf(
       database,
       `select c.id, c.hw, c.althw, c.pron, coalesce(c.defn, '') as defn,
               c.created, c.modified,
               s.correct, s.incorrect, s.reviewed, coalesce(s.history, '') as history,
               s.firstreviewedtime, s.lastreviewedtime,
-              s.scoreinctime, s.scoredectime
+              s.scoreinctime, s.scoredectime, s.score
        from pleco_flash_cards c
        join ${table} s on s.card = c.id
        ${scope}
@@ -104,6 +105,7 @@ export const readLearnedCards = (
       lastReviewed: asTime(row[12] ?? null),
       scoreIncreased: asTime(row[13] ?? null),
       scoreDecreased: asTime(row[14] ?? null),
+      score: asScore(row[15] ?? null),
     })),
     total: asCount(
       firstValueOf(

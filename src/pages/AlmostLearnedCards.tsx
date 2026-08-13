@@ -1,21 +1,18 @@
 import { Stack, Text, Title } from "@mantine/core";
 import { useMemo, type ReactNode } from "react";
-import CardList, { type CardColumn } from "@/components/CardList";
+import CardList, {
+  type CardColumn,
+  type CardListData,
+} from "@/components/CardList";
 import Explained from "@/components/Explained";
 import RelativeTime from "@/components/RelativeTime";
 import { useDatabase } from "@/database/context";
 import type { Profile } from "@/database/plecoFile";
-import {
-  readAlmostLearnedCards,
-  type AlmostLearnedCard,
-} from "@/pages/AlmostLearnedCards.db";
+import { readAlmostLearnedCards } from "@/pages/AlmostLearnedCards.db";
 
-const COLUMNS: CardColumn<AlmostLearnedCard>[] = [
-  {
-    key: "score",
-    header: "Score",
-    cell: (card) => card.score.toLocaleString(),
-  },
+// No score column of its own: the bar `CardList` draws sits in every row
+// already, and its tooltip carries the exact number this page used to print.
+const COLUMNS: CardColumn<CardListData>[] = [
   {
     key: "reviewed",
     header: "Reviewed",
@@ -99,7 +96,11 @@ const AlmostLearnedCards = () => {
 
       {almost.cards.length === 0 ? (
         <Text c="dimmed">
-          {emptyReason(profile, almost.threshold, almost.ceiling)}
+          {emptyReason(
+            profile,
+            almost.threshold,
+            almost.scoreRange?.max ?? null,
+          )}
         </Text>
       ) : (
         <>
@@ -110,8 +111,9 @@ const AlmostLearnedCards = () => {
               top score band
             </Explained>
             , scoring at least <b>{almost.threshold?.toLocaleString()}</b> but
-            short of the maximum <b>{almost.ceiling?.toLocaleString()}</b> that
-            would make them learned.{" "}
+            short of the maximum{" "}
+            <b>{almost.scoreRange?.max.toLocaleString()}</b> that would make
+            them learned.{" "}
             {almost.total > almost.cards.length && (
               <>
                 The <b>{almost.cards.length.toLocaleString()}</b> longest unseen
@@ -121,7 +123,11 @@ const AlmostLearnedCards = () => {
             Least recently reviewed first. Select a card to see its details.
           </Text>
 
-          <CardList cards={almost.cards} columns={COLUMNS} />
+          <CardList
+            cards={almost.cards}
+            columns={COLUMNS}
+            scoreRange={almost.scoreRange}
+          />
         </>
       )}
     </Stack>

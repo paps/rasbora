@@ -106,20 +106,20 @@ const RiskyCards = () => {
   const [recentWindow, setRecentWindow] = useState(DEFAULT_RECENT_WINDOW);
 
   // Read once per profile; the controls re-filter what is already in memory.
-  const candidates = useMemo(
+  const source = useMemo(
     () => (database && profile ? readRiskyCandidates(database, profile) : null),
     [database, profile],
   );
   const risky = useMemo(
     () =>
-      candidates === null
+      source === null
         ? null
-        : selectRiskyCards(candidates, { runLength, recentWindow }),
-    [candidates, runLength, recentWindow],
+        : selectRiskyCards(source.candidates, { runLength, recentWindow }),
+    [source, runLength, recentWindow],
   );
 
   // The two are null together — a review log belongs to a profile's scorefile.
-  if (!risky || !candidates || !profile) {
+  if (!risky || !source || !profile) {
     return (
       <Stack gap="lg">
         <Title>Risky cards</Title>
@@ -183,7 +183,7 @@ const RiskyCards = () => {
 
       {risky.cards.length === 0 ? (
         <Text c="dimmed">
-          {emptyReason(profile, runLength, candidates.length)}
+          {emptyReason(profile, runLength, source.candidates.length)}
         </Text>
       ) : (
         <>
@@ -201,7 +201,11 @@ const RiskyCards = () => {
             Longest run lost first. Select a card to see its details.
           </Text>
 
-          <CardList cards={risky.cards} columns={COLUMNS} />
+          <CardList
+            cards={risky.cards}
+            columns={COLUMNS}
+            scoreRange={source.scoreRange}
+          />
         </>
       )}
     </Stack>

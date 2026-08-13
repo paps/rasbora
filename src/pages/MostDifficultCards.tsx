@@ -1,12 +1,14 @@
 import { Stack, Text, Title } from "@mantine/core";
 import { useMemo, type ReactNode } from "react";
-import CardList, { type CardColumn } from "@/components/CardList";
-import type { FlashcardData } from "@/components/Flashcard";
+import CardList, {
+  type CardColumn,
+  type CardListData,
+} from "@/components/CardList";
 import { useDatabase } from "@/database/context";
 import type { Profile } from "@/database/plecoFile";
 import { readMostDifficultCards } from "@/pages/MostDifficultCards.db";
 
-const COLUMNS: CardColumn<FlashcardData>[] = [
+const COLUMNS: CardColumn<CardListData>[] = [
   {
     key: "incorrect",
     header: "Failed",
@@ -52,14 +54,14 @@ const emptyReason = (profile: Profile): ReactNode => {
 const MostDifficultCards = () => {
   const { database, profile } = useDatabase();
 
-  const cards = useMemo(
+  const difficult = useMemo(
     () =>
       database && profile ? readMostDifficultCards(database, profile) : null,
     [database, profile],
   );
 
   // The two are null together — difficulty is asked of one profile.
-  if (!cards || !profile) {
+  if (!difficult || !profile) {
     return (
       <Stack gap="lg">
         <Title>Most difficult cards</Title>
@@ -74,18 +76,22 @@ const MostDifficultCards = () => {
     <Stack gap="lg">
       <Title>Most difficult cards</Title>
 
-      {cards.length === 0 ? (
+      {difficult.cards.length === 0 ? (
         <Text c="dimmed">{emptyReason(profile)}</Text>
       ) : (
         <>
           <Text size="sm" c="dimmed">
-            The <b>{cards.length.toLocaleString()}</b> cards the{" "}
+            The <b>{difficult.cards.length.toLocaleString()}</b> cards the{" "}
             <b>{profile.name}</b> profile failed most often, counting incorrect
             reviews in its “<b>{profile.scorefile?.name}</b>” scorefile only.
             Select a card to see its details.
           </Text>
 
-          <CardList cards={cards} columns={COLUMNS} />
+          <CardList
+            cards={difficult.cards}
+            columns={COLUMNS}
+            scoreRange={difficult.scoreRange}
+          />
         </>
       )}
     </Stack>

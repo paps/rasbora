@@ -24,7 +24,7 @@ Rasbora therefore reads the export through exactly one profile at a time. You im
 
 ## The card lists
 
-Five pages answer "which cards?", and each one opens a card's details when you select it:
+Five pages answer "which cards?", and each one opens a card's details when you select it. Every row carries a bar for how well known the card is — filling and turning from red towards green as the score climbs, with the exact score on hover. It reads in doublings rather than in plain numbers, because that is how Pleco spaces reviews: a card at the top of the scale fills the bar and is one you are done with.
 
 - **Most difficult cards** — the ones this profile has failed most often.
 - **Risky cards** — the ones you had learned and are now getting wrong: a run of correct answers, then a failure among the most recent reviews. You set how long the run has to have been and how far back "recently" reaches. Pleco records no date for an individual review, only the order, so recency here is counted in reviews rather than in weeks.

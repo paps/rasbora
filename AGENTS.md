@@ -279,6 +279,11 @@ looking at it, and `plecoFile.ts` is all of it:
   seen so far nests them, but a profile naming a parent and quietly losing its
   children would undercount every page. Ids come back as integers, so a page
   can interpolate them into an `in (…)` clause.
+- **Score bounds** — `readScoreRange()`. Shared for the same reason the
+  scorefile lookup is: every card list draws its score bars against one scale,
+  and a page deriving its own would show the same card differently on two
+  pages. The bounds are per-profile configuration despite reading 100 and
+  51,200 everywhere so far.
 - **Profile settings** — `readProfileSetting()` and `readSettingNumbers()`.
   Both are traps rather than conveniences: the settings bag is keyed by
   `propset`, which is the _profile_ id, so a page reaching for
@@ -389,14 +394,35 @@ either way: these are the only things it reaches for, and it still owns no
 state.
 
 `CardList.tsx` is the other half of that: the table every card page renders,
-holding the position, the headword in the chosen script, the pinyin, then
-whatever columns the page hands it, plus the paging and the `<Drawer>` that
-opens a `Flashcard`. Five pages ask "which cards?" and they differ in the
-question, not in the table — so the table is one component, and a sixth page
-gets the same page size, the same first three columns and the same click
+holding the position, the headword in the chosen script, the pinyin, the score
+bar, then whatever columns the page hands it, plus the paging and the
+`<Drawer>` that opens a `Flashcard`. Five pages ask "which cards?" and they
+differ in the question, not in the table — so the table is one component, and a
+sixth page gets the same page size, the same first columns and the same click
 behaviour for free. It is the caller's list that is rendered, in the caller's
 order: capping a long list and saying so is the page's job, since only the page
 knows what was left out.
+
+The score bar is the part with something to say:
+
+- **It is drawn here rather than by a page, because the scale has to be one
+  scale.** `CardListData` widens `FlashcardData` with the score, and the
+  profile's `ScoreRange` comes in beside it; a page working its own bounds out
+  — from the rows it happens to be showing, say — would draw the same card two
+  ways on two pages. A null range drops the column rather than guessing one.
+- **The scale is doublings, not the raw number.** Pleco spaces reviews by
+  doubling the score, so 100 → 200 is the same step as 25,600 → 51,200. Nine
+  doublings span the usual range; a linear bar would leave two thirds of a real
+  deck bunched in its top quarter. A card at the ceiling fills the track, which
+  is what the learned list is: a column of full bars.
+- **Colour is the redundant channel, and was measured.** Simulated against the
+  three dichromacy types, the two _ends_ of any red→green ramp in Mantine's
+  palette land at ΔE 9 under deuteranopia — a red bar and a green bar look
+  nearly alike — so the bar's length carries "how well known" and the exact
+  score is a hover away, the same arrangement as the flashcard's grade bars.
+  Within that, `SCORE_COLORS` is the best of the ramps measured: yellow is left
+  out because it collapses into lime at ΔE 2.3 under protanopia, and every stop
+  clears 2.4:1 against the white row. Re-measure if you change one.
 
 `Explained.tsx` is the app's **only** "there is more here" affordance: dotted
 underlined text that a hover, a focus or a tap explains. It covers a label that

@@ -1,13 +1,15 @@
 import { Stack, Text, Title } from "@mantine/core";
 import { useMemo, type ReactNode } from "react";
-import CardList, { type CardColumn } from "@/components/CardList";
-import type { FlashcardData } from "@/components/Flashcard";
+import CardList, {
+  type CardColumn,
+  type CardListData,
+} from "@/components/CardList";
 import RelativeTime from "@/components/RelativeTime";
 import { useDatabase } from "@/database/context";
 import type { Profile } from "@/database/plecoFile";
 import { readCustomizedCards } from "@/pages/CustomizedCards.db";
 
-const COLUMNS: CardColumn<FlashcardData>[] = [
+const COLUMNS: CardColumn<CardListData>[] = [
   {
     key: "defn",
     header: "Definition",
@@ -96,7 +98,11 @@ const CustomizedCards = () => {
             last edited. Select a card to see its details.
           </Text>
 
-          <CardList cards={customized.cards} columns={COLUMNS} />
+          <CardList
+            cards={customized.cards}
+            columns={COLUMNS}
+            scoreRange={customized.scoreRange}
+          />
         </>
       )}
     </Stack>

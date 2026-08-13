@@ -1,9 +1,9 @@
 /** The query behind `MostDifficultCards.tsx`, and nothing else. */
 
 import type { Database, SqlValue } from "sql.js";
-import type { FlashcardData } from "@/components/Flashcard";
-import { asCount, asText, rowsOf } from "@/database/plecoFile";
-import type { Profile } from "@/database/plecoFile";
+import type { CardListData } from "@/components/CardList";
+import { asCount, asText, readScoreRange, rowsOf } from "@/database/plecoFile";
+import type { Profile, ScoreRange } from "@/database/plecoFile";
 
 /**
  * How many cards the page shows. "Most difficult" is open-ended; this is the
@@ -22,6 +22,21 @@ const asTime = (value: SqlValue | null): number | null => {
 
   return seconds > 0 ? seconds : null;
 };
+
+/**
+ * A score column, or null when there is none. Unlike a timestamp a zero is not
+ * "never happened" here — a profile could score down to it — so only a missing
+ * value reads as no score.
+ */
+const asScore = (value: SqlValue | null): number | null =>
+  typeof value === "number" ? value : null;
+
+export interface MostDifficultCards {
+  /** The cards, hardest first. Capped. */
+  cards: CardListData[];
+  /** The bounds the list draws its score bars against. */
+  scoreRange: ScoreRange | null;
+}
 
 /**
  * The cards the profile has failed most often, hardest first.
@@ -44,20 +59,21 @@ const asTime = (value: SqlValue | null): number | null => {
 export const readMostDifficultCards = (
   database: Database,
   profile: Profile,
-): FlashcardData[] => {
+): MostDifficultCards => {
   const table = profile.scorefile?.table ?? null;
+  const scoreRange = readScoreRange(database, profile);
 
   if (table === null || profile.categoryIds.length === 0) {
-    return [];
+    return { cards: [], scoreRange };
   }
 
-  return rowsOf(
+  const cards = rowsOf(
     database,
     `select c.id, c.hw, c.althw, c.pron, coalesce(c.defn, '') as defn,
             c.created, c.modified,
             s.correct, s.incorrect, s.reviewed, coalesce(s.history, '') as history,
             s.firstreviewedtime, s.lastreviewedtime,
-            s.scoreinctime, s.scoredectime
+            s.scoreinctime, s.scoredectime, s.score
      from pleco_flash_cards c
      join ${table} s on s.card = c.id
      where s.incorrect > 0
@@ -81,5 +97,8 @@ export const readMostDifficultCards = (
     lastReviewed: asTime(row[12] ?? null),
     scoreIncreased: asTime(row[13] ?? null),
     scoreDecreased: asTime(row[14] ?? null),
+    score: asScore(row[15] ?? null),
   }));
+
+  return { cards, scoreRange };
 };

@@ -1,9 +1,9 @@
 /** The query behind `RiskyCards.tsx`, and the reading of the review log. */
 
 import type { Database, SqlValue } from "sql.js";
-import type { FlashcardData } from "@/components/Flashcard";
-import { asCount, asText, rowsOf } from "@/database/plecoFile";
-import type { Profile } from "@/database/plecoFile";
+import type { CardListData } from "@/components/CardList";
+import { asCount, asText, readScoreRange, rowsOf } from "@/database/plecoFile";
+import type { Profile, ScoreRange } from "@/database/plecoFile";
 
 /** How many cards the page lists; see `LearnedCards.db.ts` for the reason. */
 const RISKY_LIMIT = 1000;
@@ -15,6 +15,10 @@ const asTime = (value: SqlValue | null): number | null => {
   return seconds > 0 ? seconds : null;
 };
 
+/** A score column, or null when the scorefile holds none for the card. */
+const asScore = (value: SqlValue | null): number | null =>
+  typeof value === "number" ? value : null;
+
 /** What the page's two controls mean, in reviews. */
 export interface RiskSettings {
   /** How long the run of correct answers has to have been. */
@@ -24,7 +28,7 @@ export interface RiskSettings {
 }
 
 /** A card that was going well and then stopped. */
-export interface RiskyCard extends FlashcardData {
+export interface RiskyCard extends CardListData {
   /** The run of correct answers the failure broke, in reviews. */
   brokenRun: number;
   /** Reviews since that run ended, the failure among them. */
@@ -36,6 +40,13 @@ export interface RiskyCards {
   cards: RiskyCard[];
   /** How many there are in all, which may be more than were returned. */
   total: number;
+}
+
+export interface RiskyCandidates {
+  /** Every card the filtering below has to consider. */
+  candidates: CardListData[];
+  /** The bounds the list draws its score bars against. */
+  scoreRange: ScoreRange | null;
 }
 
 /**
@@ -104,7 +115,7 @@ const riskOf = (
  * about strings already in memory would be the slower way round.
  */
 export const selectRiskyCards = (
-  candidates: FlashcardData[],
+  candidates: CardListData[],
   settings: RiskSettings,
 ): RiskyCards => {
   const risky = candidates
@@ -135,20 +146,21 @@ export const selectRiskyCards = (
 export const readRiskyCandidates = (
   database: Database,
   profile: Profile,
-): FlashcardData[] => {
+): RiskyCandidates => {
   const table = profile.scorefile?.table ?? null;
+  const scoreRange = readScoreRange(database, profile);
 
   if (table === null || profile.categoryIds.length === 0) {
-    return [];
+    return { candidates: [], scoreRange };
   }
 
-  return rowsOf(
+  const candidates = rowsOf(
     database,
     `select c.id, c.hw, c.althw, c.pron, coalesce(c.defn, '') as defn,
             c.created, c.modified,
             s.correct, s.incorrect, s.reviewed, coalesce(s.history, '') as history,
             s.firstreviewedtime, s.lastreviewedtime,
-            s.scoreinctime, s.scoredectime
+            s.scoreinctime, s.scoredectime, s.score
      from pleco_flash_cards c
      join ${table} s on s.card = c.id
      where s.incorrect > 0 and s.correct > 0 and coalesce(s.history, '') <> ''
@@ -170,5 +182,8 @@ export const readRiskyCandidates = (
     lastReviewed: asTime(row[12] ?? null),
     scoreIncreased: asTime(row[13] ?? null),
     scoreDecreased: asTime(row[14] ?? null),
+    score: asScore(row[15] ?? null),
   }));
+
+  return { candidates, scoreRange };
 };

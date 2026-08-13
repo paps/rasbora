@@ -1,9 +1,15 @@
 /** The query behind `CustomizedCards.tsx`, and nothing else. */
 
 import type { Database, SqlValue } from "sql.js";
-import type { FlashcardData } from "@/components/Flashcard";
-import { asCount, asText, firstValueOf, rowsOf } from "@/database/plecoFile";
-import type { Profile } from "@/database/plecoFile";
+import type { CardListData } from "@/components/CardList";
+import {
+  asCount,
+  asText,
+  firstValueOf,
+  readScoreRange,
+  rowsOf,
+} from "@/database/plecoFile";
+import type { Profile, ScoreRange } from "@/database/plecoFile";
 
 /** How many cards the page lists; see `LearnedCards.db.ts` for the reason. */
 const CUSTOMIZED_LIMIT = 1000;
@@ -15,11 +21,21 @@ const asTime = (value: SqlValue | null): number | null => {
   return seconds > 0 ? seconds : null;
 };
 
+/**
+ * A score column, or null when there is none — which on this page is a real
+ * case rather than a defensive one: the scorefile is joined in rather than
+ * required, so a card the profile has never reviewed reaches the list.
+ */
+const asScore = (value: SqlValue | null): number | null =>
+  typeof value === "number" ? value : null;
+
 export interface CustomizedCards {
   /** Cards with a definition of the user's own. Capped. */
-  cards: FlashcardData[];
+  cards: CardListData[];
   /** How many there are in all, which may be more than were returned. */
   total: number;
+  /** The bounds the list draws its score bars against. */
+  scoreRange: ScoreRange | null;
 }
 
 /**
@@ -44,9 +60,10 @@ export const readCustomizedCards = (
   profile: Profile,
 ): CustomizedCards => {
   const table = profile.scorefile?.table ?? null;
+  const scoreRange = readScoreRange(database, profile);
 
   if (profile.categoryIds.length === 0) {
-    return { cards: [], total: 0 };
+    return { cards: [], total: 0, scoreRange };
   }
 
   // Without a scorefile there is no `s` to read, so the review columns are
@@ -54,10 +71,10 @@ export const readCustomizedCards = (
   const join = table === null ? "" : `left join ${table} s on s.card = c.id`;
   const review =
     table === null
-      ? `0, 0, 0, '', null, null, null, null`
+      ? `0, 0, 0, '', null, null, null, null, null`
       : `s.correct, s.incorrect, s.reviewed, coalesce(s.history, ''),
          s.firstreviewedtime, s.lastreviewedtime,
-         s.scoreinctime, s.scoredectime`;
+         s.scoreinctime, s.scoredectime, s.score`;
   const age =
     table === null
       ? "nullif(c.modified, 0)"
@@ -92,6 +109,7 @@ export const readCustomizedCards = (
       lastReviewed: asTime(row[12] ?? null),
       scoreIncreased: asTime(row[13] ?? null),
       scoreDecreased: asTime(row[14] ?? null),
+      score: asScore(row[15] ?? null),
     })),
     total: asCount(
       firstValueOf(
@@ -99,5 +117,6 @@ export const readCustomizedCards = (
         `select count(*) from pleco_flash_cards c ${scope}`,
       ),
     ),
+    scoreRange,
   };
 };

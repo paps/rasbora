@@ -317,3 +317,40 @@ export const listProfiles = (database: Database): Profile[] => {
       };
     });
 };
+
+/** The scores a profile clamps its cards between. */
+export interface ScoreRange {
+  /** `pro_scoreautomin` — where a card sits after being failed enough. */
+  min: number;
+  /** `pro_scoreautomax` — the ceiling, where a card is finished with. */
+  max: number;
+}
+
+/**
+ * The bounds this profile scores against, or null when it records neither a
+ * usable minimum nor maximum.
+ *
+ * Shared for the same reason the scorefile lookup is: every card list draws
+ * the same score bar, and the bars are only comparable if the scale behind
+ * them is one scale. A page working out its own bounds — from the rows it
+ * happens to be showing, say — would draw the same card differently on two
+ * pages, which is worse than not drawing it at all.
+ *
+ * The bounds really are per-profile configuration despite reading 100 and
+ * 51,200 in every export seen so far, so they are read rather than assumed.
+ */
+export const readScoreRange = (
+  database: Database,
+  profile: Profile,
+): ScoreRange | null => {
+  const min = readSettingNumbers(
+    readProfileSetting(database, profile.id, "pro_scoreautomin"),
+  )[0];
+  const max = readSettingNumbers(
+    readProfileSetting(database, profile.id, "pro_scoreautomax"),
+  )[0];
+
+  return min === undefined || max === undefined || min <= 0 || max <= min
+    ? null
+    : { min, max };
+};

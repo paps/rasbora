@@ -1,16 +1,16 @@
 /** The queries behind `AlmostLearnedCards.tsx`, and nothing else. */
 
 import type { Database, SqlValue } from "sql.js";
-import type { FlashcardData } from "@/components/Flashcard";
+import type { CardListData } from "@/components/CardList";
 import {
   asCount,
   asText,
   firstValueOf,
-  readProfileSetting,
+  readScoreRange,
   readSettingNumbers,
   rowsOf,
 } from "@/database/plecoFile";
-import type { Profile } from "@/database/plecoFile";
+import type { Profile, ScoreRange } from "@/database/plecoFile";
 
 /** How many cards the page lists; see `LearnedCards.db.ts` for the reason. */
 const ALMOST_LEARNED_LIMIT = 1000;
@@ -22,22 +22,17 @@ const asTime = (value: SqlValue | null): number | null => {
   return seconds > 0 ? seconds : null;
 };
 
-/**
- * A card in the top band, with the score that put it there. `FlashcardData`
- * leaves `score` out because the number means nothing on its own; the page
- * shows the two bounds beside it, which is what makes it readable here.
- */
-export interface AlmostLearnedCard extends FlashcardData {
-  score: number;
-}
+/** A score column, or null when the scorefile holds none for the card. */
+const asScore = (value: SqlValue | null): number | null =>
+  typeof value === "number" ? value : null;
 
 export interface AlmostLearnedCards {
   /** Where the profile's longest review interval starts. Null if unknown. */
   threshold: number | null;
-  /** The profile's `pro_scoreautomax`, above which a card is learned. */
-  ceiling: number | null;
+  /** The bounds the band sits inside; its `max` is the learned ceiling. */
+  scoreRange: ScoreRange | null;
   /** Cards in that band, longest since last reviewed first. Capped. */
-  cards: AlmostLearnedCard[];
+  cards: CardListData[];
   /** How many there are in all, which may be more than were returned. */
   total: number;
 }
@@ -92,10 +87,8 @@ export const readAlmostLearnedCards = (
 ): AlmostLearnedCards => {
   const table = profile.scorefile?.table ?? null;
   const threshold = readTopBandStart(database, profile);
-  const ceiling =
-    readSettingNumbers(
-      readProfileSetting(database, profile.id, "pro_scoreautomax"),
-    )[0] ?? null;
+  const scoreRange = readScoreRange(database, profile);
+  const ceiling = scoreRange?.max ?? null;
 
   if (
     table === null ||
@@ -103,7 +96,7 @@ export const readAlmostLearnedCards = (
     ceiling === null ||
     profile.categoryIds.length === 0
   ) {
-    return { threshold, ceiling, cards: [], total: 0 };
+    return { threshold, scoreRange, cards: [], total: 0 };
   }
 
   const scope = `where s.score >= ? and s.score < ?
@@ -112,7 +105,7 @@ export const readAlmostLearnedCards = (
 
   return {
     threshold,
-    ceiling,
+    scoreRange,
     cards: rowsOf(
       database,
       `select c.id, c.hw, c.althw, c.pron, coalesce(c.defn, '') as defn,
@@ -143,7 +136,7 @@ export const readAlmostLearnedCards = (
       lastReviewed: asTime(row[12] ?? null),
       scoreIncreased: asTime(row[13] ?? null),
       scoreDecreased: asTime(row[14] ?? null),
-      score: asCount(row[15] ?? null),
+      score: asScore(row[15] ?? null),
     })),
     total: asCount(
       firstValueOf(
