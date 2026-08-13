@@ -36,25 +36,31 @@ const TONE_MARKS: Record<string, readonly string[]> = {
  * Which vowel of a syllable carries the tone mark. The standard rules: an `a`
  * or `e` always takes it; in `ou` the `o` does; otherwise it falls on the last
  * vowel (which handles `iu`, `ui`, and single-vowel syllables alike).
+ *
+ * Matched case-insensitively. Proper nouns are capitalised in the export
+ * (`Ao4`, `Ou1`, `A1`), and a capital vowel carries the tone like any other —
+ * matching lowercase only marks the wrong vowel, or none at all.
  */
 const tonalVowelIndex = (letters: string): number => {
-  const a = letters.indexOf("a");
+  const lower = letters.toLowerCase();
+
+  const a = lower.indexOf("a");
   if (a !== -1) {
     return a;
   }
 
-  const e = letters.indexOf("e");
+  const e = lower.indexOf("e");
   if (e !== -1) {
     return e;
   }
 
-  const ou = letters.indexOf("ou");
+  const ou = lower.indexOf("ou");
   if (ou !== -1) {
     return ou;
   }
 
-  for (let i = letters.length - 1; i >= 0; i -= 1) {
-    const letter = letters[i];
+  for (let i = lower.length - 1; i >= 0; i -= 1) {
+    const letter = lower[i];
     if (letter !== undefined && letter in TONE_MARKS) {
       return i;
     }
@@ -64,17 +70,29 @@ const tonalVowelIndex = (letters: string): number => {
 };
 
 /**
+ * A syllable's letters and the tone digit that ends them. The digit is not
+ * reliably the last character: Pleco hangs its own notation off the end, so
+ * `ti3 `, `you1-`, `ru4, ` and `Lai2'` all occur — 1,219 of 14,887 cards in
+ * the sample export carry one. That notation is punctuation around the
+ * reading rather than part of it, so it is dropped like the `//` marker
+ * below, and only the toned letters are kept.
+ */
+const TONED_LETTERS = /([a-zü]+)([1-5])/i;
+
+/**
  * Numbered pinyin for one syllable (`duan4`, `lü3`, `ma5`, `r5`) to the accented
  * form (`duàn`, `lǚ`, `ma`, `r`). Tone `5` is the neutral tone and carries no
- * mark; a syllable with no vowel (an erhua `r`, say) is left as its letters.
+ * mark; a syllable with no vowel (an erhua `r`, say) is left as its letters,
+ * and one with no tone digit at all is left alone.
  */
 export const toneSyllable = (numbered: string): string => {
-  const tone = Number(numbered.slice(-1));
-  if (!Number.isInteger(tone) || tone < 1 || tone > 5) {
-    return numbered;
+  const match = TONED_LETTERS.exec(numbered);
+  if (!match) {
+    return numbered.trim();
   }
 
-  const letters = numbered.slice(0, -1);
+  const [, letters = "", digit = ""] = match;
+  const tone = Number(digit);
   if (tone === 5) {
     return letters;
   }
@@ -85,9 +103,12 @@ export const toneSyllable = (numbered: string): string => {
     return letters;
   }
 
-  const marked = TONE_MARKS[vowel]?.[tone] ?? vowel;
+  // `TONE_MARKS` is keyed by the plain lowercase vowel, so a capital one is
+  // looked up folded and re-capitalised afterwards: `Ao4` has to give `Ào`.
+  const marked = TONE_MARKS[vowel.toLowerCase()]?.[tone] ?? vowel;
+  const cased = vowel === vowel.toUpperCase() ? marked.toUpperCase() : marked;
 
-  return letters.slice(0, index) + marked + letters.slice(index + 1);
+  return letters.slice(0, index) + cased + letters.slice(index + 1);
 };
 
 /**
@@ -108,9 +129,22 @@ export const splitHeadword = (
   const traditional = (althw || hw).split("@");
   const pinyin = pron.replace(/\//g, "").split("@");
 
-  return simplified.map((character, index) => ({
-    simplified: character,
-    traditional: traditional[index] ?? character,
-    pinyin: toneSyllable(pinyin[index] ?? ""),
-  }));
+  // Counting `hw`'s syllables alone is not enough: a few cards have an empty
+  // `hw` with the characters sitting in `althw`, and taking `hw`'s length there
+  // yields one blank syllable and silently drops the rest of the word.
+  const count = Math.max(simplified.length, traditional.length, pinyin.length);
+
+  return Array.from({ length: count }, (_, index) => {
+    // Falling back on an empty string and not just a missing one is the point:
+    // on those cards `hw` is present but blank.
+    const character = simplified[index] ?? "";
+    const variant = traditional[index] ?? "";
+    const shown = character || variant;
+
+    return {
+      simplified: shown,
+      traditional: variant || shown,
+      pinyin: toneSyllable(pinyin[index] ?? ""),
+    };
+  });
 };
