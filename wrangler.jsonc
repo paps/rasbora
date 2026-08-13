@@ -4,6 +4,9 @@
   // `npx wrangler deploy`.
   "name": "rasbora",
   "compatibility_date": "2026-08-13",
+  // Wrangler reports anonymous usage to Cloudflare unless told not to. Here
+  // rather than per-machine, so it holds for whoever deploys.
+  "send_metrics": false,
   "assets": {
     "directory": "./dist",
     // The router is client-side, so a request for /statistics matches no file.

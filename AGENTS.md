@@ -306,8 +306,9 @@ Prettier has no config file on purpose — the defaults are fine.
 ## Deployment
 
 The app is static, so Cloudflare serves `dist/` and no Worker code runs:
-`wrangler.jsonc` has no `main`, and is four settings long because that is all
-an assets-only Worker needs.
+`wrangler.jsonc` has no `main`, and is five settings long because that is all
+an assets-only Worker needs — four of them, plus `send_metrics: false` to keep
+Wrangler from reporting usage back to Cloudflare.
 
 `not_found_handling: "single-page-application"` is the one line that is not
 boilerplate. Routing is client-side, so `/statistics` matches no file in
