@@ -1,0 +1,14 @@
+{
+  // Static assets only, so there is no "main": Cloudflare serves `dist/`
+  // directly and no Worker code runs. `npx vite build` first, then
+  // `npx wrangler deploy`.
+  "name": "rasbora",
+  "compatibility_date": "2026-08-13",
+  "assets": {
+    "directory": "./dist",
+    // The router is client-side, so a request for /statistics matches no file.
+    // Serve index.html for those and let React Router sort it out — without
+    // this, every URL but / is a 404 on reload.
+    "not_found_handling": "single-page-application",
+  },
+}
