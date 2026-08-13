@@ -1,22 +1,23 @@
-import {
-  Drawer,
-  Group,
-  Pagination,
-  Stack,
-  Table,
-  Text,
-  Title,
-} from "@mantine/core";
-import { useMemo, useState, type ReactNode } from "react";
-import Flashcard from "@/components/Flashcard";
-import { splitHeadword } from "@/components/chinese";
+import { Stack, Text, Title } from "@mantine/core";
+import { useMemo, type ReactNode } from "react";
+import CardList, { type CardColumn } from "@/components/CardList";
+import type { FlashcardData } from "@/components/Flashcard";
 import { useDatabase } from "@/database/context";
 import type { Profile } from "@/database/plecoFile";
 import { readMostDifficultCards } from "@/pages/MostDifficultCards.db";
-import { useScript } from "@/script/context";
 
-/** Rows per page. The full list is at most 1000, so paging is done in memory. */
-const PAGE_SIZE = 25;
+const COLUMNS: CardColumn<FlashcardData>[] = [
+  {
+    key: "incorrect",
+    header: "Failed",
+    cell: (card) => card.incorrect.toLocaleString(),
+  },
+  {
+    key: "reviewed",
+    header: "Reviewed",
+    cell: (card) => card.reviewed.toLocaleString(),
+  },
+];
 
 /**
  * Why the table has no rows. The three reasons are different questions
@@ -50,20 +51,12 @@ const emptyReason = (profile: Profile): ReactNode => {
 
 const MostDifficultCards = () => {
   const { database, profile } = useDatabase();
-  const { script } = useScript();
-  const [page, setPage] = useState(1);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const cards = useMemo(
     () =>
       database && profile ? readMostDifficultCards(database, profile) : null,
     [database, profile],
   );
-
-  // The open card is looked up in the current list rather than kept in state,
-  // so switching profile can never leave the drawer showing tallies read from
-  // the scorefile of the profile before it.
-  const selected = cards?.find((card) => card.id === selectedId) ?? null;
 
   // The two are null together — difficulty is asked of one profile.
   if (!cards || !profile) {
@@ -76,13 +69,6 @@ const MostDifficultCards = () => {
       </Stack>
     );
   }
-
-  const pageCount = Math.max(1, Math.ceil(cards.length / PAGE_SIZE));
-  // The list only shrinks if a smaller export is loaded; clamp rather than
-  // reset so a stale page number never shows an empty table.
-  const activePage = Math.min(page, pageCount);
-  const start = (activePage - 1) * PAGE_SIZE;
-  const visible = cards.slice(start, start + PAGE_SIZE);
 
   return (
     <Stack gap="lg">
@@ -99,70 +85,9 @@ const MostDifficultCards = () => {
             Select a card to see its details.
           </Text>
 
-          <Table highlightOnHover withTableBorder verticalSpacing="xs">
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th w={60}>#</Table.Th>
-                <Table.Th>Headword</Table.Th>
-                <Table.Th>Pinyin</Table.Th>
-                <Table.Th ta="right">Failed</Table.Th>
-                <Table.Th ta="right">Reviewed</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {visible.map((card, index) => {
-                const syllables = splitHeadword(card.hw, card.althw, card.pron);
-
-                return (
-                  <Table.Tr
-                    key={card.id}
-                    onClick={() => {
-                      setSelectedId(card.id);
-                    }}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <Table.Td>{start + index + 1}</Table.Td>
-                    <Table.Td>
-                      {syllables.map((syllable) => syllable[script]).join("")}
-                    </Table.Td>
-                    <Table.Td>
-                      {syllables.map((syllable) => syllable.pinyin).join(" ")}
-                    </Table.Td>
-                    <Table.Td ta="right">
-                      {card.incorrect.toLocaleString()}
-                    </Table.Td>
-                    <Table.Td ta="right">
-                      {card.reviewed.toLocaleString()}
-                    </Table.Td>
-                  </Table.Tr>
-                );
-              })}
-            </Table.Tbody>
-          </Table>
-
-          {pageCount > 1 && (
-            <Group justify="center">
-              <Pagination
-                total={pageCount}
-                value={activePage}
-                onChange={setPage}
-              />
-            </Group>
-          )}
+          <CardList cards={cards} columns={COLUMNS} />
         </>
       )}
-
-      <Drawer
-        opened={selected !== null}
-        onClose={() => {
-          setSelectedId(null);
-        }}
-        position="right"
-        title="Card details"
-        padding="lg"
-      >
-        {selected && <Flashcard card={selected} />}
-      </Drawer>
     </Stack>
   );
 };

@@ -3,10 +3,14 @@ import { BrowserRouter, Route, Routes } from "react-router";
 import Layout from "@/Layout";
 import DatabaseProvider from "@/database/DatabaseProvider";
 import DictionaryProvider from "@/cc-cedict/DictionaryProvider";
+import AlmostLearnedCards from "@/pages/AlmostLearnedCards";
+import CustomizedCards from "@/pages/CustomizedCards";
+import LearnedCards from "@/pages/LearnedCards";
 import MostDifficultCards from "@/pages/MostDifficultCards";
 import NotFound from "@/pages/NotFound";
 import ProfileInfo from "@/pages/ProfileInfo";
 import Recommendations from "@/pages/Recommendations";
+import RiskyCards from "@/pages/RiskyCards";
 import Statistics from "@/pages/Statistics";
 import ScriptProvider from "@/script/ScriptProvider";
 
@@ -26,6 +30,13 @@ const App = () => (
                 <Route path="/statistics" element={<Statistics />} />
                 <Route path="/recommendations" element={<Recommendations />} />
                 <Route path="/difficult" element={<MostDifficultCards />} />
+                <Route path="/risky" element={<RiskyCards />} />
+                <Route
+                  path="/almost-learned"
+                  element={<AlmostLearnedCards />}
+                />
+                <Route path="/learned" element={<LearnedCards />} />
+                <Route path="/customized" element={<CustomizedCards />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Layout>

@@ -30,6 +30,10 @@ const PAGES: Page[] = [
   { path: "/statistics", label: "Statistics" },
   { path: "/recommendations", label: "Recommendations" },
   { path: "/difficult", label: "Most difficult cards" },
+  { path: "/risky", label: "Risky cards" },
+  { path: "/almost-learned", label: "Almost learned cards" },
+  { path: "/learned", label: "Learned cards" },
+  { path: "/customized", label: "Customized cards" },
 ];
 
 /**

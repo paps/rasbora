@@ -213,8 +213,13 @@ export interface Profile {
   categoryIds: number[];
 }
 
-/** One profile setting, straight out of `pleco_flash_profilesettings`. */
-const readSetting = (
+/**
+ * One profile setting, straight out of `pleco_flash_profilesettings`. Shared
+ * because the settings bag is keyed by `(propset, propid)` where `propset` is
+ * the *profile* id — a page reaching for `pro_scoreautomax` with `where id = ?`
+ * gets a plausible answer from the wrong profile.
+ */
+export const readProfileSetting = (
   database: Database,
   profileId: number,
   propid: string,
@@ -228,11 +233,16 @@ const readSetting = (
   );
 
 /**
- * Reads a multi-valued setting as ids. These are comma-**terminated** rather
- * than comma-separated (`1,` is one value), and anything that is not an
- * integer is dropped rather than becoming a NaN downstream.
+ * Reads a setting as numbers. Multi-valued ones are comma-**terminated**
+ * rather than comma-separated (`1,` is one value, `100,200,` is two), and
+ * anything that is not an integer is dropped rather than becoming a NaN
+ * downstream. A single-valued setting comes back as a one-element list.
+ *
+ * Shared for the trap rather than for the parsing: a naive `split(",")` yields
+ * a trailing empty element, and the score thresholds it silently appends a NaN
+ * to are compared against every card.
  */
-const readIdList = (value: string): number[] =>
+export const readSettingNumbers = (value: string): number[] =>
   value
     .split(",")
     .map((part) => part.trim())
@@ -290,11 +300,11 @@ export const listProfiles = (database: Database): Profile[] => {
     }))
     .filter((profile) => Number.isInteger(profile.id))
     .map((profile) => {
-      const scorefileId = readIdList(
-        readSetting(database, profile.id, "pro_scorefile"),
+      const scorefileId = readSettingNumbers(
+        readProfileSetting(database, profile.id, "pro_scorefile"),
       )[0];
-      const roots = readIdList(
-        readSetting(database, profile.id, "pro_categories"),
+      const roots = readSettingNumbers(
+        readProfileSetting(database, profile.id, "pro_categories"),
       );
 
       return {

@@ -157,6 +157,7 @@ src/
     DictionaryProvider.tsx  Loads the dictionary once, app-wide
   components/           Reusable presentational pieces, shared across pages
     Flashcard.tsx       The card display, opened from any list of cards
+    CardList.tsx        The table of cards that opens one, with its paging
     Explained.tsx       Dotted-underlined text a hover/focus/tap explains
     RelativeTime.tsx    "3 months ago", with the exact date on hover
     chinese.ts          Headword splitting and numbered-pinyin → tone marks
@@ -164,7 +165,11 @@ src/
     ProfileInfo.tsx     + ProfileInfo.db.ts
     Statistics.tsx      + Statistics.db.ts
     Recommendations.tsx
-    MostDifficultCards.tsx  + MostDifficultCards.db.ts
+    MostDifficultCards.tsx   + MostDifficultCards.db.ts
+    RiskyCards.tsx           + RiskyCards.db.ts
+    AlmostLearnedCards.tsx   + AlmostLearnedCards.db.ts
+    LearnedCards.tsx         + LearnedCards.db.ts
+    CustomizedCards.tsx      + CustomizedCards.db.ts
     NotFound.tsx
 ```
 
@@ -202,9 +207,41 @@ answer when typed in, so a page has to handle `database === null` and
 it reviews into, what it draws from, its session settings (the documented ones
 spelled out, all ~150 raw in an `<Accordion>`), and a smaller section of
 file-level facts. `Statistics.tsx` charts the profile's cards over time.
-`MostDifficultCards.tsx` lists the cards the profile has failed most, and opens
-one in a `<Drawer>` on click. `Recommendations.tsx` is a deliberately empty
-placeholder, and `NotFound.tsx` is still just a heading.
+`Recommendations.tsx` is a deliberately empty placeholder, and `NotFound.tsx`
+is still just a heading.
+
+The other five pages all answer "which cards?", so they all render `CardList`
+and differ only in the question — the SQL, the extra columns, and the sentence
+above the table. In sidebar order, which runs from the cards that need work to
+the cards that do not:
+
+- **Most difficult cards** — failed most often in the profile's scorefile.
+- **Risky cards** — a run of correct answers, then a failure among the most
+  recent reviews. Both lengths are the reader's to set: the export dates no
+  individual review, so "recently" can only be counted in reviews, and how long
+  a run has to be before losing it matters is a judgement about their own deck.
+  The candidate rows are read once per profile and the controls re-filter them
+  in memory, so a keystroke does not re-query.
+- **Almost learned cards** — in the profile's top score band but short of its
+  ceiling: still asked, at the longest interval the profile has.
+- **Learned cards** — at the ceiling, so Pleco cannot space them further.
+- **Customized cards** — carrying a definition the user wrote. This one is
+  about the card rather than the review state, so its scorefile join is a
+  `left join` and a card the profile has never shown still appears.
+
+Three things about that group are load-bearing. **The score bounds come from
+the profile**, never from a constant: `pro_scoreautomax` is 51,200 in every
+export seen so far and is still configuration, and the five
+`pro_scorefilter_*_starts` settings are the bands. Since the export does not
+say which of the five test types a session runs — `pro_type` reads the same on
+every profile seen so far, so its mapping is unverified — the top band is taken
+as the highest of the five, which is the same number until a user sets them
+apart. **"Oldest" means least recently reviewed**, because `lastreviewedtime`
+is the only age a card carries once its score has stopped moving; cards the
+scorefile never dated sort last, where a zero would otherwise read as 1970 at
+the top of a list about age. And **every list is capped at 1,000 rows**, with
+the caption saying so whenever the total is larger — a silently truncated list
+reads as a complete one.
 
 ## The data layer
 
@@ -242,6 +279,13 @@ looking at it, and `plecoFile.ts` is all of it:
   seen so far nests them, but a profile naming a parent and quietly losing its
   children would undercount every page. Ids come back as integers, so a page
   can interpolate them into an `in (…)` clause.
+- **Profile settings** — `readProfileSetting()` and `readSettingNumbers()`.
+  Both are traps rather than conveniences: the settings bag is keyed by
+  `propset`, which is the _profile_ id, so a page reaching for
+  `pro_scoreautomax` with the wrong column gets a plausible answer from another
+  profile; and multi-valued settings are comma-**terminated**, so a naive
+  `split(",")` appends a NaN to the score thresholds every card is compared
+  against. What a setting _means_ still belongs to the page that reads it.
 
 Note what is _not_ a reason to add to `plecoFile.ts`: several pages needing it.
 Shared code here earns its place by correctness — **a per-page version would be
@@ -343,6 +387,16 @@ rather than props, for the same reason — a page could forget to pass them and
 show a card out of step with the rest of the app. It stays a rendering component
 either way: these are the only things it reaches for, and it still owns no
 state.
+
+`CardList.tsx` is the other half of that: the table every card page renders,
+holding the position, the headword in the chosen script, the pinyin, then
+whatever columns the page hands it, plus the paging and the `<Drawer>` that
+opens a `Flashcard`. Five pages ask "which cards?" and they differ in the
+question, not in the table — so the table is one component, and a sixth page
+gets the same page size, the same first three columns and the same click
+behaviour for free. It is the caller's list that is rendered, in the caller's
+order: capping a long list and saying so is the page's job, since only the page
+knows what was left out.
 
 `Explained.tsx` is the app's **only** "there is more here" affordance: dotted
 underlined text that a hover, a focus or a tap explains. It covers a label that

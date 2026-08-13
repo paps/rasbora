@@ -20,7 +20,19 @@ A **profile** is what you select before starting a review session, and everythin
 
 So a profile is the top of the tree, and settings, scores and card selection all hang below it. Nothing in the export is meaningful on its own — a score without the profile that produced it says nothing.
 
-Rasbora therefore reads the export through exactly one profile at a time. You import a file and pick a profile at the top of the window, both stay visible everywhere, and every page answers for that profile alone: `Profile info` describes it, `Statistics` charts the cards it draws from, and `Most difficult cards` counts failures in its scorefile only.
+Rasbora therefore reads the export through exactly one profile at a time. You import a file and pick a profile at the top of the window, both stay visible everywhere, and every page answers for that profile alone: `Profile info` describes it, `Statistics` charts the cards it draws from, and the card lists all read its scorefile only.
+
+## The card lists
+
+Five pages answer "which cards?", and each one opens a card's details when you select it:
+
+- **Most difficult cards** — the ones this profile has failed most often.
+- **Risky cards** — the ones you had learned and are now getting wrong: a run of correct answers, then a failure among the most recent reviews. You set how long the run has to have been and how far back "recently" reaches. Pleco records no date for an individual review, only the order, so recency here is counted in reviews rather than in weeks.
+- **Almost learned cards** — in the profile's top score band, but not yet at its maximum. These still come back, at the longest interval the profile has.
+- **Learned cards** — at the profile's maximum score, where Pleco has nowhere further to space them. Least recently seen first.
+- **Customized cards** — the ones you have written your own definition on, which is the only meaning a Pleco export itself carries. Open one and the bundled dictionary's definition sits below your own.
+
+Both score bounds are read from the profile you picked rather than assumed, so a profile that scores differently is read differently.
 
 ## Traditional or simplified
 
