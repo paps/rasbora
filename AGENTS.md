@@ -45,11 +45,14 @@ src/
     plecoFile.ts        Opening an export, reading sql.js values, score tables
     context.ts          DatabaseContext + the useDatabase() hook
     DatabaseProvider.tsx  Holds the imported export for the whole app
+  components/           Reusable presentational pieces, shared across pages
+    Flashcard.tsx       The card display, opened from any list of cards
+    chinese.ts          Headword splitting and numbered-pinyin → tone marks
   pages/                One file per route, plus its queries
     LoadFlashcards.tsx  + LoadFlashcards.db.ts
     Statistics.tsx      + Statistics.db.ts
     Recommendations.tsx
-    MostDifficultCards.tsx
+    MostDifficultCards.tsx  + MostDifficultCards.db.ts
     NotFound.tsx
 ```
 
@@ -65,9 +68,10 @@ answers if it is typed in, so a page that needs data has to handle
 `database === null` itself.
 
 `LoadFlashcards.tsx` imports an export and shows a summary of it.
-`Statistics.tsx` charts cards over time. `Recommendations.tsx` and
-`MostDifficultCards.tsx` are deliberately empty placeholders, and
-`NotFound.tsx` is still just a heading.
+`Statistics.tsx` charts cards over time. `MostDifficultCards.tsx` lists the
+cards that have failed review the most, and opens one in a `<Drawer>` on click.
+`Recommendations.tsx` is a deliberately empty placeholder, and `NotFound.tsx`
+is still just a heading.
 
 ## The data layer
 
@@ -118,6 +122,27 @@ there is no `public/` directory and nothing to copy by hand.
 Note that a query function cannot simply live in the `.tsx`:
 `react-refresh/only-export-components` fails the check when a file exports both
 a component and a function, which is the other reason for the companion file.
+
+## Components
+
+`src/components/` is for presentation that more than one page renders — and here
+being shared is the whole point, unlike the data layer, where sharing has to
+earn itself. A card looks the same wherever it is shown, so the display lives in
+one place and pages hand it data.
+
+`Flashcard.tsx` is that display and is meant to be _the_ way a single card is
+shown app-wide: give it a `FlashcardData` and it renders the headword, pinyin,
+any note and the review tally, reading nothing and holding no state. Its
+`FlashcardData` is the vocabulary item plus the review counts summed across
+scorefiles — the counts add up cleanly, whereas `score` and `difficulty` are on
+a per-profile scale and are left out rather than aggregated wrongly. A page that
+needs more can widen the contract; do not fork the component.
+
+`chinese.ts` is the pure text side of that: splitting a headword on `@` into
+aligned simplified/traditional/pinyin syllables, and turning numbered pinyin
+(`duan4`) into tone marks (`duàn`). The difficult-cards table and the flashcard
+both call it, so it is here and not in either. It runs no query — a page's
+`.db.ts` returns the raw columns and this shapes them for the eye.
 
 ## Charts
 
