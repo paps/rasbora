@@ -33,6 +33,41 @@ Everything the app shows therefore hangs off one selected profile:
 If a new feature seems to need export-wide numbers, that is a signal worth
 questioning before writing it.
 
+## The other global: which script cards are written in
+
+A Pleco card carries both written forms — `hw` is simplified, `althw`
+traditional — and a learner reads one of them. Which one is app-wide state, held
+by `ScriptProvider` and picked in the title bar beside the profile.
+
+It is global for the same reason the profile is: the same card appears in a
+table and again in a drawer, and the two have to agree. A page that had to ask
+for the script could forget to, and would then render a card in the form the
+rest of the app is not using.
+
+Three things follow, and they are the ones to keep in mind when touching this:
+
+- **It is not export state, so it does not live in `src/database/`.** It
+  outlives every import, means the same thing before one has happened, and no
+  query reads it. `src/script/` is its own small provider for that reason.
+- **The `Script` values are the `Syllable` field names.** `"simplified"` and
+  `"traditional"` are exactly the fields `splitHeadword()` returns, so anything
+  rendering a character writes `syllable[script]` and cannot reach for the wrong
+  one. `otherScript()` gives the form shown underneath it on a flashcard.
+- **The choice persists, in `localStorage` under `rasbora-script`.** This is the
+  one thing in the app that survives a reload, and deliberately so: it is a
+  preference rather than data. `getInitialValueInEffect: false` is load-bearing
+  — Mantine otherwise reads storage in an effect after the first render, which
+  would show a frame of traditional to a reader who chose simplified.
+
+The default is **traditional**. Cards with no traditional variant are unaffected
+either way: `splitHeadword()` already falls back to the simplified form, so both
+scripts render the same characters for them.
+
+Note what this does _not_ touch. Category names, profile names and anything else
+the user typed into Pleco are stored strings, not headwords with two forms, so
+they render as written whatever the setting says. Converting them would take a
+conversion table the app does not have and will not be adding.
+
 ## Principles
 
 - **Keep it simple.** This app is meant to be easy to maintain, not clever.
@@ -66,13 +101,17 @@ public/
   favicon.svg           Served as-is at /favicon.svg; see "The data layer"
 src/
   main.tsx              Mounts <App /> and imports the Mantine stylesheets
-  App.tsx               <MantineProvider> + <DatabaseProvider> + router
+  App.tsx               <MantineProvider> + <ScriptProvider> +
+                        <DatabaseProvider> + router
   Layout.tsx            <AppShell>: the title bar and the sidebar
   database/             What every page shares, and nothing more
     plecoFile.ts        Opening an export, reading sql.js values, score
                         tables, profiles
     context.ts          DatabaseContext + the useDatabase() hook
     DatabaseProvider.tsx  Holds the export and the selected profile app-wide
+  script/               The written form cards are shown in
+    context.ts          Script, otherScript() + the useScript() hook
+    ScriptProvider.tsx  Holds the choice app-wide, in localStorage
   components/           Reusable presentational pieces, shared across pages
     Flashcard.tsx       The card display, opened from any list of cards
     chinese.ts          Headword splitting and numbered-pinyin → tone marks
@@ -90,12 +129,16 @@ Page titles are just a `<Title>` at the top of each page, so there is no title
 plumbing to keep in sync.
 
 `Layout.tsx` wraps every route, and its title bar holds the app's mark and name
-on the left and the two controls that are global to the app on the right: the
-imported file, and the profile everything is read
-through. Before an import it shows one button; after one it shows the file
-name, a subdued **Change** button that reopens the picker, and a `<Select>` of
-the export's profiles. Both belong here rather than on a page because every
-page depends on them.
+on the left and the three controls that are global to the app on the right: the
+imported file, the profile everything is read through, and the script cards are
+written in. Before an import it shows one button; after one it shows the file
+name, a subdued **Change** button that reopens the picker, a `<Select>` of the
+export's profiles, and a 繁/简 `<SegmentedControl>`. All three belong here rather
+than on a page because every page depends on them.
+
+Fitting three controls costs the app's name below `xs`, where it is hidden and
+the mark alone identifies the app. That is the constraint to respect when adding
+a fourth: the title bar is full at 360 px.
 
 Its `PAGES` list is the sidebar, and **no link is ever disabled** — a page with
 nothing to read says so in a sentence instead. That is not a courtesy: routes
@@ -163,10 +206,13 @@ set of flashcards" sentence instead of querying.
 
 The imported database lives **in memory only**, and so does the profile
 selection, which resets to the export's first profile on every import.
-Reloading the page drops both and the user has to pick the file again; there is
-deliberately no persistence yet. Nothing downstream depends on where the bytes
+Reloading the page drops both and the user has to pick the file again; no
+_export data_ is persisted yet. Nothing downstream depends on where the bytes
 came from, so caching them in IndexedDB later is a change to `DatabaseProvider`
 alone.
+
+The script preference is the one exception, and is not export data: see "The
+other global" above.
 
 sql.js needs its WebAssembly module at runtime. It is wired up with Vite's
 `?url` import in `plecoFile.ts`, which emits a hashed asset at build time — so
@@ -193,11 +239,16 @@ one place and pages hand it data.
 
 `Flashcard.tsx` is that display and is meant to be _the_ way a single card is
 shown app-wide: give it a `FlashcardData` and it renders the headword, pinyin,
-any note and the review tally, reading nothing and holding no state. Its
-`FlashcardData` is the vocabulary item plus the review counts read from the
-caller's profile scorefile. `score` and `difficulty` are left out because they
-only mean something next to the profile settings that bound them. A page that
-needs more can widen the contract; do not fork the component.
+any note and the review tally, holding no state. Its `FlashcardData` is the
+vocabulary item plus the review counts read from the caller's profile scorefile.
+`score` and `difficulty` are left out because they only mean something next to
+the profile settings that bound them. A page that needs more can widen the
+contract; do not fork the component.
+
+The one thing it reads for itself is `useScript()`, which decides which form the
+big glyphs show and which is dimmed underneath. That is deliberately not a prop:
+see "The other global" above. It stays a rendering component either way — the
+script is the only thing it reaches for, and it still owns no state.
 
 `chinese.ts` is the pure text side of that: splitting a headword on `@` into
 aligned simplified/traditional/pinyin syllables, and turning numbered pinyin

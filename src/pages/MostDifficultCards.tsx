@@ -13,6 +13,7 @@ import { splitHeadword } from "@/components/chinese";
 import { useDatabase } from "@/database/context";
 import type { Profile } from "@/database/plecoFile";
 import { readMostDifficultCards } from "@/pages/MostDifficultCards.db";
+import { useScript } from "@/script/context";
 
 /** Rows per page. The full list is at most 1000, so paging is done in memory. */
 const PAGE_SIZE = 25;
@@ -49,6 +50,7 @@ const emptyReason = (profile: Profile): ReactNode => {
 
 const MostDifficultCards = () => {
   const { database, profile } = useDatabase();
+  const { script } = useScript();
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
@@ -121,9 +123,7 @@ const MostDifficultCards = () => {
                   >
                     <Table.Td>{start + index + 1}</Table.Td>
                     <Table.Td>
-                      {syllables
-                        .map((syllable) => syllable.simplified)
-                        .join("")}
+                      {syllables.map((syllable) => syllable[script]).join("")}
                     </Table.Td>
                     <Table.Td>
                       {syllables.map((syllable) => syllable.pinyin).join(" ")}
