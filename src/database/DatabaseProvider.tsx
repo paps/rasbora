@@ -29,10 +29,20 @@ const DatabaseProvider = ({ children }: DatabaseProviderProps) => {
 
       openPlecoDatabase(file)
         .then((opened) => {
+          // Resolve the profiles before touching any state: if the new export
+          // turns out to be unreadable this throws, and the app has to be left
+          // holding the old database rather than a closed one.
+          let imported: Profile[];
+
+          try {
+            imported = listProfiles(opened);
+          } catch (cause: unknown) {
+            opened.close();
+            throw cause;
+          }
+
           // Free the WebAssembly memory held by the export being replaced.
           database?.close();
-
-          const imported = listProfiles(opened);
 
           setDatabase(opened);
           setFileName(file.name);
