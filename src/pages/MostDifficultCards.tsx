@@ -8,24 +8,49 @@ import {
   Title,
 } from "@mantine/core";
 import { useMemo, useState } from "react";
-import Flashcard, { type FlashcardData } from "@/components/Flashcard";
+import Flashcard from "@/components/Flashcard";
 import { splitHeadword } from "@/components/chinese";
 import { useDatabase } from "@/database/context";
+import type { Profile } from "@/database/plecoFile";
 import { readMostDifficultCards } from "@/pages/MostDifficultCards.db";
 
 /** Rows per page. The full list is at most 1000, so paging is done in memory. */
 const PAGE_SIZE = 25;
 
+/**
+ * Why the table has no rows. The three reasons are different questions
+ * answered, and saying the wrong one misleads: a profile with no scorefile has
+ * no review history at all, a profile that draws from no category reviews
+ * nothing however much its scorefile holds, and only then does an empty list
+ * mean the profile's cards have genuinely never been failed.
+ */
+const emptyReason = (profile: Profile): string => {
+  if (profile.scorefile === null) {
+    return `The ${profile.name} profile writes to no scorefile, so it has no review history.`;
+  }
+
+  if (profile.categoryIds.length === 0) {
+    return `The ${profile.name} profile draws from no category, so it puts no card in front of you to fail.`;
+  }
+
+  return `No card has ever failed a review in the ${profile.name} profile.`;
+};
+
 const MostDifficultCards = () => {
   const { database, profile } = useDatabase();
   const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<FlashcardData | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const cards = useMemo(
     () =>
       database && profile ? readMostDifficultCards(database, profile) : null,
     [database, profile],
   );
+
+  // The open card is looked up in the current list rather than kept in state,
+  // so switching profile can never leave the drawer showing tallies read from
+  // the scorefile of the profile before it.
+  const selected = cards?.find((card) => card.id === selectedId) ?? null;
 
   // The two are null together — difficulty is asked of one profile.
   if (!cards || !profile) {
@@ -51,11 +76,7 @@ const MostDifficultCards = () => {
       <Title>Most difficult cards</Title>
 
       {cards.length === 0 ? (
-        <Text c="dimmed">
-          {profile.scorefile === null
-            ? `The ${profile.name} profile writes to no scorefile, so it has no review history.`
-            : `No card has ever failed a review in the ${profile.name} profile.`}
-        </Text>
+        <Text c="dimmed">{emptyReason(profile)}</Text>
       ) : (
         <>
           <Text size="sm" c="dimmed">
@@ -83,7 +104,7 @@ const MostDifficultCards = () => {
                   <Table.Tr
                     key={card.id}
                     onClick={() => {
-                      setSelected(card);
+                      setSelectedId(card.id);
                     }}
                     style={{ cursor: "pointer" }}
                   >
@@ -123,7 +144,7 @@ const MostDifficultCards = () => {
       <Drawer
         opened={selected !== null}
         onClose={() => {
-          setSelected(null);
+          setSelectedId(null);
         }}
         position="right"
         title="Card details"
