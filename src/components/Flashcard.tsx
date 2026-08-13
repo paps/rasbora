@@ -1,5 +1,6 @@
 import { Badge, Group, Stack, Text } from "@mantine/core";
 import { splitHeadword } from "@/components/chinese";
+import { otherScript, useScript } from "@/script/context";
 
 /**
  * Everything the card display needs: the vocabulary item plus its review
@@ -31,20 +32,29 @@ interface FlashcardProps {
 }
 
 /**
- * The app's single card display: the headword shown per syllable with its
- * pinyin, the traditional form when it differs, any note, and the review
- * tally. Anything that lists cards opens this to show one, so it takes a plain
- * `FlashcardData` and renders — it reads nothing and owns no state.
+ * The app's single card display: the headword shown per syllable in the chosen
+ * script with its pinyin, the other script below when it differs, any note, and
+ * the review tally. Anything that lists cards opens this to show one, so it
+ * takes a plain `FlashcardData` and renders.
+ *
+ * The one thing it reads for itself is the app-wide script. Threading that in
+ * as a prop would let a page forget it and show a card in the script the rest
+ * of the app is not using, which is exactly the inconsistency a global
+ * preference exists to prevent. It still holds no state.
  */
 const Flashcard = ({ card }: FlashcardProps) => {
+  const { script } = useScript();
+  const other = otherScript(script);
   // Position-prefixed so repeated syllables (妈妈, 谢谢) stay distinct keys.
+  // Keyed on the simplified form whatever is displayed, so that switching
+  // script re-renders the syllables it already has rather than replacing them.
   const syllables = splitHeadword(card.hw, card.althw, card.pron).map(
     (syllable, position) => ({
       ...syllable,
       key: `${String(position)}-${syllable.simplified}`,
     }),
   );
-  const hasTraditional = syllables.some(
+  const hasVariant = syllables.some(
     (syllable) => syllable.simplified !== syllable.traditional,
   );
   const accuracy =
@@ -59,13 +69,11 @@ const Flashcard = ({ card }: FlashcardProps) => {
               {syllable.pinyin}
             </Text>
             <Text fz={44} fw={500} lh={1}>
-              {syllable.simplified}
+              {syllable[script]}
             </Text>
-            {hasTraditional && (
+            {hasVariant && (
               <Text fz={20} c="dimmed">
-                {syllable.simplified === syllable.traditional
-                  ? " "
-                  : syllable.traditional}
+                {syllable[script] === syllable[other] ? " " : syllable[other]}
               </Text>
             )}
           </Stack>

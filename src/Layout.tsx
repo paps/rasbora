@@ -6,14 +6,17 @@ import {
   Group,
   Image,
   NavLink,
+  SegmentedControl,
   Select,
   Text,
   Title,
+  VisuallyHidden,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import type { ReactNode } from "react";
 import { Link, useLocation } from "react-router";
 import { useDatabase } from "@/database/context";
+import { useScript, type Script } from "@/script/context";
 
 interface Page {
   path: string;
@@ -28,14 +31,41 @@ const PAGES: Page[] = [
   { path: "/difficult", label: "Most difficult cards" },
 ];
 
+/**
+ * The written forms, traditional first because it is the default. The visible
+ * label is the character itself, which keeps the control narrow enough to sit
+ * beside the profile picker on a phone and is what the reader is choosing
+ * anyway; the word behind it is there for screen readers, which would otherwise
+ * announce a bare 繁.
+ */
+const SCRIPTS: { value: Script; label: ReactNode }[] = [
+  {
+    value: "traditional",
+    label: (
+      <>
+        繁<VisuallyHidden>Traditional</VisuallyHidden>
+      </>
+    ),
+  },
+  {
+    value: "simplified",
+    label: (
+      <>
+        简<VisuallyHidden>Simplified</VisuallyHidden>
+      </>
+    ),
+  },
+];
+
 interface LayoutProps {
   children: ReactNode;
 }
 
 /**
- * The app frame: the sidebar, and a title bar holding the two controls that
- * are global to the app — the imported file, and the profile being read
- * through. Both live here because every page depends on them.
+ * The app frame: the sidebar, and a title bar holding the three controls that
+ * are global to the app — the imported file, the profile being read through,
+ * and the written form cards are shown in. All three live here because every
+ * page depends on them.
  *
  * Sidebar links are never disabled. A page that has no export to read says so
  * itself, which it has to do anyway: its route still answers when typed in.
@@ -52,6 +82,7 @@ const Layout = ({ children }: LayoutProps) => {
     profile,
     selectProfile,
   } = useDatabase();
+  const { script, setScript } = useScript();
   const { pathname } = useLocation();
 
   const importChosenFile = (file: File | null) => {
@@ -78,7 +109,14 @@ const Layout = ({ children }: LayoutProps) => {
           */}
           <Image src="/favicon.svg" alt="" w={30} h={30} />
 
-          <Title order={3}>Rasbora</Title>
+          {/*
+            The name gives way to the mark on a narrow phone: the title bar has
+            three controls to fit on the right, and the favicon beside them
+            already says which app this is.
+          */}
+          <Title order={3} visibleFrom="xs">
+            Rasbora
+          </Title>
 
           <Group gap="xs" wrap="nowrap" ml="auto">
             {error && (
@@ -109,8 +147,9 @@ const Layout = ({ children }: LayoutProps) => {
                 {profiles.length > 0 ? (
                   <Select
                     // Narrow enough that a phone still fits the burger, the
-                    // title, Change and the picker on one row.
-                    w={{ base: 148, sm: 220 }}
+                    // title, Change, the picker and the script control on one
+                    // row.
+                    w={{ base: 104, sm: 220 }}
                     aria-label="Profile"
                     placeholder="Profile"
                     allowDeselect={false}
@@ -130,6 +169,19 @@ const Layout = ({ children }: LayoutProps) => {
                     No profiles
                   </Text>
                 )}
+
+                {/*
+                  Sits with the profile picker rather than above the card lists
+                  it changes: it is one choice for the whole app, and every page
+                  that draws a character obeys it.
+                */}
+                <SegmentedControl<Script>
+                  size="xs"
+                  aria-label="Character script"
+                  value={script}
+                  onChange={setScript}
+                  data={SCRIPTS}
+                />
               </>
             ) : (
               <FileButton accept=".pqb" onChange={importChosenFile}>
