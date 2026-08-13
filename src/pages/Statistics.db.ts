@@ -2,12 +2,10 @@
 
 import type { Database } from "sql.js";
 import { asCount, asText, firstValueOf, rowsOf } from "@/database/plecoFile";
+import type { Profile } from "@/database/plecoFile";
 
-/** Series key of the line counting every card, categorised or not. */
+/** Series key of the line counting every card the profile draws. */
 export const TOTAL_SERIES = "total";
-
-/** Series key of the line counting cards that are in no category. */
-export const UNCATEGORISED_SERIES = "uncategorised";
 
 /** Series key of the line grouping the categories that did not get their own. */
 export const OTHER_SERIES = "other";
@@ -66,15 +64,6 @@ const CREATED_MONTH = "strftime('%Y-%m', c.created, 'unixepoch')";
 
 const DATED_CARD = "c.created is not null and c.created > 0";
 
-/**
- * A card only counts towards a category that still exists: assignments
- * outlive the categories they point at, and the export's ids are sparse.
- */
-const CATEGORISED_CARD = `
-  select 1 from pleco_flash_categoryassigns a
-  join pleco_flash_categories t on t.id = a.cat
-  where a.card = c.id`;
-
 /** Reads `[key, month, count]` triples into `counts[month][key]`. */
 const collect = (
   into: Map<string, Map<string, number>>,
@@ -89,19 +78,40 @@ const collect = (
 };
 
 /**
- * Counts cards by the month they were created in, one series per category
- * plus a total and, when there are any, one for cards in no category.
+ * Counts the profile's cards by the month they were created in, one series per
+ * category the profile draws from plus a total across them.
+ *
+ * The profile is the whole scope: a card the profile never sees is not part of
+ * its history, so the chart counts only cards in `profile.categoryIds`. Those
+ * ids are integers resolved by `listProfiles`, so they are interpolated rather
+ * than bound — a bound parameter cannot stand in for a list.
  *
  * Note that the export records no history of category membership, so a card
  * counts towards the categories it is in *now*, at the month it was created
  * in. Cards in several categories count towards each of them, which is why
  * the category lines can add up to more than the total.
  */
-export const readCardsOverTime = (database: Database): CardsOverTime => {
+export const readCardsOverTime = (
+  database: Database,
+  profile: Profile,
+): CardsOverTime => {
+  if (profile.categoryIds.length === 0) {
+    return {
+      series: [],
+      monthly: [],
+      cumulative: [],
+      groupedCategories: [],
+      undatedCards: 0,
+    };
+  }
+
+  const inProfile = `a.cat in (${profile.categoryIds.join(", ")})`;
   const categoryNames = new Map(
-    rowsOf(database, "select id, name from pleco_flash_categories").map(
-      (row) => [asCount(row[0] ?? null), asText(row[1] ?? null)] as const,
-    ),
+    rowsOf(
+      database,
+      `select id, name from pleco_flash_categories
+       where id in (${profile.categoryIds.join(", ")})`,
+    ).map((row) => [asCount(row[0] ?? null), asText(row[1] ?? null)] as const),
   );
 
   // month -> series key -> count, before the smallest categories are grouped.
@@ -113,8 +123,7 @@ export const readCardsOverTime = (database: Database): CardsOverTime => {
     `select a.cat, ${CREATED_MONTH} as month, count(*)
      from pleco_flash_cards c
      join pleco_flash_categoryassigns a on a.card = c.id
-     join pleco_flash_categories t on t.id = a.cat
-     where ${DATED_CARD}
+     where ${inProfile} and ${DATED_CARD}
      group by a.cat, month`,
   )) {
     const category = asCount(row[0] ?? null);
@@ -129,31 +138,19 @@ export const readCardsOverTime = (database: Database): CardsOverTime => {
     categoryTotals.set(category, (categoryTotals.get(category) ?? 0) + count);
   }
 
+  // Counted distinctly: a card in two of the profile's categories is one card
+  // in the profile, even though it draws a point on each category's line.
   for (const row of rowsOf(
     database,
-    `select ${CREATED_MONTH} as month, count(*)
+    `select ${CREATED_MONTH} as month, count(distinct c.id)
      from pleco_flash_cards c
-     where ${DATED_CARD}
+     join pleco_flash_categoryassigns a on a.card = c.id
+     where ${inProfile} and ${DATED_CARD}
      group by month`,
   )) {
     collect(
       byMonth,
       TOTAL_SERIES,
-      asText(row[0] ?? null),
-      asCount(row[1] ?? null),
-    );
-  }
-
-  for (const row of rowsOf(
-    database,
-    `select ${CREATED_MONTH} as month, count(*)
-     from pleco_flash_cards c
-     where ${DATED_CARD} and not exists (${CATEGORISED_CARD})
-     group by month`,
-  )) {
-    collect(
-      byMonth,
-      UNCATEGORISED_SERIES,
       asText(row[0] ?? null),
       asCount(row[1] ?? null),
     );
@@ -175,14 +172,6 @@ export const readCardsOverTime = (database: Database): CardsOverTime => {
 
   if (grouped.length > 0) {
     series.push({ key: OTHER_SERIES, label: "Other categories" });
-  }
-
-  // A flat line at zero says nothing, so the series is only offered when the
-  // export actually has cards outside every category.
-  if (
-    [...byMonth.values()].some((counts) => counts.has(UNCATEGORISED_SERIES))
-  ) {
-    series.push({ key: UNCATEGORISED_SERIES, label: "Uncategorised" });
   }
 
   // Last, so that the chart draws the total on top of the categories it sums:
@@ -234,7 +223,10 @@ export const readCardsOverTime = (database: Database): CardsOverTime => {
     undatedCards: asCount(
       firstValueOf(
         database,
-        `select count(*) from pleco_flash_cards c where not (${DATED_CARD})`,
+        `select count(distinct c.id)
+         from pleco_flash_cards c
+         join pleco_flash_categoryassigns a on a.card = c.id
+         where ${inProfile} and not (${DATED_CARD})`,
       ),
     ),
   };

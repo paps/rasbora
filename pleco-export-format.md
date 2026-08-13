@@ -219,7 +219,13 @@ reconstruct the exact _sequence_ of every review but not _when_ each one happene
 
 `sincelastchange` is `0` on every row in this file.
 
-## 5. Categories, profiles, scorefiles
+## 5. Profiles, categories, scorefiles
+
+**The profile is the top of Pleco's model.** It is what a user picks before reviewing, and
+everything else hangs off it: `pro_scorefile` says which scores table the session reads and
+writes, `pro_categories` says which cards it draws, and the remaining ~146 settings say how
+the session behaves. Nothing else in the export points _back_ at a profile, so a score or a
+category count read without one is an answer to a question no user asked.
 
 ```sql
 CREATE TABLE 'pleco_flash_categories' (

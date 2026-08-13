@@ -2,7 +2,8 @@
 
 import type { Database } from "sql.js";
 import type { FlashcardData } from "@/components/Flashcard";
-import { asCount, asText, listScorefiles, rowsOf } from "@/database/plecoFile";
+import { asCount, asText, rowsOf } from "@/database/plecoFile";
+import type { Profile } from "@/database/plecoFile";
 
 /**
  * How many cards the page shows. "Most difficult" is open-ended; this is the
@@ -12,41 +13,39 @@ import { asCount, asText, listScorefiles, rowsOf } from "@/database/plecoFile";
 const MOST_DIFFICULT_LIMIT = 1000;
 
 /**
- * The cards failed most often, hardest first. A card's failures are its
- * `incorrect` reviews summed across every scorefile, because a card carries
- * independent review state in each one and the question is how hard the card
- * is, not how hard it is in one study mode. Cards that have never failed are
- * left out — they are not difficult, and including them would just pad the tail
- * with the whole deck.
+ * The cards the profile has failed most often, hardest first.
  *
- * The scores tables are named after their scorefile id and discovered at
- * runtime; their names are safe to interpolate because they come from the table
- * list, not from user input.
+ * Difficulty is asked of one profile, never of the export: a card carries
+ * independent review state in every scorefile, and the profile says which one
+ * counts. Cards outside the profile's categories are left out even when they
+ * have review state, since the profile never puts them in front of the user.
+ * Cards that have never failed are left out too — they are not difficult, and
+ * they would pad the tail with the whole deck.
+ *
+ * The scores table is named after its scorefile id and discovered at runtime;
+ * its name is safe to interpolate because it comes from the table list, and so
+ * are the category ids, which `listProfiles` resolved to integers.
  */
-export const readMostDifficultCards = (database: Database): FlashcardData[] => {
-  const tables = listScorefiles(database)
-    .map((scorefile) => scorefile.table)
-    .filter((table) => table !== null);
+export const readMostDifficultCards = (
+  database: Database,
+  profile: Profile,
+): FlashcardData[] => {
+  const table = profile.scorefile?.table ?? null;
 
-  if (tables.length === 0) {
+  if (table === null || profile.categoryIds.length === 0) {
     return [];
   }
-
-  const reviewState = tables
-    .map((table) => `select card, correct, incorrect, reviewed from ${table}`)
-    .join(" union all ");
 
   return rowsOf(
     database,
     `select c.id, c.hw, c.althw, c.pron, coalesce(c.defn, '') as defn,
-            sum(s.correct) as correct,
-            sum(s.incorrect) as incorrect,
-            sum(s.reviewed) as reviewed
+            s.correct, s.incorrect, s.reviewed
      from pleco_flash_cards c
-     join (${reviewState}) s on s.card = c.id
-     group by c.id
-     having sum(s.incorrect) > 0
-     order by sum(s.incorrect) desc, sum(s.reviewed) desc, c.id
+     join ${table} s on s.card = c.id
+     where s.incorrect > 0
+       and c.id in (select card from pleco_flash_categoryassigns
+                    where cat in (${profile.categoryIds.join(", ")}))
+     order by s.incorrect desc, s.reviewed desc, c.id
      limit ${String(MOST_DIFFICULT_LIMIT)}`,
   ).map((row) => ({
     id: asCount(row[0] ?? null),
