@@ -1,0 +1,2 @@
+# The bundled dictionary is a binary; never try to diff or merge it as text.
+*.sqlite binary

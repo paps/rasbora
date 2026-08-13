@@ -75,6 +75,18 @@ const loadSqlJs = () => {
   return sqlJs;
 };
 
+/**
+ * Opens any SQLite file from its bytes, sharing the one WebAssembly
+ * compilation. The export is not the only SQLite the app reads — the bundled
+ * CC-CEDICT dictionary is one too — and both going through here keeps sql.js
+ * compiled exactly once, which is the whole reason the bootstrap lives in this
+ * file. The caller owns the returned database and must `close()` it.
+ */
+export const openSqlite = async (bytes: Uint8Array): Promise<Database> => {
+  const SQL = await loadSqlJs();
+  return new SQL.Database(bytes);
+};
+
 /** Reads one row of `pleco_flash_properties`, the export's own metadata. */
 export const readProperty = (database: Database, propid: string): string =>
   asText(
@@ -105,8 +117,7 @@ const readFormatString = (database: Database): string | null => {
  * @throws if the file is not a Pleco export.
  */
 export const openPlecoDatabase = async (file: File): Promise<Database> => {
-  const SQL = await loadSqlJs();
-  const database = new SQL.Database(new Uint8Array(await file.arrayBuffer()));
+  const database = await openSqlite(new Uint8Array(await file.arrayBuffer()));
 
   if (readFormatString(database) !== "Pleco SQL Flashcard Database") {
     database.close();

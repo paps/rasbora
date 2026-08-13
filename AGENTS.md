@@ -68,6 +68,43 @@ the user typed into Pleco are stored strings, not headwords with two forms, so
 they render as written whatever the setting says. Converting them would take a
 conversion table the app does not have and will not be adding.
 
+## The bundled dictionary: where meanings come from
+
+An export barely contains meanings. `defn` is a user's own note and is NULL on
+97.6% of cards; the real definitions are references into Pleco's licensed
+dictionaries, whose bytes are not in the file. So the meaning has to come from
+elsewhere, and that is **CC-CEDICT** — a free community dictionary shipped with
+the app as an indexed SQLite file, `src/cc-cedict/cedict.sqlite`.
+
+Like the script preference and unlike the export, it is app-wide reference data:
+the same before any import, untouched by one, and read by no query over the
+export. Hence `src/cc-cedict/`, a `DictionaryProvider` beside `ScriptProvider`,
+its own `useScript`-shaped `useDictionary()` hook — and, like the script, read
+by `Flashcard` itself rather than passed in.
+
+Four things to keep in mind when touching this:
+
+- **The lookup is a whole-word join keyed by reading.** CC-CEDICT is keyed by
+  the whole headword (锻炼, not 锻 + 炼), so the key is `hw` with its `@`s
+  removed, not a syllable. A headword can have several readings with different
+  meanings (行 is xíng _or_ háng), so the card's own pinyin picks the sense; when
+  none matches, the first entry shows rather than nothing.
+- **`canonicalPinyin()` exists twice and must agree.** The card's `pron` and a
+  CC-CEDICT reading only meet if both reduce to the same string. The reducer in
+  `src/cc-cedict/context.ts` and the one in `cc-cedict/build.mjs` are that
+  contract; change one, change both. Against the sample export the join resolves
+  91% of cards, 90% with an exact reading-level match.
+- **It loads lazily and fails soft.** A few megabytes, and no card is shown
+  before an import anyway, so the fetch runs in the background from mount and
+  never blocks first paint. Until it resolves — or if it never does — `lookup`
+  returns null and the card simply shows no gloss, exactly as for a headword the
+  dictionary does not have. The asset is content-hashed, so a rebuilt dictionary
+  busts the browser cache on its own.
+- **It is CC BY-SA 4.0, so it is credited where shown.** Every card that
+  displays a gloss carries the CC-CEDICT attribution; do not remove it. The file
+  itself is built and refreshed by `cc-cedict/` (see that folder's readme) and
+  committed as a binary — it is not generated at build time.
+
 ## Principles
 
 - **Keep it simple.** This app is meant to be easy to maintain, not clever.
@@ -97,21 +134,27 @@ vite.config.js          Vite config (JS on purpose, so it needs no @types/node)
 eslint.config.js        Flat config: typescript-eslint + @eslint-react +
                         react-hooks + react-refresh
 tsconfig.json           Strict, with the "@/*" -> "./src/*" path alias
+cc-cedict/              Build tooling for the bundled dictionary (see its readme)
+  build.mjs             CC-CEDICT text dump → src/cc-cedict/cedict.sqlite
 public/
   favicon.svg           Served as-is at /favicon.svg; see "The data layer"
 src/
   main.tsx              Mounts <App /> and imports the Mantine stylesheets
   App.tsx               <MantineProvider> + <ScriptProvider> +
-                        <DatabaseProvider> + router
+                        <DictionaryProvider> + <DatabaseProvider> + router
   Layout.tsx            <AppShell>: the title bar and the sidebar
   database/             What every page shares, and nothing more
-    plecoFile.ts        Opening an export, reading sql.js values, score
-                        tables, profiles
+    plecoFile.ts        Opening an export, the shared sql.js opener, reading
+                        sql.js values, score tables, profiles
     context.ts          DatabaseContext + the useDatabase() hook
     DatabaseProvider.tsx  Holds the export and the selected profile app-wide
   script/               The written form cards are shown in
     context.ts          Script, otherScript() + the useScript() hook
     ScriptProvider.tsx  Holds the choice app-wide, in localStorage
+  cc-cedict/           Where card meanings come from; see "The bundled dictionary"
+    cedict.sqlite       CC-CEDICT, committed and served as a static asset
+    context.ts          lookupCard(), the useDictionary() hook
+    DictionaryProvider.tsx  Loads the dictionary once, app-wide
   components/           Reusable presentational pieces, shared across pages
     Flashcard.tsx       The card display, opened from any list of cards
     Explained.tsx       Dotted-underlined text a hover/focus/tap explains
@@ -178,11 +221,15 @@ looking at it, and `plecoFile.ts` is all of it:
 
 - **Opening an export** — the sql.js bootstrap, the cached WebAssembly
   compilation, and the `FormatString` assertion. One compilation for the whole
-  app, and `DatabaseProvider` owns the lifecycle.
+  app, and `DatabaseProvider` owns the lifecycle. The bare `openSqlite(bytes)`
+  underneath is exported too, because the export is not the only SQLite the app
+  reads — the bundled dictionary is one as well — and both going through it is
+  what keeps that "one compilation" true.
 - **Reading values** — `rowsOf`, `firstValueOf`, `asText`, `asCount`. SQLite is
   dynamically typed and sql.js hands back `SqlValue[][]`, so every read is
   narrowed by hand. These are shared so that a NULL means the same thing
-  everywhere; do not re-roll them per page.
+  everywhere; do not re-roll them per page — the dictionary reads through them
+  too.
 - **Score tables** — `listScorefiles()`. Review state lives in
   `pleco_flash_scores_<N>`, ids are sparse, and the tables have to be found at
   runtime. Hardcoding `pleco_flash_scores_1` does not fail, it silently ignores
@@ -226,7 +273,9 @@ other global" above.
 
 sql.js needs its WebAssembly module at runtime. It is wired up with Vite's
 `?url` import in `plecoFile.ts`, which emits a hashed asset at build time — so
-no asset the code refers to has to be copied by hand.
+no asset the code refers to has to be copied by hand. The bundled dictionary,
+`src/cc-cedict/cedict.sqlite`, is the second such asset: a committed binary
+imported `?url` and fetched at runtime, hashed and cached like the wasm.
 
 `public/` holds only what has to keep a fixed URL and so cannot be hashed:
 today that is `favicon.svg` alone. Anything the code imports belongs in `src/`
@@ -287,10 +336,13 @@ Five things about the review section are load-bearing:
   "barely remembered" — holds ΔE 39 under simulated protanopia, the worst of
   the three simulations. Re-check it if you change a shade.
 
-The one thing it reads for itself is `useScript()`, which decides which form the
-big glyphs show and which is dimmed underneath. That is deliberately not a prop:
-see "The other global" above. It stays a rendering component either way — the
-script is the only thing it reaches for, and it still owns no state.
+It reads two globals for itself. `useScript()`, which decides which form the big
+glyphs show and which is dimmed underneath; and `useDictionary()`, for the
+CC-CEDICT gloss shown below the user's own note. Both are deliberately hooks
+rather than props, for the same reason — a page could forget to pass them and
+show a card out of step with the rest of the app. It stays a rendering component
+either way: these are the only things it reaches for, and it still owns no
+state.
 
 `Explained.tsx` is the app's **only** "there is more here" affordance: dotted
 underlined text that a hover, a focus or a tap explains. It covers a label that
