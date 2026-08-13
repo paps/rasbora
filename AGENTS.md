@@ -298,8 +298,27 @@ the job:
   error does — do not leave warnings behind.
 - `npm run format` runs Prettier. Run this when your work is done, before
   committing or pushing.
+- `npx wrangler deploy` publishes `dist/` to Cloudflare. It uploads what is
+  already there and never builds, so `npx vite build` has to have run first.
 
 Prettier has no config file on purpose — the defaults are fine.
+
+## Deployment
+
+The app is static, so Cloudflare serves `dist/` and no Worker code runs:
+`wrangler.jsonc` has no `main`, and is five settings long because that is all
+an assets-only Worker needs — four of them, plus `send_metrics: false` to keep
+Wrangler from reporting usage back to Cloudflare.
+
+`not_found_handling: "single-page-application"` is the one line that is not
+boilerplate. Routing is client-side, so `/statistics` matches no file in
+`dist/`; this returns `index.html` for those requests and lets React Router
+read the URL. Without it every route but `/` 404s when reloaded or opened from
+a link, and `NotFound.tsx` would never render.
+
+Deploys are manual and there is no CI: build, then deploy. That is deliberate,
+for the same reason there are no `dev`/`build` scripts — two `npx` commands do
+not need a wrapper.
 
 ## Why there are three React ESLint plugins
 
