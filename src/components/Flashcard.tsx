@@ -2,11 +2,11 @@ import { Badge, Group, Stack, Text } from "@mantine/core";
 import { splitHeadword } from "@/components/chinese";
 
 /**
- * Everything the card display needs. It is deliberately the vocabulary item
- * plus its review tallies summed across scorefiles — the three counts add up
- * cleanly, whereas `score` and `difficulty` are on a per-profile scale that
- * cannot be aggregated meaningfully. A page that has one scorefile in view can
- * grow this contract later; today's callers do not.
+ * Everything the card display needs: the vocabulary item plus its review
+ * tallies, read from whichever scorefile the caller's profile points at.
+ * `score` and `difficulty` are deliberately absent — a page that wants to show
+ * them can widen this contract, but they only mean anything alongside the
+ * profile settings that bound them.
  */
 export interface FlashcardData {
   id: number;

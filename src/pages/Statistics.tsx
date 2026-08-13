@@ -5,7 +5,6 @@ import { useDatabase } from "@/database/context";
 import {
   OTHER_SERIES,
   TOTAL_SERIES,
-  UNCATEGORISED_SERIES,
   readCardsOverTime,
 } from "@/pages/Statistics.db";
 
@@ -24,25 +23,24 @@ const CATEGORY_COLORS = [
   "green.8",
 ];
 
-/** The three series that are not a category always look the same. */
+/** The two series that are not a category always look the same. */
 const FIXED_COLORS: Record<string, string> = {
   [TOTAL_SERIES]: "gray.7",
   [OTHER_SERIES]: "violet.7",
-  [UNCATEGORISED_SERIES]: "red.7",
 };
 
 type Measure = "cumulative" | "monthly";
 
 const Statistics = () => {
-  const { database } = useDatabase();
+  const { database, profile } = useDatabase();
   const [measure, setMeasure] = useState<Measure>("cumulative");
 
   const chart = useMemo(() => {
-    if (!database) {
+    if (!database || !profile) {
       return null;
     }
 
-    const cardsOverTime = readCardsOverTime(database);
+    const cardsOverTime = readCardsOverTime(database, profile);
     const categoryKeys = cardsOverTime.series
       .map((series) => series.key)
       .filter((key) => !(key in FIXED_COLORS));
@@ -61,7 +59,7 @@ const Statistics = () => {
         strokeDasharray: series.key === TOTAL_SERIES ? "6 4" : undefined,
       })),
     };
-  }, [database]);
+  }, [database, profile]);
 
   const data = useMemo(
     () =>
@@ -71,11 +69,26 @@ const Statistics = () => {
     [chart, measure],
   );
 
-  if (!chart) {
+  // The two are null together — the chart is read through the profile.
+  if (!chart || !profile) {
     return (
       <Stack gap="lg">
         <Title>Statistics</Title>
-        <Text c="dimmed">Import a Pleco export to see statistics.</Text>
+        <Text c="dimmed">
+          Import a set of flashcards to see statistics for a profile.
+        </Text>
+      </Stack>
+    );
+  }
+
+  if (chart.cumulative.length === 0) {
+    return (
+      <Stack gap="lg">
+        <Title>Statistics</Title>
+        <Text c="dimmed">
+          This profile draws from no category that still holds dated cards, so
+          there is nothing to chart.
+        </Text>
       </Stack>
     );
   }
@@ -113,6 +126,7 @@ const Statistics = () => {
         {measure === "cumulative"
           ? "Cards created up to the end of each month, counted against the categories they are in today."
           : "Cards created during each month, counted against the categories they are in today."}{" "}
+        Only the categories the {profile.name} profile draws from are counted.
         Cards in several categories count towards each of them, so the category
         lines can add up to more than the total.
         {chart.groupedCategories.length > 0 &&

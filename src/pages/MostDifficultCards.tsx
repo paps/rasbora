@@ -17,21 +17,23 @@ import { readMostDifficultCards } from "@/pages/MostDifficultCards.db";
 const PAGE_SIZE = 25;
 
 const MostDifficultCards = () => {
-  const { database } = useDatabase();
+  const { database, profile } = useDatabase();
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<FlashcardData | null>(null);
 
   const cards = useMemo(
-    () => (database ? readMostDifficultCards(database) : null),
-    [database],
+    () =>
+      database && profile ? readMostDifficultCards(database, profile) : null,
+    [database, profile],
   );
 
-  if (!cards) {
+  // The two are null together — difficulty is asked of one profile.
+  if (!cards || !profile) {
     return (
       <Stack gap="lg">
         <Title>Most difficult cards</Title>
         <Text c="dimmed">
-          Import a Pleco export to see the most difficult cards.
+          Import a set of flashcards to see the cards a profile fails most.
         </Text>
       </Stack>
     );
@@ -49,13 +51,18 @@ const MostDifficultCards = () => {
       <Title>Most difficult cards</Title>
 
       {cards.length === 0 ? (
-        <Text c="dimmed">No card has ever failed a review in this export.</Text>
+        <Text c="dimmed">
+          {profile.scorefile === null
+            ? `The ${profile.name} profile writes to no scorefile, so it has no review history.`
+            : `No card has ever failed a review in the ${profile.name} profile.`}
+        </Text>
       ) : (
         <>
           <Text size="sm" c="dimmed">
-            The {cards.length.toLocaleString()} cards failed most often,
-            counting every incorrect review across all scorefiles. Select a card
-            to see its details.
+            The {cards.length.toLocaleString()} cards the {profile.name} profile
+            failed most often, counting incorrect reviews in its “
+            {profile.scorefile?.name}” scorefile only. Select a card to see its
+            details.
           </Text>
 
           <Table highlightOnHover withTableBorder verticalSpacing="xs">

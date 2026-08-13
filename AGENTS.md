@@ -8,6 +8,31 @@ See `readme.md` for what the app is meant to do, and
 `pleco-export-format.md` for the shape of the Pleco flashcard export it
 ingests.
 
+## The mental model: everything flows from a profile
+
+This is how a Pleco user thinks, and the app has to keep matching it.
+
+A **profile** is the top of Pleco's model. It is what the user picks before a
+review session, and from it flows: the **scorefile** the session reads and
+writes, the **cards** it reviews (through the categories the profile loads —
+often one, sometimes several), and the **settings** it runs under. Scores,
+difficulty and review history live per scorefile, so the same card can be
+saturated in one profile and unseen in another; a number read without knowing
+its profile means nothing.
+
+Everything the app shows therefore hangs off one selected profile:
+
+- The profile is **global state**, held by `DatabaseProvider` next to the
+  imported file, and picked in the title bar so it is visible on every page.
+- A page reads through `profile.scorefile` and `profile.categoryIds`, never
+  across the whole export. Summing a card's reviews over every scorefile
+  answers a question nobody asked.
+- Pages with no profile in view say so; they do not fall back to whole-file
+  numbers.
+
+If a new feature seems to need export-wide numbers, that is a signal worth
+questioning before writing it.
+
 ## Principles
 
 - **Keep it simple.** This app is meant to be easy to maintain, not clever.
@@ -44,14 +69,15 @@ src/
   App.tsx               <MantineProvider> + <DatabaseProvider> + router
   Layout.tsx            <AppShell>: the title bar and the sidebar
   database/             What every page shares, and nothing more
-    plecoFile.ts        Opening an export, reading sql.js values, score tables
+    plecoFile.ts        Opening an export, reading sql.js values, score
+                        tables, profiles
     context.ts          DatabaseContext + the useDatabase() hook
-    DatabaseProvider.tsx  Holds the imported export for the whole app
+    DatabaseProvider.tsx  Holds the export and the selected profile app-wide
   components/           Reusable presentational pieces, shared across pages
     Flashcard.tsx       The card display, opened from any list of cards
     chinese.ts          Headword splitting and numbered-pinyin → tone marks
   pages/                One file per route, plus its queries
-    LoadFlashcards.tsx  + LoadFlashcards.db.ts
+    ProfileInfo.tsx     + ProfileInfo.db.ts
     Statistics.tsx      + Statistics.db.ts
     Recommendations.tsx
     MostDifficultCards.tsx  + MostDifficultCards.db.ts
@@ -63,17 +89,25 @@ under `src/pages/`, a `<Route>`, and an entry in `Layout.tsx`'s `PAGES` list.
 Page titles are just a `<Title>` at the top of each page, so there is no title
 plumbing to keep in sync.
 
-`Layout.tsx` wraps every route. Its `PAGES` list is the sidebar: each entry
-says whether the page needs an imported export, and those are disabled until
-one is. Disabling a link is a convenience, not a guard — the route still
-answers if it is typed in, so a page that needs data has to handle
-`database === null` itself.
+`Layout.tsx` wraps every route, and its title bar holds the two controls that
+are global to the app: the imported file, and the profile everything is read
+through. Before an import it shows one button; after one it shows the file
+name, a subdued **Change** button that reopens the picker, and a `<Select>` of
+the export's profiles. Both belong here rather than on a page because every
+page depends on them.
 
-`LoadFlashcards.tsx` imports an export and shows a summary of it.
-`Statistics.tsx` charts cards over time. `MostDifficultCards.tsx` lists the
-cards that have failed review the most, and opens one in a `<Drawer>` on click.
-`Recommendations.tsx` is a deliberately empty placeholder, and `NotFound.tsx`
-is still just a heading.
+Its `PAGES` list is the sidebar, and **no link is ever disabled** — a page with
+nothing to read says so in a sentence instead. That is not a courtesy: routes
+answer when typed in, so a page has to handle `database === null` and
+`profile === null` anyway, and a disabled link would only hide the explanation.
+
+`ProfileInfo.tsx` is the landing page and describes the selected profile: what
+it reviews into, what it draws from, its session settings (the documented ones
+spelled out, all ~150 raw in an `<Accordion>`), and a smaller section of
+file-level facts. `Statistics.tsx` charts the profile's cards over time.
+`MostDifficultCards.tsx` lists the cards the profile has failed most, and opens
+one in a `<Drawer>` on click. `Recommendations.tsx` is a deliberately empty
+placeholder, and `NotFound.tsx` is still just a heading.
 
 ## The data layer
 
@@ -99,6 +133,14 @@ looking at it, and `plecoFile.ts` is all of it:
   `pleco_flash_scores_<N>`, ids are sparse, and the tables have to be found at
   runtime. Hardcoding `pleco_flash_scores_1` does not fail, it silently ignores
   the other scorefiles, which is exactly why this one is shared.
+- **Profiles** — `listProfiles()`. Every page reads through a profile, so its
+  two links out have to be resolved before anything else can run, and both are
+  traps: `pro_scorefile` names the scorefile and does _not_ match the profile's
+  own id, and `pro_categories` is comma-**terminated**. The returned
+  `categoryIds` also descend into child categories — inferred, since no export
+  seen so far nests them, but a profile naming a parent and quietly losing its
+  children would undercount every page. Ids come back as integers, so a page
+  can interpolate them into an `in (…)` clause.
 
 Note what is _not_ a reason to add to `plecoFile.ts`: several pages needing it.
 Shared code here earns its place by correctness — **a per-page version would be
@@ -112,10 +154,18 @@ checklist now has to be respected in each `.db.ts` rather than in one place.
 `plecoFile.ts` implements only the traps that are too easy to walk into by
 hand; read the checklist before writing a new query.
 
-The imported database lives **in memory only**. Reloading the page drops it and
-the user has to pick the file again; there is deliberately no persistence yet.
-Nothing downstream depends on where the bytes came from, so caching them in
-IndexedDB later is a change to `DatabaseProvider` alone.
+**A page query takes the profile.** `readCardsOverTime(database, profile)`,
+`readMostDifficultCards(database, profile)`: the scope comes in as an argument
+rather than being decided inside the SQL, so a page cannot accidentally answer
+for the whole export. A page that has no profile in view renders its "import a
+set of flashcards" sentence instead of querying.
+
+The imported database lives **in memory only**, and so does the profile
+selection, which resets to the export's first profile on every import.
+Reloading the page drops both and the user has to pick the file again; there is
+deliberately no persistence yet. Nothing downstream depends on where the bytes
+came from, so caching them in IndexedDB later is a change to `DatabaseProvider`
+alone.
 
 sql.js needs its WebAssembly module at runtime. It is wired up with Vite's
 `?url` import in `plecoFile.ts`, which emits a hashed asset at build time — so
@@ -140,9 +190,9 @@ one place and pages hand it data.
 `Flashcard.tsx` is that display and is meant to be _the_ way a single card is
 shown app-wide: give it a `FlashcardData` and it renders the headword, pinyin,
 any note and the review tally, reading nothing and holding no state. Its
-`FlashcardData` is the vocabulary item plus the review counts summed across
-scorefiles — the counts add up cleanly, whereas `score` and `difficulty` are on
-a per-profile scale and are left out rather than aggregated wrongly. A page that
+`FlashcardData` is the vocabulary item plus the review counts read from the
+caller's profile scorefile. `score` and `difficulty` are left out because they
+only mean something next to the profile settings that bound them. A page that
 needs more can widen the contract; do not fork the component.
 
 `chinese.ts` is the pure text side of that: splitting a headword on `@` into
@@ -158,9 +208,14 @@ page. It is the only reason either package is here, so keep chart work on
 `<LineChart>` and friends rather than dropping to raw recharts.
 
 `Statistics.db.ts` shapes the data and names the series; `Statistics.tsx` picks
-the colours. Two things there are load-bearing:
+the colours. Three things there are load-bearing:
 
-- **The series count is capped.** An export can hold dozens of categories, and
+- **The chart is the profile's, not the file's.** Only the categories the
+  profile draws from get a line, and the total counts cards in those categories
+  — distinctly, since a card in two of them is still one card. There is no
+  "uncategorised" series any more: within a profile, every card in scope is in
+  one of its categories by definition.
+- **The series count is capped.** A profile can load dozens of categories, and
   a line each would be unreadable, so the biggest six keep their own line and
   the rest are summed into "Other categories" — named in the caption under the
   chart, because a silently dropped category reads as a category with no cards.
