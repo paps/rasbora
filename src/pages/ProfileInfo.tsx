@@ -142,7 +142,7 @@ const ProfileInfo = () => {
 
   if (!file) {
     return (
-      <Stack gap="lg">
+      <Stack gap="md">
         <Title>Profile info</Title>
         <Text c="dimmed">
           Import a set of flashcards to see profile information.

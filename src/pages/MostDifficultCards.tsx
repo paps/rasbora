@@ -63,7 +63,7 @@ const MostDifficultCards = () => {
   // The two are null together — difficulty is asked of one profile.
   if (!difficult || !profile) {
     return (
-      <Stack gap="lg">
+      <Stack gap="md">
         <Title>Most difficult cards</Title>
         <Text c="dimmed">
           Import a set of flashcards to see the cards a profile fails most.
@@ -73,7 +73,7 @@ const MostDifficultCards = () => {
   }
 
   return (
-    <Stack gap="lg">
+    <Stack gap="md">
       <Title>Most difficult cards</Title>
 
       {difficult.cards.length === 0 ? (

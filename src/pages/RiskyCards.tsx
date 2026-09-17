@@ -121,7 +121,7 @@ const RiskyCards = () => {
   // The two are null together — a review log belongs to a profile's scorefile.
   if (!risky || !source || !profile) {
     return (
-      <Stack gap="lg">
+      <Stack gap="md">
         <Title>Risky cards</Title>
         <Text c="dimmed">
           Import a set of flashcards to see the cards a profile is losing.
@@ -131,7 +131,7 @@ const RiskyCards = () => {
   }
 
   return (
-    <Stack gap="lg">
+    <Stack gap="md">
       <Title>Risky cards</Title>
 
       <Text size="sm" c="dimmed">
