@@ -113,8 +113,8 @@ const DatabaseProvider = ({ children }: DatabaseProviderProps) => {
           const file = typeof source === "function" ? await source() : source;
           if (generationRef.current !== current) return;
           opened = await openImport(file);
-          const trimmedSourceUrl = sourceUrl?.trim();
-          opened.sourceUrl = trimmedSourceUrl ? trimmedSourceUrl : null;
+          const trimmedSourceUrl = sourceUrl?.trim() ?? "";
+          opened.sourceUrl = trimmedSourceUrl === "" ? null : trimmedSourceUrl;
           if (generationRef.current !== current) return;
           const firstProfileId = opened.profiles[0]?.id ?? null;
           let warning: string | null = null;
