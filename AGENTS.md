@@ -171,6 +171,7 @@ src/
     AlmostLearnedCards.tsx   + AlmostLearnedCards.db.ts
     LearnedCards.tsx         + LearnedCards.db.ts
     CustomizedCards.tsx      + CustomizedCards.db.ts
+    ViewCard.tsx             + ViewCard.db.ts
     LoadFile.tsx             + LoadFile.db.ts
     NotFound.tsx
 ```
@@ -249,6 +250,55 @@ now live on `Load Pleco file`. `Statistics.tsx` charts the profile's cards over
 time.
 `Recommendations.tsx` is a deliberately empty placeholder, and `NotFound.tsx`
 is still just a heading.
+
+`ViewCard.tsx` is the one card page that is not a list, and it is in the
+sidebar between the profile pages and the five that are — a lookup rather than
+a question about a set. Everything else that shows cards answers "which
+cards?" and renders `CardList` for it; this one asks "that one, what does it
+say?", so it renders `Flashcard` directly, the same display the drawer opens.
+
+**It shows three cards at most, and says so when more match.** The display is
+tall — a card with a few hundred reviews is a few hundred bars — so a fourth
+result would push the first off the screen, and a reader scrolling past three
+whole cards is reading a list, which the other five pages already are. Past
+three, an `Alert` above the results gives the real count and asks for a
+narrower search; the cap is the same "a truncated list must not read as a
+complete one" rule the card lists follow, at a different scale.
+
+Its search is the part with something to say, and it lives in `ViewCard.db.ts`:
+
+- **Both sides are reduced to a shape that can meet.** `pron` is `@`-separated
+  numbered pinyin with Pleco's own notation hanging off it (`you1-`, `ru4, `,
+  `bao4//@ming2`), and a reader types `ping chang`. So the column is reduced in
+  SQL — a dozen nested `replace()` calls, since SQLite has no regex — and the
+  query is reduced in TypeScript, to the same letters-only lowercase form with
+  `ü` folded to `u`.
+- **Tones narrow rather than merely being tolerated.** There are two reduced
+  forms, toneless (`pingchang`) and numbered (`ping2chang2`). Every query
+  matches the first; a query that carried tones must match the second as well,
+  so `chang` finds 123 cards in the sample export and `chang2` finds 60. Tones
+  are used only when **every** whitespace token carries one — `ping chang2`
+  cannot be assembled into anything a card reads as, and `píngcháng` has two
+  marks in one token with no saying where the syllable breaks, so both fall
+  back to the toneless form and still find the card.
+- **This is _not_ `canonicalPinyin()` and must not be merged with it.** That
+  one is half of a contract with `cc-cedict/build.mjs` — change one, change
+  both, or the dictionary join stops resolving — and it keeps syllable spacing,
+  which a substring search has to drop. Two reducers, two jobs.
+- **The card id is searchable because it is the only unique handle.** `hw` is
+  not: the sample export holds 平常 twice. Searching a number is how you say
+  "that one" about two cards that read alike.
+- **Results are ranked, which is what makes a cap of three usable.** Exact
+  match first, then a match at the start, then one anywhere, with `c.id` inside
+  each band so the order does not shuffle while the reader types. Searching
+  `shi` puts the cards that _are_ shi above the ones that merely contain it.
+
+The scorefile is joined rather than required, as on `Customized cards`: a card
+the profile has never put in front of anyone still has a headword to find it
+by, and only its tallies come back empty. The query is debounced, unlike
+`Risky cards`' controls — that page re-filters rows it already holds, while
+this one runs two full scans of the cards table, which no index survives
+`lower()` and a dozen `replace()` calls to help with.
 
 The other five pages all answer "which cards?", so they all render `CardList`
 and differ only in the question — the SQL, the extra columns, and the sentence

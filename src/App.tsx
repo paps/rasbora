@@ -13,6 +13,7 @@ import ProfileInfo from "@/pages/ProfileInfo";
 import Recommendations from "@/pages/Recommendations";
 import RiskyCards from "@/pages/RiskyCards";
 import Statistics from "@/pages/Statistics";
+import ViewCard from "@/pages/ViewCard";
 import ScriptProvider from "@/script/ScriptProvider";
 import { useDatabase } from "@/database/context";
 
@@ -44,6 +45,7 @@ const App = () => (
                 <Route path="/load" element={<LoadFile />} />
                 <Route path="/statistics" element={<Statistics />} />
                 <Route path="/recommendations" element={<Recommendations />} />
+                <Route path="/card" element={<ViewCard />} />
                 <Route path="/difficult" element={<MostDifficultCards />} />
                 <Route path="/risky" element={<RiskyCards />} />
                 <Route
