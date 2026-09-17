@@ -17,9 +17,12 @@
 
 - [ ] Make the whole thing fully mobile friendly
 
-- [ ] Correctly store the sqlite file in cache for immediate no network reload when opening a new tab. Also properly cache efficiently cc-cedict
+- [x] Correctly store the sqlite file in cache for immediate no network reload when opening a new tab. Also properly cache efficiently cc-cedict
 
 - [ ] Ability to search for a card anywhere
 
 - [ ] Ability to view a card (whole page view). Can be opened from a direct link with querystring (assuming Pleco file still in cache)
 
+- [ ] Show estimated number of flashcards left to review, based on the profile settings, what we know empiracally from what Pleco does, and the time of day vs. the time of the pleco export
+- [ ] Update skill with this information, so that an AI agent can also estimate the value properly
+- [ ] Add this next review information when you're looking at an individual flashcard
