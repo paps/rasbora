@@ -37,3 +37,13 @@
 - [ ] Open `View a card` from a direct link with a querystring (assuming Pleco
       file still in cache) — the page holds its search in component state for
       now, so a search is not linkable and does not survive a reload
+- [ ] Rename `Learned cards` to `Cards to revive` (or find the right SRS name
+      for it) and sort it oldest first. Update the page accordingly: the goal is
+      to bring back into review the cards that weren't actually learned, or were
+      forgotten, after years+ of non use
+- [ ] Instead of displaying the score prominently, display the number of days
+      before the next review (which can go negative depending on the current
+      time) — score is not useful on its own, the number of days is always the
+      better metric. Days = `score` / `pro_cardpointsday` (100 here) counted
+      from `lastreviewedtime`, so next review =
+      `lastreviewedtime + score/pro_cardpointsday days - now`
