@@ -69,12 +69,13 @@ const SCRIPT_TOOLTIPS: Record<Script, string> = {
  * so a page of their own costs nothing and leaves the title bar with only the
  * profile, which really does change while reading.
  *
- * It is also where the app lands with nothing loaded: the export lives in
- * memory only, so every visit starts needing a file, and `/` sends the reader
- * here until one is in.
+ * It is also where the app lands when there is no saved export to restore.
+ * File removal belongs here alongside import, since both apply to the export
+ * rather than to the selected profile.
  */
 const LoadFile = () => {
-  const { database, fileName, isImporting, error, importFile } = useDatabase();
+  const { database, fileName, isImporting, error, importFile, forgetFile } =
+    useDatabase();
   const { script, setScript } = useScript();
 
   const file = useMemo(
@@ -95,8 +96,9 @@ const LoadFile = () => {
         <Text size="sm" c="dimmed">
           Rasbora reads a Pleco flashcard export — the <b>.pqb</b> file Pleco
           writes from <b>Flashcards → Import/Export → Export cards</b>. It is
-          read in your browser and never uploaded, and it is held in memory
-          only, so reloading the page means picking it again.
+          read in your browser and never uploaded. Your file and selected
+          profile are saved in this browser and restored when you reload or open
+          another tab. Loading another file replaces the saved copy.
         </Text>
 
         <FileButton accept=".pqb" onChange={importChosenFile}>
@@ -106,6 +108,17 @@ const LoadFile = () => {
             </Button>
           )}
         </FileButton>
+
+        {database && (
+          <Button
+            variant="subtle"
+            color="red"
+            onClick={forgetFile}
+            disabled={isImporting}
+          >
+            Forget file
+          </Button>
+        )}
 
         {error && (
           <Text size="sm" c="red">

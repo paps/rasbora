@@ -1,10 +1,12 @@
 import {
+  Alert,
   AppShell,
   Burger,
   Group,
   Image,
   NavLink,
   Select,
+  Text,
   Title,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
@@ -57,7 +59,15 @@ interface LayoutProps {
  */
 const Layout = ({ children }: LayoutProps) => {
   const [opened, { toggle, close }] = useDisclosure(false);
-  const { database, profiles, profile, selectProfile } = useDatabase();
+  const {
+    database,
+    profiles,
+    profile,
+    selectProfile,
+    isImporting,
+    isRestoring,
+    storageWarning,
+  } = useDatabase();
   const { pathname } = useLocation();
 
   return (
@@ -97,6 +107,7 @@ const Layout = ({ children }: LayoutProps) => {
               aria-label="Profile"
               placeholder="Profile"
               allowDeselect={false}
+              disabled={isImporting}
               value={profile ? String(profile.id) : null}
               onChange={(value) => {
                 if (value !== null) {
@@ -125,7 +136,21 @@ const Layout = ({ children }: LayoutProps) => {
         ))}
       </AppShell.Navbar>
 
-      <AppShell.Main>{children}</AppShell.Main>
+      <AppShell.Main>
+        {storageWarning && (
+          <Alert color="yellow" mb="md">
+            {storageWarning}
+          </Alert>
+        )}
+        {/* Wait before mounting routes so Landing cannot redirect a saved file to /load. */}
+        {isRestoring ? (
+          <Text c="dimmed" role="status">
+            Restoring saved flashcards…
+          </Text>
+        ) : (
+          children
+        )}
+      </AppShell.Main>
     </AppShell>
   );
 };

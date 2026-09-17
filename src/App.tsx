@@ -18,9 +18,9 @@ import { useDatabase } from "@/database/context";
 
 /**
  * What `/` shows: the profile, once there is an export to read it from, and the
- * loader until then. The export lives in memory only, so a fresh visit always
- * lands on `Load Pleco file` — which is the one thing there is to do at that
- * point — while a reader who has imported one gets the profile they picked.
+ * loader when no export is available. Layout waits for the saved file and
+ * profile to be restored before mounting routes, so a returning reader stays
+ * on the profile page instead of being redirected while storage is loading.
  */
 const Landing = () => {
   const { database } = useDatabase();

@@ -1,99 +1,217 @@
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import type { Database } from "sql.js";
 import { DatabaseContext, type DatabaseContextValue } from "@/database/context";
 import { listProfiles, openPlecoDatabase } from "@/database/plecoFile";
 import type { Profile } from "@/database/plecoFile";
+import {
+  forgetImport,
+  readSavedImport,
+  saveImport,
+  saveProfile,
+} from "@/database/savedImport";
+
+interface LoadedImport {
+  database: Database;
+  fileName: string;
+  profiles: Profile[];
+  importId: string | null;
+}
+
+const openImport = async (file: File): Promise<LoadedImport> => {
+  const database = await openPlecoDatabase(file);
+  try {
+    return {
+      database,
+      fileName: file.name,
+      profiles: listProfiles(database),
+      importId: null,
+    };
+  } catch (cause: unknown) {
+    database.close();
+    throw cause;
+  }
+};
 
 interface DatabaseProviderProps {
   children: ReactNode;
 }
 
-/**
- * Holds the imported Pleco export for the whole app, and the profile it is
- * being read through — the profile is app-wide because everything a page shows
- * hangs off it. The database lives in memory only: reloading the page drops it
- * and the file has to be imported again.
- */
+/** Restores the last export and profile; each tab owns its sql.js instance. */
 const DatabaseProvider = ({ children }: DatabaseProviderProps) => {
-  const [database, setDatabase] = useState<Database | null>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState<LoadedImport | null>(null);
+  const [profileId, setProfileId] = useState<number | null>(null);
+  const [isRestoring, setIsRestoring] = useState(true);
   const [isImporting, setIsImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [profileId, setProfileId] = useState<number | null>(null);
+  const [storageWarning, setStorageWarning] = useState<string | null>(null);
+  const busyRef = useRef(true);
+  const generationRef = useRef(0);
 
-  const importFile = useCallback(
-    (file: File) => {
-      setIsImporting(true);
-      setError(null);
+  useEffect(() => {
+    const pendingRef = generationRef;
+    const current = ++pendingRef.current;
+    void (async () => {
+      try {
+        const saved = await readSavedImport();
+        if (!saved || generationRef.current !== current) return;
+        const opened = await openImport(saved.file);
+        if (generationRef.current !== current) {
+          opened.database.close();
+          return;
+        }
+        setLoaded({ ...opened, importId: saved.importId });
+        setProfileId(
+          opened.profiles.find((profile) => profile.id === saved.profileId)
+            ?.id ??
+            opened.profiles[0]?.id ??
+            null,
+        );
+      } catch {
+        if (generationRef.current === current) {
+          setStorageWarning(
+            "The saved flashcards could not be restored. Please import your Pleco file again.",
+          );
+        }
+      } finally {
+        if (generationRef.current === current) {
+          busyRef.current = false;
+          setIsRestoring(false);
+        }
+      }
+    })();
+    return () => {
+      ++pendingRef.current;
+    };
+  }, []);
 
-      openPlecoDatabase(file)
-        .then((opened) => {
-          // Resolve the profiles before touching any state: if the new export
-          // turns out to be unreadable this throws, and the app has to be left
-          // holding the old database rather than a closed one.
-          let imported: Profile[];
+  useEffect(() => () => loaded?.database.close(), [loaded]);
 
-          try {
-            imported = listProfiles(opened);
-          } catch (cause: unknown) {
-            opened.close();
-            throw cause;
-          }
+  const importFile = useCallback((file: File) => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    const current = ++generationRef.current;
+    setIsImporting(true);
+    setError(null);
 
-          // Free the WebAssembly memory held by the export being replaced.
-          database?.close();
-
-          setDatabase(opened);
-          setFileName(file.name);
-          setProfiles(imported);
-          // Pleco opens on a profile, so the app does too: the first one the
-          // export lists, until the user picks another.
-          setProfileId(imported[0]?.id ?? null);
-        })
-        .catch((cause: unknown) => {
+    void (async () => {
+      let opened: LoadedImport | null = null;
+      try {
+        opened = await openImport(file);
+        if (generationRef.current !== current) return;
+        const firstProfileId = opened.profiles[0]?.id ?? null;
+        let warning: string | null = null;
+        try {
+          const importId = crypto.randomUUID();
+          await saveImport({ file, importId, profileId: firstProfileId });
+          opened.importId = importId;
+        } catch {
+          warning =
+            "These flashcards are available in this tab, but could not be saved in your browser. A new tab may restore the previously saved file. Please import this file again to retry.";
+        }
+        if (generationRef.current !== current) return;
+        setLoaded(opened);
+        opened = null; // React now owns and closes this database.
+        setProfileId(firstProfileId);
+        setStorageWarning(warning);
+      } catch (cause: unknown) {
+        if (generationRef.current === current) {
           setError(
             cause instanceof Error
               ? cause.message
               : "The file could not be read.",
           );
-        })
-        .finally(() => {
+        }
+      } finally {
+        opened?.database.close();
+        if (generationRef.current === current) {
+          busyRef.current = false;
           setIsImporting(false);
-        });
-    },
-    [database],
-  );
-
-  const selectProfile = useCallback((id: number) => {
-    setProfileId(id);
+        }
+      }
+    })();
   }, []);
 
-  const profile = useMemo(
-    () => profiles.find((candidate) => candidate.id === profileId) ?? null,
-    [profiles, profileId],
+  const selectProfile = useCallback(
+    (id: number) => {
+      if (
+        busyRef.current ||
+        !loaded?.profiles.some((profile) => profile.id === id)
+      )
+        return;
+      setProfileId(id);
+      if (loaded.importId !== null) {
+        const current = generationRef.current;
+        void saveProfile(loaded.importId, id).catch(() => {
+          if (generationRef.current === current) {
+            setStorageWarning(
+              "Your profile choice could not be saved. A new tab may open with the previous profile.",
+            );
+          }
+        });
+      }
+    },
+    [loaded],
   );
+
+  const forgetFile = useCallback(() => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    const current = ++generationRef.current;
+    setIsImporting(true);
+    setError(null);
+    void forgetImport(loaded?.importId ?? null)
+      .then(() => {
+        if (generationRef.current === current) {
+          setLoaded(null);
+          setProfileId(null);
+          setStorageWarning(null);
+        }
+      })
+      .catch(() => {
+        if (generationRef.current === current) {
+          setError("The saved file could not be removed. Please try again.");
+        }
+      })
+      .finally(() => {
+        if (generationRef.current === current) {
+          busyRef.current = false;
+          setIsImporting(false);
+        }
+      });
+  }, [loaded]);
 
   const value = useMemo<DatabaseContextValue>(
     () => ({
-      database,
-      fileName,
+      database: loaded?.database ?? null,
+      fileName: loaded?.fileName ?? null,
+      profiles: loaded?.profiles ?? [],
+      profile:
+        loaded?.profiles.find((profile) => profile.id === profileId) ?? null,
+      isRestoring,
       isImporting,
       error,
+      storageWarning,
       importFile,
-      profiles,
-      profile,
       selectProfile,
+      forgetFile,
     }),
     [
-      database,
-      fileName,
+      loaded,
+      profileId,
+      isRestoring,
       isImporting,
       error,
+      storageWarning,
       importFile,
-      profiles,
-      profile,
       selectProfile,
+      forgetFile,
     ],
   );
 

@@ -20,7 +20,31 @@ A **profile** is what you select before starting a review session, and everythin
 
 So a profile is the top of the tree, and settings, scores and card selection all hang below it. Nothing in the export is meaningful on its own — a score without the profile that produced it says nothing.
 
-Rasbora therefore reads the export through exactly one profile at a time. You load a file on the `Load Pleco file` page, which is where the app opens, and then pick a profile at the top of the window — it stays visible everywhere, and every page answers for that profile alone: `Profile info` describes it, `Statistics` charts the cards it draws from, and the card lists all read its scorefile only.
+Rasbora therefore reads the export through exactly one profile at a time. You load a file on the `Load Pleco file` page, which is where the app opens when there is no saved file, and then pick a profile at the top of the window — it stays visible everywhere, and every page answers for that profile alone: `Profile info` describes it, `Statistics` charts the cards it draws from, and the card lists all read its scorefile only.
+
+## Remembering your file
+
+After an import, Rasbora saves the original Pleco file and your selected profile
+in your browser. Reloading or opening another tab on the same site restores
+both automatically, without uploading or downloading the export. Importing a
+new file replaces the saved copy and selects its first profile. Existing tabs
+keep their current file and profile until reloaded; their profile changes cannot
+overwrite the selection for a newer import.
+
+Use **Forget file** on the Load Pleco file page to remove that export from
+browser storage and close it in the current tab. Other open tabs
+keep their in-memory copy, but cannot save it again just by changing profiles.
+The original file on your device is untouched.
+
+Storage belongs to this site in this browser profile. Clearing site data,
+private browsing ending, or browser storage eviction can remove the saved copy;
+keep your original Pleco export. If saving fails, the imported file still works
+in the current tab and Rasbora explains that it could not be remembered.
+
+The bundled CC-CEDICT dictionary and SQLite engine use the browser's HTTP cache
+with Cloudflare's default revalidation policy. On repeat visits, the browser
+checks whether a cached asset has changed and reuses its local copy when the
+server confirms it has not. Changed assets get new content-hashed URLs.
 
 ## The card lists
 

@@ -53,9 +53,9 @@ Three things follow, and they are the ones to keep in mind when touching this:
   `"traditional"` are exactly the fields `splitHeadword()` returns, so anything
   rendering a character writes `syllable[script]` and cannot reach for the wrong
   one. `otherScript()` gives the form shown underneath it on a flashcard.
-- **The choice persists, in `localStorage` under `rasbora-script`.** This is the
-  one thing in the app that survives a reload, and deliberately so: it is a
-  preference rather than data. `getInitialValueInEffect: false` is load-bearing
+- **The choice persists, in `localStorage` under `rasbora-script`.** This
+  preference survives a reload independently of the saved export and selected
+  profile. `getInitialValueInEffect: false` is load-bearing
   — Mantine otherwise reads storage in an effect after the first render, which
   would show a frame of traditional to a reader who chose simplified.
 
@@ -147,7 +147,8 @@ src/
     plecoFile.ts        Opening an export, the shared sql.js opener, reading
                         sql.js values, score tables, profiles
     context.ts          DatabaseContext + the useDatabase() hook
-    DatabaseProvider.tsx  Holds the export and the selected profile app-wide
+    DatabaseProvider.tsx  Restores and holds the export and selected profile
+    savedImport.ts      IndexedDB storage of the original file and profile choice
   script/               The written form cards are shown in
     context.ts          Script, otherScript() + the useScript() hook
     ScriptProvider.tsx  Holds the choice app-wide, in localStorage
@@ -181,8 +182,10 @@ plumbing to keep in sync.
 
 `/` is the one route that is not a plain page: a four-line `Landing` component
 renders `ProfileInfo` when there is an export and redirects to `/load` when
-there is not. It is the only place in the app that decides what to show from
-`database` rather than saying what it means.
+there is not. `Layout` waits for restoration before mounting the routes, so a
+returning reader is not redirected while the saved file is still loading.
+`Landing` is the only place that chooses a page from `database` rather than
+showing the requested page's empty state.
 
 `Layout.tsx` wraps every route. Its title bar holds the app's mark, its name and
 one control — a `<Select>` of the export's profiles — and all of it is
@@ -204,10 +207,10 @@ row up to a `maw`, so a long profile name reads in full on a desktop and still
 fits beside the mark on a phone.
 
 `LoadFile.tsx` is where both of the controls that left went, and it is the page
-the app lands on: the export lives in memory only, so every visit starts with
-nothing loaded and `/` sends the reader here until a file is in. It holds the
-`FileButton` that opens the picker, the import error if there is one, and the
-繁/简 `<SegmentedControl>` under a heading that says in English what it does —
+the app lands on when there is no saved export to restore. It holds the
+`FileButton` that opens the picker, **Forget file**, the import or removal error
+if there is one, and the 繁/简 `<SegmentedControl>` under a heading that says
+in English what it does —
 which the two characters cannot, to someone still learning to read them.
 
 It also describes the file: format version, who wrote it, when, and how many
@@ -355,15 +358,28 @@ profile" — it is the one page in the app whose subject is the file. A query th
 wants export-wide numbers to say something about _cards_ is the thing that rule
 is there to stop, and it still stops it.
 
-The imported database lives **in memory only**, and so does the profile
-selection, which resets to the export's first profile on every import.
-Reloading the page drops both and the user has to pick the file again; no
-_export data_ is persisted yet. Nothing downstream depends on where the bytes
-came from, so caching them in IndexedDB later is a change to `DatabaseProvider`
-alone.
+The original export and selected profile are saved in **IndexedDB**, through
+`src/database/savedImport.ts`. `DatabaseProvider` restores them on mount, opens
+an independent in-memory sql.js database for each tab, and owns its cleanup.
+Pages still receive the same database and profile; they never access storage.
+The layout shows a restoring message before rendering pages, so the import
+prompt does not flash during startup.
 
-The script preference is the one exception, and is not export data: see "The
-other global" above.
+A successful new import atomically replaces the saved file and selects its
+first profile. Validation and profile resolution happen before that write, so
+an invalid import leaves both the current database and saved file intact.
+Profile selection is a separate small record: changing profiles never rewrites
+the file. Every import has a unique ID, checked in the same transaction when
+saving a profile or forgetting a file, so an older tab cannot change the saved
+selection for a newer export. Existing tabs keep their current views until
+reloaded; new tabs restore the last saved file and profile.
+
+Storage failures are reported separately from import errors: the file can stay
+usable in this tab even when saving fails. **Forget file**, on the Load Pleco
+file page, removes that export from storage and closes the current tab's copy.
+Browser storage can be cleared or evicted, and private browsing is usually
+temporary. The script preference remains independent in localStorage:
+see "The other global" above.
 
 sql.js needs its WebAssembly module at runtime. It is wired up with Vite's
 `?url` import in `plecoFile.ts`, which emits a hashed asset at build time — so
