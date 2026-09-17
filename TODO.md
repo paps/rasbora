@@ -6,3 +6,17 @@
 - [x] 'Forgotten' page: a list of cards that had 666+ and then got lost, number
       of 6s adjustable — shipped as `Risky cards`, with both the run length and
       how far back "recently" reaches adjustable on the page
+
+- [ ] Check what happens for flashcards that refer to a user dict entry only (because the dict entry is not available for now in the app)
+
+- [ ] Make it work for fuller exports of Pleco (that include Pleco settings and, in particular, Pleco user dictionaries, which appear to come as a separate sqlite file?)
+
+- [ ] Ability to identify dangling user dict entries (ones that have no flashcard associated)
+
+- [ ] Detect flashcards that I consider 'bugged', i.e. they lost their definitions (it doesn't display when reviewing in Pleco)
+
+- [ ] Make the whole thing fully mobile friendly
+
+- [ ] Correctly store the sqlite file in cache for immediate no network reload when opening a new tab. Also properly cache efficiently cc-cedict
+
+
