@@ -1,14 +1,7 @@
 /** The queries behind `ProfileInfo.tsx`, and nothing else. */
 
 import type { Database, SqlValue } from "sql.js";
-import {
-  asCount,
-  asText,
-  firstValueOf,
-  listScorefiles,
-  readProperty,
-  rowsOf,
-} from "@/database/plecoFile";
+import { asCount, asText, firstValueOf, rowsOf } from "@/database/plecoFile";
 import type { Profile } from "@/database/plecoFile";
 
 export interface ProfileCategory {
@@ -41,41 +34,11 @@ export interface ProfileDetails {
   settings: ProfileSetting[];
 }
 
-export interface FileScorefile {
-  id: number;
-  name: string;
-  reviewedCards: number;
-}
-
-export interface FileSummary {
-  formatVersion: string;
-  platform: string;
-  generator: string;
-  created: number | null;
-  cardCount: number;
-  categoryCount: number;
-  profileCount: number;
-  scorefiles: FileScorefile[];
-}
-
 /** A Unix-seconds column as a timestamp, or null when missing or zero. */
 const asTime = (value: SqlValue | null): number | null => {
   const seconds = asCount(value);
 
   return seconds > 0 ? seconds : null;
-};
-
-/**
- * A timestamp out of `pleco_flash_properties`, whose values are all TEXT —
- * unlike the profile columns, which really are integers.
- */
-const readTimeProperty = (
-  database: Database,
-  propid: string,
-): number | null => {
-  const seconds = Number(readProperty(database, propid));
-
-  return Number.isFinite(seconds) && seconds > 0 ? seconds : null;
 };
 
 /**
@@ -150,25 +113,3 @@ export const readProfileDetails = (
     })),
   };
 };
-
-/** The facts that belong to the imported file rather than to any profile. */
-export const readFileSummary = (database: Database): FileSummary => ({
-  formatVersion: readProperty(database, "FormatVersion"),
-  platform: readProperty(database, "FilePlatform"),
-  generator: readProperty(database, "FileGenerator"),
-  created: readTimeProperty(database, "FileCreated"),
-  cardCount: asCount(
-    firstValueOf(database, "select count(*) from pleco_flash_cards"),
-  ),
-  categoryCount: asCount(
-    firstValueOf(database, "select count(*) from pleco_flash_categories"),
-  ),
-  profileCount: asCount(
-    firstValueOf(database, "select count(*) from pleco_flash_profiles"),
-  ),
-  scorefiles: listScorefiles(database).map((scorefile) => ({
-    id: scorefile.id,
-    name: scorefile.name,
-    reviewedCards: countRows(database, scorefile.table),
-  })),
-});

@@ -1,4 +1,5 @@
-import { Stack, Text, Title } from "@mantine/core";
+import { Anchor, Stack, Text, Title } from "@mantine/core";
+import { Link } from "react-router";
 import { useMemo, type ReactNode } from "react";
 import CardList, {
   type CardColumn,
@@ -80,18 +81,20 @@ const LearnedCards = () => {
   // The two are null together — a ceiling is a profile's, never the export's.
   if (!learned || !profile) {
     return (
-      <Stack gap="lg">
+      <Stack gap="md">
         <Title>Learned cards</Title>
         <Text c="dimmed">
-          Import a set of flashcards to see the cards a profile is finished
-          with.
+          <Anchor component={Link} to="/load">
+            Load a Pleco file
+          </Anchor>{" "}
+          to see the cards a profile is finished with.
         </Text>
       </Stack>
     );
   }
 
   return (
-    <Stack gap="lg">
+    <Stack gap="md">
       <Title>Learned cards</Title>
 
       {learned.cards.length === 0 ? (

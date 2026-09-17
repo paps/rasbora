@@ -37,7 +37,7 @@ questioning before writing it.
 
 A Pleco card carries both written forms — `hw` is simplified, `althw`
 traditional — and a learner reads one of them. Which one is app-wide state, held
-by `ScriptProvider` and picked in the title bar beside the profile.
+by `ScriptProvider` and picked on the `Load Pleco file` page.
 
 It is global for the same reason the profile is: the same card appears in a
 table and again in a drawer, and the two have to agree. A page that had to ask
@@ -171,6 +171,7 @@ src/
     AlmostLearnedCards.tsx   + AlmostLearnedCards.db.ts
     LearnedCards.tsx         + LearnedCards.db.ts
     CustomizedCards.tsx      + CustomizedCards.db.ts
+    LoadFile.tsx             + LoadFile.db.ts
     NotFound.tsx
 ```
 
@@ -179,35 +180,73 @@ under `src/pages/`, a `<Route>`, and an entry in `Layout.tsx`'s `PAGES` list.
 Page titles are just a `<Title>` at the top of each page, so there is no title
 plumbing to keep in sync.
 
-`Layout.tsx` wraps every route, and its title bar holds the app's mark and name
-on the left and the three controls that are global to the app on the right: the
-imported file, the profile everything is read through, and the script cards are
-written in. Before an import it shows one button; after one it shows the file
-name, a subdued **Change** button that reopens the picker, a `<Select>` of the
-export's profiles, and a 繁/简 `<SegmentedControl>` whose tooltip names the
-current script in English and the one a click switches to, since the two
-characters only distinguish themselves to someone who can already read them.
-All three belong here rather than on a page because every page depends on them.
+`/` is the one route that is not a plain page: a four-line `Landing` component
+renders `ProfileInfo` when there is an export and redirects to `/load` when
+there is not. `Layout` waits for restoration before mounting the routes, so a
+returning reader is not redirected while the saved file is still loading.
+`Landing` is the only place that chooses a page from `database` rather than
+showing the requested page's empty state.
 
-Fitting three controls costs the app's name below `xs`, where it is hidden and
-the mark alone identifies the app. That is the constraint to respect when adding
-a fourth: the title bar is full at 360 px.
+`Layout.tsx` wraps every route. Its title bar holds the app's mark, its name and
+one control — a `<Select>` of the export's profiles — and all of it is
+left-aligned, as one group beside the mark.
 
-The control says what it is twice over, and both are needed: `VisuallyHidden`
-gives each button its accessible name, which a screen reader announces instead
-of a bare 繁, while the tooltip tells a sighted reader who cannot read the
-characters. A tooltip is not an accessible name and a hidden name never shows
-on screen, so neither one covers for the other.
+**Only what changes while reading belongs up here.** The profile does: the same
+page answers differently under another profile, so it has to be reachable from
+every one of them. The file and the written form do not — you pick a file when
+you arrive and a script because of where you are learning — so they live on
+`Load Pleco file`, which is what the title bar being full at 360 px was telling
+us. Ask that question before adding a second control, not how many will fit.
+
+**Nothing is pushed to the right edge, either.** A right-aligned group is only
+ever as far right as the layout viewport, and a card table wider than the screen
+widens that on a phone — so the controls ended up off the right edge on exactly
+the screens with the least room to spare. Left-aligned, they sit where the mark
+puts them whatever the page below is doing. The `<Select>` takes the rest of the
+row up to a `maw`, so a long profile name reads in full on a desktop and still
+fits beside the mark on a phone.
+
+`LoadFile.tsx` is where both of the controls that left went, and it is the page
+the app lands on when there is no saved export to restore. It holds the
+`FileButton` that opens the picker, **Forget file**, the import or removal error
+if there is one, and the 繁/简 `<SegmentedControl>` under a heading that says
+in English what it does —
+which the two characters cannot, to someone still learning to read them.
+
+It also describes the file: format version, who wrote it, when, and how many
+cards, categories, profiles and reviewed cards are in it. That section used to
+be the last thing on `Profile info`, and it was the one thing on that page that
+did not move when the profile picker did — two sections about a profile, then a
+table about the file, under a title saying "Profile info". Here it is about the
+page's own subject, and the two pages point at each other in a sentence so the
+split reads as a split rather than a loss.
+
+Each of the two pages writes its own `<Table>`, and the two are **not** to be
+merged into a shared component. A label-and-value table is Mantine markup, not
+something this app owns; the moment it becomes a component it starts growing
+props for whatever the next page wants of it. `src/components/` is for what has
+to look the same everywhere — a flashcard does, because it is the same card in a
+list and in a drawer. Two tables that happen to have two columns are not the
+same thing twice.
+
+The script control says what it is twice over, and both are needed:
+`VisuallyHidden` gives each button its accessible name, which a screen reader
+announces instead of a bare 繁, while the tooltip tells a sighted reader who
+cannot read the characters. A tooltip is not an accessible name and a hidden
+name never shows on screen, so neither one covers for the other.
 
 Its `PAGES` list is the sidebar, and **no link is ever disabled** — a page with
 nothing to read says so in a sentence instead. That is not a courtesy: routes
 answer when typed in, so a page has to handle `database === null` and
 `profile === null` anyway, and a disabled link would only hide the explanation.
 
-`ProfileInfo.tsx` is the landing page and describes the selected profile: what
-it reviews into, what it draws from, its session settings (the documented ones
-spelled out, all ~150 raw in an `<Accordion>`), and a smaller section of
-file-level facts. `Statistics.tsx` charts the profile's cards over time.
+`ProfileInfo.tsx` is what `/` renders once a file is in, and describes the
+selected profile and nothing else: what it reviews into, what it draws from, and
+its session settings (the documented ones spelled out, all ~150 raw in an
+`<Accordion>`). Everything on it moves when the profile picker moves, which is
+the test for whether something belongs here — the file's own facts failed it and
+now live on `Load Pleco file`. `Statistics.tsx` charts the profile's cards over
+time.
 `Recommendations.tsx` is a deliberately empty placeholder, and `NotFound.tsx`
 is still just a heading.
 
@@ -309,7 +348,15 @@ hand; read the checklist before writing a new query.
 `readMostDifficultCards(database, profile)`: the scope comes in as an argument
 rather than being decided inside the SQL, so a page cannot accidentally answer
 for the whole export. A page that has no profile in view renders its "import a
-set of flashcards" sentence instead of querying.
+set of flashcards" sentence instead of querying — which is a link to
+`/load`, since that is the one thing the reader can do about it.
+
+`readFileSummary()` in `LoadFile.db.ts` is the **one** exception, and is meant
+to stay the only one: it counts the whole export because the page asking is
+about the whole export. That is not a loophole in "everything hangs off a
+profile" — it is the one page in the app whose subject is the file. A query that
+wants export-wide numbers to say something about _cards_ is the thing that rule
+is there to stop, and it still stops it.
 
 The original export and selected profile are saved in **IndexedDB**, through
 `src/database/savedImport.ts`. `DatabaseProvider` restores them on mount, opens
@@ -328,10 +375,10 @@ selection for a newer export. Existing tabs keep their current views until
 reloaded; new tabs restore the last saved file and profile.
 
 Storage failures are reported separately from import errors: the file can stay
-usable in this tab even when saving fails. **Forget file**, in Profile info's
-File section, removes that export from storage and closes the current tab's
-copy. Browser storage can be cleared or evicted, and private browsing is
-usually temporary. The script preference remains independent in localStorage:
+usable in this tab even when saving fails. **Forget file**, on the Load Pleco
+file page, removes that export from storage and closes the current tab's copy.
+Browser storage can be cleared or evicted, and private browsing is usually
+temporary. The script preference remains independent in localStorage:
 see "The other global" above.
 
 sql.js needs its WebAssembly module at runtime. It is wired up with Vite's

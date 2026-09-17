@@ -1,4 +1,5 @@
-import { SegmentedControl, Stack, Text, Title } from "@mantine/core";
+import { Anchor, SegmentedControl, Stack, Text, Title } from "@mantine/core";
+import { Link } from "react-router";
 import { LineChart } from "@mantine/charts";
 import { useMemo, useState } from "react";
 import { useDatabase } from "@/database/context";
@@ -72,10 +73,13 @@ const Statistics = () => {
   // The two are null together — the chart is read through the profile.
   if (!chart || !profile) {
     return (
-      <Stack gap="lg">
+      <Stack gap="md">
         <Title>Statistics</Title>
         <Text c="dimmed">
-          Import a set of flashcards to see statistics for a profile.
+          <Anchor component={Link} to="/load">
+            Load a Pleco file
+          </Anchor>{" "}
+          to see statistics for a profile.
         </Text>
       </Stack>
     );
@@ -83,7 +87,7 @@ const Statistics = () => {
 
   if (chart.cumulative.length === 0) {
     return (
-      <Stack gap="lg">
+      <Stack gap="md">
         <Title>Statistics</Title>
         <Text c="dimmed">
           This profile draws from no category that still holds dated cards, so
@@ -94,7 +98,7 @@ const Statistics = () => {
   }
 
   return (
-    <Stack gap="lg">
+    <Stack gap="md">
       <Title>Statistics</Title>
 
       <SegmentedControl

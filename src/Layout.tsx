@@ -2,23 +2,17 @@ import {
   Alert,
   AppShell,
   Burger,
-  Button,
-  FileButton,
   Group,
   Image,
   NavLink,
-  SegmentedControl,
   Select,
   Text,
   Title,
-  Tooltip,
-  VisuallyHidden,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import type { ReactNode } from "react";
 import { Link, useLocation } from "react-router";
 import { useDatabase } from "@/database/context";
-import { useScript, type Script } from "@/script/context";
 
 interface Page {
   path: string;
@@ -27,6 +21,7 @@ interface Page {
 
 /** The sidebar, in order. Every path here also needs a route in `App.tsx`. */
 const PAGES: Page[] = [
+  { path: "/load", label: "Load Pleco file" },
   { path: "/", label: "Profile info" },
   { path: "/statistics", label: "Statistics" },
   { path: "/recommendations", label: "Recommendations" },
@@ -37,56 +32,27 @@ const PAGES: Page[] = [
   { path: "/customized", label: "Customized cards" },
 ];
 
-/**
- * The written forms, traditional first because it is the default. The visible
- * label is the character itself, which keeps the control narrow enough to sit
- * beside the profile picker on a phone and is what the reader is choosing
- * anyway; the word behind it is there for screen readers, which would otherwise
- * announce a bare 繁.
- */
-const SCRIPTS: { value: Script; label: ReactNode }[] = [
-  {
-    value: "traditional",
-    label: (
-      <>
-        繁<VisuallyHidden>Traditional</VisuallyHidden>
-      </>
-    ),
-  },
-  {
-    value: "simplified",
-    label: (
-      <>
-        简<VisuallyHidden>Simplified</VisuallyHidden>
-      </>
-    ),
-  },
-];
-
-/**
- * What the control's tooltip says, keyed by the form currently showing: the
- * script in English, then the one a click switches to. 繁/简 only tells you
- * which is which if you can already read them, which is not true of everyone
- * learning to.
- *
- * Spelled out per script rather than built from `otherScript()` and a name
- * table, because two literal sentences are easier to read and to reword than
- * the code that would assemble them.
- */
-const SCRIPT_TOOLTIPS: Record<Script, string> = {
-  traditional: "Traditional — click for simplified",
-  simplified: "Simplified — click for traditional",
-};
-
 interface LayoutProps {
   children: ReactNode;
 }
 
 /**
- * The app frame: the sidebar, and a title bar holding the three controls that
- * are global to the app — the imported file, the profile being read through,
- * and the written form cards are shown in. All three live here because every
- * page depends on them.
+ * The app frame: the sidebar, and a title bar holding the app's mark, its name
+ * and the profile every page is read through.
+ *
+ * The profile is the only control up here, and it is here because it changes
+ * while reading: the same page answers differently under another profile, so it
+ * has to be reachable from all of them. The file and the written form used to
+ * sit beside it and no longer do — they are chosen once rather than while
+ * reading, and three controls plus a burger and the mark do not fit across a
+ * phone. They live on `Load Pleco file` instead, which is also where the app
+ * lands with nothing imported.
+ *
+ * Nothing is pushed to the right edge for the same reason. A right-aligned
+ * group is only ever as far right as the layout viewport, which a card table
+ * wider than the screen quietly widens on a phone — so the controls went off
+ * the edge on exactly the screens with the least room. Left-aligned, they sit
+ * next to the mark and wrap into the space they need.
  *
  * Sidebar links are never disabled. A page that has no export to read says so
  * itself, which it has to do anyway: its route still answers when typed in.
@@ -95,28 +61,20 @@ const Layout = ({ children }: LayoutProps) => {
   const [opened, { toggle, close }] = useDisclosure(false);
   const {
     database,
-    fileName,
-    isImporting,
-    isRestoring,
-    error,
-    storageWarning,
-    importFile,
     profiles,
     profile,
     selectProfile,
+    isImporting,
+    isRestoring,
+    storageWarning,
   } = useDatabase();
-  const { script, setScript } = useScript();
   const { pathname } = useLocation();
-
-  const importChosenFile = (file: File | null) => {
-    if (file) {
-      importFile(file);
-    }
-  };
 
   return (
     <AppShell
-      padding="xl"
+      // `md` rather than `xl`: on a phone, `xl` spent 64 px of a 412 px screen
+      // on margin, which is where a card table's columns were going.
+      padding="md"
       header={{ height: 60 }}
       navbar={{ width: 260, breakpoint: "sm", collapsed: { mobile: !opened } }}
     >
@@ -132,97 +90,36 @@ const Layout = ({ children }: LayoutProps) => {
           */}
           <Image src="/favicon.svg" alt="" w={30} h={30} />
 
+          <Title order={3}>Rasbora</Title>
+
           {/*
-            The name gives way to the mark on a narrow phone: the title bar has
-            three controls to fit on the right, and the favicon beside them
-            already says which app this is.
+            Only shown once there is an export to pick a profile from: before
+            one, there is nothing to choose between, and an empty picker would
+            read as a file that loaded and held no profiles.
           */}
-          <Title order={3} visibleFrom="xs">
-            Rasbora
-          </Title>
-
-          <Group gap="xs" wrap="nowrap" ml="auto">
-            {database ? (
-              <>
-                <Text size="sm" c="dimmed" lineClamp={1} visibleFrom="sm">
-                  {fileName}
-                </Text>
-
-                <FileButton accept=".pqb" onChange={importChosenFile}>
-                  {(props) => (
-                    <Button
-                      {...props}
-                      variant="subtle"
-                      size="compact-sm"
-                      loading={isImporting}
-                    >
-                      Change
-                    </Button>
-                  )}
-                </FileButton>
-
-                {profiles.length > 0 ? (
-                  <Select
-                    // Narrow enough that a phone still fits the burger, the
-                    // title, Change, the picker and the script control on one
-                    // row.
-                    w={{ base: 104, sm: 220 }}
-                    aria-label="Profile"
-                    placeholder="Profile"
-                    allowDeselect={false}
-                    disabled={isImporting}
-                    value={profile ? String(profile.id) : null}
-                    onChange={(value) => {
-                      if (value !== null) {
-                        selectProfile(Number(value));
-                      }
-                    }}
-                    data={profiles.map((candidate) => ({
-                      value: String(candidate.id),
-                      label: candidate.name,
-                    }))}
-                  />
-                ) : (
-                  <Text size="sm" c="dimmed">
-                    No profiles
-                  </Text>
-                )}
-
-                {/*
-                  Sits with the profile picker rather than above the card lists
-                  it changes: it is one choice for the whole app, and every page
-                  that draws a character obeys it.
-                */}
-                <Tooltip
-                  label={SCRIPT_TOOLTIPS[script]}
-                  withArrow
-                  // Below: the control sits in the header, where a tooltip
-                  // above it would open off the top of the window.
-                  position="bottom"
-                  // Hover and keyboard focus, but not touch: a tap already
-                  // flips the control and shows the answer, so a bubble on
-                  // top of it would only be in the way.
-                  events={{ hover: true, focus: true, touch: false }}
-                >
-                  <SegmentedControl<Script>
-                    size="xs"
-                    aria-label="Character script"
-                    value={script}
-                    onChange={setScript}
-                    data={SCRIPTS}
-                  />
-                </Tooltip>
-              </>
-            ) : (
-              <FileButton accept=".pqb" onChange={importChosenFile}>
-                {(props) => (
-                  <Button {...props} loading={isImporting || isRestoring}>
-                    Import flashcards
-                  </Button>
-                )}
-              </FileButton>
-            )}
-          </Group>
+          {database && profiles.length > 0 && (
+            <Select
+              // Takes what the mark and the title leave, up to the width a
+              // profile name actually needs. On a phone that is the rest of
+              // the row; on a desktop it stops growing well short of it.
+              flex={1}
+              maw={220}
+              aria-label="Profile"
+              placeholder="Profile"
+              allowDeselect={false}
+              disabled={isImporting}
+              value={profile ? String(profile.id) : null}
+              onChange={(value) => {
+                if (value !== null) {
+                  selectProfile(Number(value));
+                }
+              }}
+              data={profiles.map((candidate) => ({
+                value: String(candidate.id),
+                label: candidate.name,
+              }))}
+            />
+          )}
         </Group>
       </AppShell.Header>
 
@@ -240,16 +137,12 @@ const Layout = ({ children }: LayoutProps) => {
       </AppShell.Navbar>
 
       <AppShell.Main>
-        {error && (
-          <Alert color="red" mb="md">
-            {error}
-          </Alert>
-        )}
         {storageWarning && (
           <Alert color="yellow" mb="md">
             {storageWarning}
           </Alert>
         )}
+        {/* Wait before mounting routes so Landing cannot redirect a saved file to /load. */}
         {isRestoring ? (
           <Text c="dimmed" role="status">
             Restoring saved flashcards…

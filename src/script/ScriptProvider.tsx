@@ -12,9 +12,8 @@ interface ScriptProviderProps {
 
 /**
  * Where the app's written form is kept, in `localStorage` so that the choice
- * survives a reload. Unlike the imported export, which is deliberately held in
- * memory only, this is a preference rather than data: re-picking a file after a
- * reload is unavoidable, re-picking your own script every time is not.
+ * survives a reload independently of the saved Pleco export. Loading or
+ * forgetting a file leaves this reading preference unchanged.
  */
 const ScriptProvider = ({ children }: ScriptProviderProps) => {
   const [script, setScript] = useLocalStorage<Script>({

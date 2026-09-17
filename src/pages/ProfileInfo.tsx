@@ -1,10 +1,10 @@
-import { Accordion, Button, Stack, Table, Text, Title } from "@mantine/core";
+import { Accordion, Anchor, Stack, Table, Text, Title } from "@mantine/core";
 import { useMemo, type ReactNode } from "react";
+import { Link } from "react-router";
 import Explained from "@/components/Explained";
 import RelativeTime from "@/components/RelativeTime";
 import { useDatabase } from "@/database/context";
 import {
-  readFileSummary,
   readProfileDetails,
   type ProfileSetting,
 } from "@/pages/ProfileInfo.db";
@@ -129,42 +129,26 @@ const AllSettings = ({ settings }: AllSettingsProps) => (
 );
 
 const ProfileInfo = () => {
-  const { database, fileName, profile, forgetFile, isImporting } =
-    useDatabase();
+  const { database, profile } = useDatabase();
 
   const details = useMemo(
     () => (database && profile ? readProfileDetails(database, profile) : null),
     [database, profile],
   );
-  const file = useMemo(
-    () => (database ? readFileSummary(database) : null),
-    [database],
-  );
 
-  if (!file) {
+  if (!database) {
     return (
-      <Stack gap="lg">
+      <Stack gap="md">
         <Title>Profile info</Title>
         <Text c="dimmed">
-          Import a set of flashcards to see profile information.
+          <Anchor component={Link} to="/load">
+            Load a Pleco file
+          </Anchor>{" "}
+          to see profile information.
         </Text>
       </Stack>
     );
   }
-
-  const fileRows: DetailRow[] = [
-    { label: "File", value: fileName ?? "—" },
-    { label: "Format version", value: file.formatVersion },
-    { label: "Written by", value: `${file.generator} on ${file.platform}` },
-    { label: "Created", value: <RelativeTime seconds={file.created} /> },
-    { label: "Cards", value: file.cardCount.toLocaleString() },
-    { label: "Categories", value: file.categoryCount.toLocaleString() },
-    { label: "Profiles", value: file.profileCount.toLocaleString() },
-    ...file.scorefiles.map((scorefile) => ({
-      label: `Scorefile “${scorefile.name}”`,
-      value: `${scorefile.reviewedCards.toLocaleString()} cards with review state`,
-    })),
-  ];
 
   if (!profile || !details) {
     return (
@@ -172,21 +156,12 @@ const ProfileInfo = () => {
         <Title>Profile info</Title>
         <Text c="dimmed">
           This export holds no profile, so there is nothing for the app to read
-          the flashcards through.
+          the flashcards through. What the file itself holds is on{" "}
+          <Anchor component={Link} to="/load">
+            Load Pleco file
+          </Anchor>
+          .
         </Text>
-        <Stack gap="md">
-          <Title order={4}>File</Title>
-          <DetailTable rows={fileRows} />
-          <Button
-            variant="subtle"
-            color="red"
-            w="fit-content"
-            onClick={forgetFile}
-            disabled={isImporting}
-          >
-            Forget file
-          </Button>
-        </Stack>
       </Stack>
     );
   }
@@ -247,7 +222,12 @@ const ProfileInfo = () => {
           A profile is where everything starts in Pleco: it decides which
           scorefile a review writes to, which categories the cards come from,
           and how the session behaves. Every page of Rasbora reads the export
-          through the profile selected at the top of the window.
+          through the profile selected at the top of the window. What the file
+          itself holds, whatever profile is reading it, is on{" "}
+          <Anchor component={Link} to="/load">
+            Load Pleco file
+          </Anchor>
+          .
         </Text>
         <DetailTable rows={profileRows} />
       </Stack>
@@ -261,20 +241,6 @@ const ProfileInfo = () => {
           }))}
         />
         <AllSettings settings={details.settings} />
-      </Stack>
-
-      <Stack gap="md">
-        <Title order={4}>File</Title>
-        <DetailTable rows={fileRows} />
-        <Button
-          variant="subtle"
-          color="red"
-          w="fit-content"
-          onClick={forgetFile}
-          disabled={isImporting}
-        >
-          Forget file
-        </Button>
       </Stack>
     </Stack>
   );

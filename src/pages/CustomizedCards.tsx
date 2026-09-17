@@ -1,4 +1,5 @@
-import { Stack, Text, Title } from "@mantine/core";
+import { Anchor, Stack, Text, Title } from "@mantine/core";
+import { Link } from "react-router";
 import { useMemo, type ReactNode } from "react";
 import CardList, {
   type CardColumn,
@@ -65,18 +66,20 @@ const CustomizedCards = () => {
   // The two are null together: the list is scoped to the profile's cards.
   if (!customized || !profile) {
     return (
-      <Stack gap="lg">
+      <Stack gap="md">
         <Title>Customized cards</Title>
         <Text c="dimmed">
-          Import a set of flashcards to see the cards you have written a
-          definition on.
+          <Anchor component={Link} to="/load">
+            Load a Pleco file
+          </Anchor>{" "}
+          to see the cards you have written a definition on.
         </Text>
       </Stack>
     );
   }
 
   return (
-    <Stack gap="lg">
+    <Stack gap="md">
       <Title>Customized cards</Title>
 
       {customized.cards.length === 0 ? (

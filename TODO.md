@@ -18,5 +18,3 @@
 - [ ] Make the whole thing fully mobile friendly
 
 - [ ] Correctly store the sqlite file in cache for immediate no network reload when opening a new tab. Also properly cache efficiently cc-cedict
-
-

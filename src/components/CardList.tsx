@@ -164,10 +164,20 @@ const CardList = <T extends CardListData>({
 
   return (
     <>
-      <Table highlightOnHover withTableBorder verticalSpacing="xs">
+      {/*
+        Mantine's own spacing, with nothing added on top. The table used to ask
+        for `verticalSpacing="xs"`, which is 10 px against the default 7, and
+        that is 3 px twice on every row of a list that is mostly rows.
+      */}
+      <Table highlightOnHover withTableBorder>
         <Table.Thead>
           <Table.Tr>
-            <Table.Th w={60}>#</Table.Th>
+            {/*
+              Wide enough for the four digits the 1,000-row cap allows, and no
+              wider. The 60 px it used to claim was space the headword and the
+              pinyin were being squeezed out of.
+            */}
+            <Table.Th w={44}>#</Table.Th>
             <Table.Th>Headword</Table.Th>
             <Table.Th>Pinyin</Table.Th>
             {scoreRange !== null && <Table.Th w={90}>Score</Table.Th>}
