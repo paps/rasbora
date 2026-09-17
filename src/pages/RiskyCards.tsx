@@ -1,4 +1,5 @@
-import { Group, NumberInput, Stack, Text, Title } from "@mantine/core";
+import { Anchor, Group, NumberInput, Stack, Text, Title } from "@mantine/core";
+import { Link } from "react-router";
 import { useMemo, useState, type ReactNode } from "react";
 import CardList, { type CardColumn } from "@/components/CardList";
 import Explained from "@/components/Explained";
@@ -124,7 +125,10 @@ const RiskyCards = () => {
       <Stack gap="md">
         <Title>Risky cards</Title>
         <Text c="dimmed">
-          Import a set of flashcards to see the cards a profile is losing.
+          <Anchor component={Link} to="/load">
+            Load a Pleco file
+          </Anchor>{" "}
+          to see the cards a profile is losing.
         </Text>
       </Stack>
     );

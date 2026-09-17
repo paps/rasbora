@@ -1,11 +1,12 @@
 import { MantineProvider } from "@mantine/core";
-import { BrowserRouter, Route, Routes } from "react-router";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import Layout from "@/Layout";
 import DatabaseProvider from "@/database/DatabaseProvider";
 import DictionaryProvider from "@/cc-cedict/DictionaryProvider";
 import AlmostLearnedCards from "@/pages/AlmostLearnedCards";
 import CustomizedCards from "@/pages/CustomizedCards";
 import LearnedCards from "@/pages/LearnedCards";
+import LoadFile from "@/pages/LoadFile";
 import MostDifficultCards from "@/pages/MostDifficultCards";
 import NotFound from "@/pages/NotFound";
 import ProfileInfo from "@/pages/ProfileInfo";
@@ -13,6 +14,19 @@ import Recommendations from "@/pages/Recommendations";
 import RiskyCards from "@/pages/RiskyCards";
 import Statistics from "@/pages/Statistics";
 import ScriptProvider from "@/script/ScriptProvider";
+import { useDatabase } from "@/database/context";
+
+/**
+ * What `/` shows: the profile, once there is an export to read it from, and the
+ * loader until then. The export lives in memory only, so a fresh visit always
+ * lands on `Load Pleco file` — which is the one thing there is to do at that
+ * point — while a reader who has imported one gets the profile they picked.
+ */
+const Landing = () => {
+  const { database } = useDatabase();
+
+  return database ? <ProfileInfo /> : <Navigate to="/load" replace />;
+};
 
 // `ScriptProvider` and `DictionaryProvider` sit outside `DatabaseProvider`
 // because both are standing app-wide facts, not the export: the written form is
@@ -26,7 +40,8 @@ const App = () => (
           <BrowserRouter>
             <Layout>
               <Routes>
-                <Route path="/" element={<ProfileInfo />} />
+                <Route path="/" element={<Landing />} />
+                <Route path="/load" element={<LoadFile />} />
                 <Route path="/statistics" element={<Statistics />} />
                 <Route path="/recommendations" element={<Recommendations />} />
                 <Route path="/difficult" element={<MostDifficultCards />} />

@@ -20,7 +20,7 @@ A **profile** is what you select before starting a review session, and everythin
 
 So a profile is the top of the tree, and settings, scores and card selection all hang below it. Nothing in the export is meaningful on its own — a score without the profile that produced it says nothing.
 
-Rasbora therefore reads the export through exactly one profile at a time. You import a file and pick a profile at the top of the window, both stay visible everywhere, and every page answers for that profile alone: `Profile info` describes it, `Statistics` charts the cards it draws from, and the card lists all read its scorefile only.
+Rasbora therefore reads the export through exactly one profile at a time. You load a file on the `Load Pleco file` page, which is where the app opens, and then pick a profile at the top of the window — it stays visible everywhere, and every page answers for that profile alone: `Profile info` describes it, `Statistics` charts the cards it draws from, and the card lists all read its scorefile only.
 
 ## The card lists
 
@@ -36,7 +36,7 @@ Both score bounds are read from the profile you picked rather than assumed, so a
 
 ## Traditional or simplified
 
-Pleco stores both written forms of every card, so you choose which one you read. The 繁/简 switch sits at the top of the window next to the profile, and applies everywhere a character is drawn — the card lists and the card details alike. Traditional is the default, and your choice is remembered between visits.
+Pleco stores both written forms of every card, so you choose which one you read. The 繁/简 switch sits on the `Load Pleco file` page, beside the file it applies to, and it applies everywhere a character is drawn — the card lists and the card details alike. It is a choice you make once, because of where you are learning rather than what you are reading. Traditional is the default, and your choice is remembered between visits.
 
 Where a card has no traditional variant, both settings show the same characters. On a card's details, whichever form you did not choose is shown smaller underneath it.
 
