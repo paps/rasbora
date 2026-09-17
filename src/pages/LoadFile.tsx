@@ -1,22 +1,26 @@
 import {
+  Alert,
   Anchor,
   Button,
   FileButton,
+  Group,
   SegmentedControl,
   Stack,
   Table,
   Text,
+  TextInput,
   Title,
   Tooltip,
   VisuallyHidden,
   useMantineColorScheme,
   type MantineColorScheme,
 } from "@mantine/core";
-import { useMemo, type ReactNode } from "react";
-import { Link } from "react-router";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Link, useSearchParams } from "react-router";
 import RelativeTime from "@/components/RelativeTime";
 import { useDatabase } from "@/database/context";
 import { readFileSummary } from "@/pages/LoadFile.db";
+import { downloadFile } from "@/pages/LoadFile.remote";
 import { useScript, type Script } from "@/script/context";
 
 /**
@@ -91,10 +95,29 @@ const COLOR_SCHEMES: { value: MantineColorScheme; label: string }[] = [
  * rather than to the selected profile.
  */
 const LoadFile = () => {
-  const { database, fileName, isImporting, error, importFile, forgetFile } =
-    useDatabase();
+  const {
+    database,
+    fileName,
+    sourceUrl,
+    isImporting,
+    error,
+    importFile,
+    forgetFile,
+  } = useDatabase();
   const { script, setScript } = useScript();
   const { colorScheme, setColorScheme } = useMantineColorScheme();
+  const [searchParams] = useSearchParams();
+  const [fromUrl] = useState(() => searchParams.get("fromUrl")?.trim() ?? "");
+  const [url, setUrl] = useState(fromUrl);
+  const automaticImportStartedRef = useRef(false);
+
+  useEffect(() => {
+    // Layout mounts this page after saved-file restoration. Treat the opening
+    // link as one import request, including when Strict Mode replays effects.
+    if (!fromUrl || isImporting || automaticImportStartedRef.current) return;
+    automaticImportStartedRef.current = true;
+    importFile(() => downloadFile(fromUrl), fromUrl);
+  }, [fromUrl, isImporting, importFile]);
 
   const file = useMemo(
     () => (database ? readFileSummary(database) : null),
@@ -110,6 +133,20 @@ const LoadFile = () => {
     <Stack gap="lg" maw={760}>
       <Title>Load Pleco file</Title>
 
+      {sourceUrl && (
+        <Alert title="Loaded from a URL" color="blue" role="note">
+          <Anchor
+            href={sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            size="sm"
+            style={{ overflowWrap: "anywhere" }}
+          >
+            {sourceUrl}
+          </Anchor>
+        </Alert>
+      )}
+
       <Stack gap="xs" align="flex-start">
         <Text size="sm" c="dimmed">
           Rasbora reads a Pleco flashcard export — the <b>.pqb</b> file Pleco
@@ -121,11 +158,54 @@ const LoadFile = () => {
 
         <FileButton accept=".pqb" onChange={importChosenFile}>
           {(props) => (
-            <Button {...props} loading={isImporting}>
+            <Button {...props} disabled={isImporting}>
               {database ? "Load another file" : "Load a Pleco file"}
             </Button>
           )}
         </FileButton>
+
+        <Stack
+          component="form"
+          gap="xs"
+          w="100%"
+          onSubmit={(event) => {
+            event.preventDefault();
+            importFile(() => downloadFile(url), url);
+          }}
+        >
+          <TextInput
+            label="File URL"
+            description="Paste a direct download URL or a Google Drive file link shared with Anyone with the link."
+            type="url"
+            required
+            value={url}
+            onChange={(event) => {
+              setUrl(event.currentTarget.value);
+            }}
+            disabled={isImporting}
+          />
+          <Group>
+            <Button
+              type="submit"
+              variant="light"
+              disabled={isImporting || !url.trim()}
+            >
+              Load from URL
+            </Button>
+          </Group>
+          <Text size="sm" c="dimmed">
+            Downloads go directly to your browser. Other hosts must allow
+            browser access; links requiring sign-in are not supported. The
+            downloaded file is saved here just like a local file. To get an
+            updated export, load its URL again.
+          </Text>
+        </Stack>
+
+        {isImporting && (
+          <Text size="sm" role="status">
+            Loading flashcards…
+          </Text>
+        )}
 
         {database && (
           <Button
@@ -139,7 +219,7 @@ const LoadFile = () => {
         )}
 
         {error && (
-          <Text size="sm" c="red">
+          <Text size="sm" c="red" role="alert">
             {error}
           </Text>
         )}

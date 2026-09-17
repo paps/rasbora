@@ -20,6 +20,7 @@ import {
 interface LoadedImport {
   database: Database;
   fileName: string;
+  sourceUrl: string | null;
   profiles: Profile[];
   importId: string | null;
 }
@@ -30,6 +31,7 @@ const openImport = async (file: File): Promise<LoadedImport> => {
     return {
       database,
       fileName: file.name,
+      sourceUrl: null,
       profiles: listProfiles(database),
       importId: null,
     };
@@ -66,7 +68,11 @@ const DatabaseProvider = ({ children }: DatabaseProviderProps) => {
           opened.database.close();
           return;
         }
-        setLoaded({ ...opened, importId: saved.importId });
+        setLoaded({
+          ...opened,
+          importId: saved.importId,
+          sourceUrl: saved.sourceUrl,
+        });
         setProfileId(
           opened.profiles.find((profile) => profile.id === saved.profileId)
             ?.id ??
@@ -93,50 +99,62 @@ const DatabaseProvider = ({ children }: DatabaseProviderProps) => {
 
   useEffect(() => () => loaded?.database.close(), [loaded]);
 
-  const importFile = useCallback((file: File) => {
-    if (busyRef.current) return;
-    busyRef.current = true;
-    const current = ++generationRef.current;
-    setIsImporting(true);
-    setError(null);
+  const importFile = useCallback(
+    (source: File | (() => Promise<File>), sourceUrl?: string) => {
+      if (busyRef.current) return;
+      busyRef.current = true;
+      const current = ++generationRef.current;
+      setIsImporting(true);
+      setError(null);
 
-    void (async () => {
-      let opened: LoadedImport | null = null;
-      try {
-        opened = await openImport(file);
-        if (generationRef.current !== current) return;
-        const firstProfileId = opened.profiles[0]?.id ?? null;
-        let warning: string | null = null;
+      void (async () => {
+        let opened: LoadedImport | null = null;
         try {
-          const importId = crypto.randomUUID();
-          await saveImport({ file, importId, profileId: firstProfileId });
-          opened.importId = importId;
-        } catch {
-          warning =
-            "These flashcards are available in this tab, but could not be saved in your browser. A new tab may restore the previously saved file. Please import this file again to retry.";
+          const file = typeof source === "function" ? await source() : source;
+          if (generationRef.current !== current) return;
+          opened = await openImport(file);
+          const trimmedSourceUrl = sourceUrl?.trim() ?? "";
+          opened.sourceUrl = trimmedSourceUrl === "" ? null : trimmedSourceUrl;
+          if (generationRef.current !== current) return;
+          const firstProfileId = opened.profiles[0]?.id ?? null;
+          let warning: string | null = null;
+          try {
+            const importId = crypto.randomUUID();
+            await saveImport({
+              file,
+              importId,
+              profileId: firstProfileId,
+              sourceUrl: opened.sourceUrl,
+            });
+            opened.importId = importId;
+          } catch {
+            warning =
+              "These flashcards are available in this tab, but could not be saved in your browser. A new tab may restore the previously saved file. Please import this file again to retry.";
+          }
+          if (generationRef.current !== current) return;
+          setLoaded(opened);
+          opened = null; // React now owns and closes this database.
+          setProfileId(firstProfileId);
+          setStorageWarning(warning);
+        } catch (cause: unknown) {
+          if (generationRef.current === current) {
+            setError(
+              cause instanceof Error
+                ? cause.message
+                : "The file could not be read.",
+            );
+          }
+        } finally {
+          opened?.database.close();
+          if (generationRef.current === current) {
+            busyRef.current = false;
+            setIsImporting(false);
+          }
         }
-        if (generationRef.current !== current) return;
-        setLoaded(opened);
-        opened = null; // React now owns and closes this database.
-        setProfileId(firstProfileId);
-        setStorageWarning(warning);
-      } catch (cause: unknown) {
-        if (generationRef.current === current) {
-          setError(
-            cause instanceof Error
-              ? cause.message
-              : "The file could not be read.",
-          );
-        }
-      } finally {
-        opened?.database.close();
-        if (generationRef.current === current) {
-          busyRef.current = false;
-          setIsImporting(false);
-        }
-      }
-    })();
-  }, []);
+      })();
+    },
+    [],
+  );
 
   const selectProfile = useCallback(
     (id: number) => {
@@ -191,6 +209,7 @@ const DatabaseProvider = ({ children }: DatabaseProviderProps) => {
     () => ({
       database: loaded?.database ?? null,
       fileName: loaded?.fileName ?? null,
+      sourceUrl: loaded?.sourceUrl ?? null,
       profiles: loaded?.profiles ?? [],
       profile:
         loaded?.profiles.find((profile) => profile.id === profileId) ?? null,

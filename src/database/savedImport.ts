@@ -6,6 +6,7 @@ interface Selection {
 
 export interface SavedImport extends Selection {
   file: File;
+  sourceUrl: string | null;
 }
 
 const readSelection = (value: unknown): Selection | null => {
@@ -22,6 +23,30 @@ const readSelection = (value: unknown): Selection | null => {
     return { importId: value.importId, profileId: value.profileId };
   }
   return null;
+};
+
+/** Missing or stale provenance must not stop an older saved file restoring. */
+const readSourceUrl = (value: unknown, importId: string): string | null => {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    !("importId" in value) ||
+    value.importId !== importId ||
+    !("url" in value) ||
+    typeof value.url !== "string"
+  ) {
+    return null;
+  }
+  try {
+    const url = new URL(value.url);
+    return ["http:", "https:"].includes(url.protocol) &&
+      !url.username &&
+      !url.password
+      ? value.url
+      : null;
+  } catch {
+    return null;
+  }
 };
 
 const openStorage = (): Promise<IDBDatabase> =>
@@ -88,6 +113,7 @@ const withStore = async <T>(
 export const readSavedImport = (): Promise<SavedImport | null> =>
   withStore("readonly", (store, result) => {
     const file = store.get("file");
+    const source = store.get("source");
     const selection = store.get("selection");
     selection.onsuccess = () => {
       const metadata = readSelection(selection.result);
@@ -95,7 +121,11 @@ export const readSavedImport = (): Promise<SavedImport | null> =>
       if (storedFile === undefined && selection.result === undefined) {
         result(null);
       } else if (storedFile instanceof File && metadata) {
-        result({ ...metadata, file: storedFile });
+        result({
+          ...metadata,
+          file: storedFile,
+          sourceUrl: readSourceUrl(source.result, metadata.importId),
+        });
       } else {
         // Abort rather than treating damaged storage as an empty first visit.
         store.transaction.abort();
@@ -106,6 +136,9 @@ export const readSavedImport = (): Promise<SavedImport | null> =>
 export const saveImport = (saved: SavedImport): Promise<void> =>
   withStore("readwrite", (store, result) => {
     store.put(saved.file, "file");
+    // Keep provenance separate from profile selection, but tied to this file.
+    // Older tabs can replace the file without knowing about this record.
+    store.put({ importId: saved.importId, url: saved.sourceUrl }, "source");
     store.put(
       { importId: saved.importId, profileId: saved.profileId },
       "selection",

@@ -7,13 +7,19 @@ export interface DatabaseContextValue {
   database: Database | null;
   /** Name of the imported file, kept so the app can show what is loaded. */
   fileName: string | null;
+  /** Original remote link, or null for local files and older saved imports. */
+  sourceUrl: string | null;
   isImporting: boolean;
   isRestoring: boolean;
   /** Why the last import failed, or null if it did not. */
   error: string | null;
   /** Persistence can fail while the imported database remains usable. */
   storageWarning: string | null;
-  importFile: (file: File) => void;
+  /** Acquire remote bytes inside the same busy/validation/storage lifecycle. */
+  importFile: (
+    source: File | (() => Promise<File>),
+    sourceUrl?: string,
+  ) => void;
   forgetFile: () => void;
   /** Every profile in the export, in Pleco's order. Empty until an import. */
   profiles: Profile[];

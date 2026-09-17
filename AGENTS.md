@@ -211,7 +211,7 @@ src/
     LearnedCards.tsx         + LearnedCards.db.ts
     CustomizedCards.tsx      + CustomizedCards.db.ts
     ViewCard.tsx             + ViewCard.db.ts
-    LoadFile.tsx             + LoadFile.db.ts
+    LoadFile.tsx             + LoadFile.db.ts + LoadFile.remote.ts
     NotFound.tsx
 ```
 
@@ -468,6 +468,29 @@ the file. Every import has a unique ID, checked in the same transaction when
 saving a profile or forgetting a file, so an older tab cannot change the saved
 selection for a newer export. Existing tabs keep their current views until
 reloaded; new tabs restore the last saved file and profile.
+
+Remote imports enter the same lifecycle: `importFile()` accepts either a local
+`File` or a function that downloads one. The provider invokes that function
+inside its busy guard, before validation and the existing atomic save, so local
+imports, remote imports, forgetting, and profile changes cannot race in a tab.
+`LoadFile.remote.ts` owns URL handling beside the page. It uses direct browser
+fetches and the Google Drive API for public sharing links. The public browser
+key is committed as `GOOGLE_DRIVE_API_KEY` in `LoadFile.remote.ts`, restricted
+to the Drive API and this site. There is no backend or proxy.
+The source URL is saved alongside the file in the same IndexedDB transaction
+and exposed as `sourceUrl` by the provider for the Load page's info panel. It
+is the original input link, never the Drive API URL containing the app key.
+The separate `source` record carries the import ID: profile changes leave it
+alone, and an older app tab that replaces the file cannot leave a stale URL
+attached to the new import. Local imports store a null source; forgetting clears
+it with the file. Missing source metadata on older imports means no panel.
+The saved record still holds the file bytes, never a URL to refetch; restoration
+never contacts the remote host. Opening `/load?fromUrl=…` is a separate explicit
+import request: the page reads it on mount, prefills the URL field, and starts
+one import after restoration. It waits for any current import and guards
+against effect replay and completion causing repeat downloads. The parameter
+stays in the address so reopening or reloading that link requests a fresh copy.
+Google Cloud setup is documented in `readme.md`.
 
 Storage failures are reported separately from import errors: the file can stay
 usable in this tab even when saving fails. **Forget file**, on the Load Pleco
