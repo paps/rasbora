@@ -25,6 +25,10 @@ const PAGES: Page[] = [
   { path: "/", label: "Profile info" },
   { path: "/statistics", label: "Statistics" },
   { path: "/recommendations", label: "Recommendations" },
+  // Between the pages about the profile and the five that ask "which cards?":
+  // it is a lookup rather than a question about a set, so it does not belong
+  // inside that run, and it is reached often enough not to sit under it.
+  { path: "/card", label: "View a card" },
   { path: "/difficult", label: "Most difficult cards" },
   { path: "/risky", label: "Risky cards" },
   { path: "/almost-learned", label: "Almost learned cards" },
