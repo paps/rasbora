@@ -65,7 +65,7 @@ const CustomizedCards = () => {
   // The two are null together: the list is scoped to the profile's cards.
   if (!customized || !profile) {
     return (
-      <Stack gap="lg">
+      <Stack gap="md">
         <Title>Customized cards</Title>
         <Text c="dimmed">
           Import a set of flashcards to see the cards you have written a
@@ -76,7 +76,7 @@ const CustomizedCards = () => {
   }
 
   return (
-    <Stack gap="lg">
+    <Stack gap="md">
       <Title>Customized cards</Title>
 
       {customized.cards.length === 0 ? (

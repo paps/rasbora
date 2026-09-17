@@ -80,7 +80,7 @@ const LearnedCards = () => {
   // The two are null together — a ceiling is a profile's, never the export's.
   if (!learned || !profile) {
     return (
-      <Stack gap="lg">
+      <Stack gap="md">
         <Title>Learned cards</Title>
         <Text c="dimmed">
           Import a set of flashcards to see the cards a profile is finished
@@ -91,7 +91,7 @@ const LearnedCards = () => {
   }
 
   return (
-    <Stack gap="lg">
+    <Stack gap="md">
       <Title>Learned cards</Title>
 
       {learned.cards.length === 0 ? (

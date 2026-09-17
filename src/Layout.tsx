@@ -113,7 +113,9 @@ const Layout = ({ children }: LayoutProps) => {
 
   return (
     <AppShell
-      padding="xl"
+      // `md` rather than `xl`: on a phone, `xl` spent 64 px of a 412 px screen
+      // on margin, which is where a card table's columns were going.
+      padding="md"
       header={{ height: 60 }}
       navbar={{ width: 260, breakpoint: "sm", collapsed: { mobile: !opened } }}
     >

@@ -80,7 +80,7 @@ const AlmostLearnedCards = () => {
   // The two are null together — a score band is a profile's, never the file's.
   if (!almost || !profile) {
     return (
-      <Stack gap="lg">
+      <Stack gap="md">
         <Title>Almost learned cards</Title>
         <Text c="dimmed">
           Import a set of flashcards to see the cards a profile has nearly
@@ -91,7 +91,7 @@ const AlmostLearnedCards = () => {
   }
 
   return (
-    <Stack gap="lg">
+    <Stack gap="md">
       <Title>Almost learned cards</Title>
 
       {almost.cards.length === 0 ? (
