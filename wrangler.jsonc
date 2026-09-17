@@ -1,7 +1,7 @@
 {
   // Static assets only, so there is no "main": Cloudflare serves `dist/`
-  // directly and no Worker code runs. `npx vite build` first, then
-  // `npx wrangler deploy`.
+  // directly and no Worker code runs. Pushing the `prod` branch builds and
+  // deploys; `npx vite build` then `npx wrangler deploy` is the manual fallback.
   "name": "rasbora",
   "compatibility_date": "2026-08-13",
   // Wrangler reports anonymous usage to Cloudflare unless told not to. Here

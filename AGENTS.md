@@ -696,8 +696,11 @@ the job:
   error does — do not leave warnings behind.
 - `npm run format` runs Prettier. Run this when your work is done, before
   committing or pushing.
-- `npx wrangler deploy` publishes `dist/` to Cloudflare. It uploads what is
-  already there and never builds, so `npx vite build` has to have run first.
+- `git push origin origin/main:refs/heads/prod` deploys — see "Deployment".
+  Fast-forward only: `prod` never carries a commit that main does not.
+- `npx wrangler deploy` publishes a local `dist/` to Cloudflare by hand. It
+  uploads what is already there and never builds, so `npx vite build` has to
+  have run first. It is the fallback, not the usual path.
 
 Prettier has no config file on purpose — the defaults are fine.
 
@@ -714,9 +717,17 @@ boilerplate. Routing is client-side, so `/statistics` matches no file in
 read the URL. Without it every route but `/` 404s when reloaded or opened from
 a link, and `NotFound.tsx` would never render.
 
-Deploys are manual and there is no CI: build, then deploy. That is deliberate,
-for the same reason there are no `dev`/`build` scripts — two `npx` commands do
-not need a wrapper.
+**Deploying is updating the `prod` branch.** Cloudflare watches it: a push to
+`prod` builds the site and publishes it to https://rasbora.martintapia.com,
+live a few minutes later. Work lands on main, and `prod` is fast-forwarded to
+main when the reader should see it — so main can hold changes that are not
+deployed yet, and `git log origin/prod..origin/main` is exactly what the next
+deploy ships.
+
+That trigger is configured in the Cloudflare dashboard, not in this repository,
+which is why there is no CI file here. To confirm a deploy landed, check that the live
+JavaScript bundle contains a string from the change rather than trusting the
+push alone.
 
 ## Why there are three React ESLint plugins
 

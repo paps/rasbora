@@ -81,9 +81,9 @@ lets you correct the URL or retry manually.
    its `/*` path pattern. Add `http://localhost:5173` and
    `http://localhost:5173/*` if testing locally.
 3. Set `GOOGLE_DRIVE_API_KEY` at the top of
-   `src/pages/LoadFile.remote.ts` to that key and commit it. Run
-   `npx vite build` and deploy the rebuilt `dist/`. No environment variables
-   or separate configuration files are needed.
+   `src/pages/LoadFile.remote.ts` to that key and commit it, then deploy by
+   updating the `prod` branch from main. No environment variables or separate
+   configuration files are needed.
 
 This public browser key lives in the repository and is visible in the built
 JavaScript and network requests. Keep the API and website restrictions above.
