@@ -1,6 +1,6 @@
 // Public browser key, committed here; restrict it to the Drive API and this site.
 // Set this value to enable Google Drive downloads (see readme.md).
-const GOOGLE_DRIVE_API_KEY = "";
+const GOOGLE_DRIVE_API_KEY = "AIzaSyC9W3dY7zBiz4JkiQDEAmhNxDyP9IC7zyE";
 
 const DRIVE_HOSTS = new Set([
   "drive.google.com",
