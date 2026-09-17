@@ -41,10 +41,10 @@ private browsing ending, or browser storage eviction can remove the saved copy;
 keep your original Pleco export. If saving fails, the imported file still works
 in the current tab and Rasbora explains that it could not be remembered.
 
-The bundled CC-CEDICT dictionary and SQLite engine use the browser's HTTP cache.
-Production assets have content hashes in their URLs and are cached for a year,
-so ordinary repeat visits reuse them locally; changed assets get new URLs.
-The app itself still requires network access when its resources are not cached.
+The bundled CC-CEDICT dictionary and SQLite engine use the browser's HTTP cache
+with Cloudflare's default revalidation policy. On repeat visits, the browser
+checks whether a cached asset has changed and reuses its local copy when the
+server confirms it has not. Changed assets get new content-hashed URLs.
 
 ## The card lists
 

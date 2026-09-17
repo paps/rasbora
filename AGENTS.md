@@ -138,7 +138,6 @@ cc-cedict/              Build tooling for the bundled dictionary (see its readme
   build.mjs             CC-CEDICT text dump → src/cc-cedict/cedict.sqlite
 public/
   favicon.svg           Served as-is at /favicon.svg; see "The data layer"
-  _headers              Long-lived HTTP caching for content-hashed assets
 src/
   main.tsx              Mounts <App /> and imports the Mantine stylesheets
   App.tsx               <MantineProvider> + <ScriptProvider> +
@@ -341,13 +340,11 @@ no asset the code refers to has to be copied by hand. The bundled dictionary,
 `src/cc-cedict/cedict.sqlite`, is the second such asset: a committed binary
 imported `?url` and fetched at runtime, hashed and cached like the wasm.
 
-`public/` holds `favicon.svg`, which needs a fixed URL, and Cloudflare's
-`_headers` configuration. The latter sets a one-year immutable HTTP cache policy
-for Vite's content-hashed `/assets/*`, including the dictionary and WebAssembly
-module; changing either produces a new URL. HTML is outside that rule so app
-updates are still discovered. Anything the code imports belongs in `src/`
-with a `?url` import instead, rather than in `public/`. `Layout.tsx` showing the
-same file beside the title is not an exception to that: it writes the fixed `/favicon.svg` URL rather than
+`public/` holds only what has to keep a fixed URL and so cannot be hashed:
+today that is `favicon.svg` alone. Anything the code imports belongs in `src/`
+with a `?url` import instead, which is why the directory stayed empty until a
+favicon needed it. `Layout.tsx` showing the same file beside the title is not
+an exception to that: it writes the fixed `/favicon.svg` URL rather than
 importing it, so the tab icon and the one in the title bar stay the same
 picture and the file is served once.
 
