@@ -44,6 +44,25 @@ intact. Reloads and new tabs restore the saved bytes and profile without
 contacting the URL again. There is no automatic sync: load the URL again to
 import a newer export. Explicit URL loads request a fresh download.
 
+You can also open `/load?fromUrl=…` to start a download automatically, with the
+URL already filled into the form. Encode the complete source URL as the query
+parameter value, especially if it contains `&`, `+`, or `#`. For example:
+
+```text
+/load?fromUrl=https%3A%2F%2Ffiles.example%2Fflashcards.pqb
+```
+
+For a Drive link, build the query with
+`new URLSearchParams({ fromUrl: driveSharingLink }).toString()` to preserve all
+of its parameters, including `resourcekey`.
+
+The opening link starts one import after saved-file restoration finishes, using
+the same validation, errors, and IndexedDB save as **Load from URL**. An empty
+`fromUrl` does nothing. Reloading or reopening a link containing `fromUrl`
+requests a fresh download; open `/load` without it to use the saved copy. An
+unsuccessful automatic import leaves the previous export intact, and the form
+lets you correct the URL or retry manually.
+
 ### Configuring Google Drive downloads
 
 1. In a Google Cloud project, enable the **Google Drive API** and create a

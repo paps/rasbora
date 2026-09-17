@@ -383,7 +383,12 @@ fetches and the Google Drive API for public sharing links. The public browser
 key is committed as `GOOGLE_DRIVE_API_KEY` in `LoadFile.remote.ts`, restricted
 to the Drive API and this site. There is no backend or proxy.
 The saved record still holds the file bytes, never a URL to refetch; restoration
-never contacts the remote host. Google Cloud setup is documented in `readme.md`.
+never contacts the remote host. Opening `/load?fromUrl=…` is a separate explicit
+import request: the page reads it on mount, prefills the URL field, and starts
+one import after restoration. It waits for any current import and guards
+against effect replay and completion causing repeat downloads. The parameter
+stays in the address so reopening or reloading that link requests a fresh copy.
+Google Cloud setup is documented in `readme.md`.
 
 Storage failures are reported separately from import errors: the file can stay
 usable in this tab even when saving fails. **Forget file**, on the Load Pleco

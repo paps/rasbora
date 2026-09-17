@@ -12,8 +12,8 @@ import {
   Tooltip,
   VisuallyHidden,
 } from "@mantine/core";
-import { useMemo, useState, type ReactNode } from "react";
-import { Link } from "react-router";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Link, useSearchParams } from "react-router";
 import RelativeTime from "@/components/RelativeTime";
 import { useDatabase } from "@/database/context";
 import { readFileSummary } from "@/pages/LoadFile.db";
@@ -80,7 +80,18 @@ const LoadFile = () => {
   const { database, fileName, isImporting, error, importFile, forgetFile } =
     useDatabase();
   const { script, setScript } = useScript();
-  const [url, setUrl] = useState("");
+  const [searchParams] = useSearchParams();
+  const [fromUrl] = useState(() => searchParams.get("fromUrl")?.trim() ?? "");
+  const [url, setUrl] = useState(fromUrl);
+  const automaticImportStartedRef = useRef(false);
+
+  useEffect(() => {
+    // Layout mounts this page after saved-file restoration. Treat the opening
+    // link as one import request, including when Strict Mode replays effects.
+    if (!fromUrl || isImporting || automaticImportStartedRef.current) return;
+    automaticImportStartedRef.current = true;
+    importFile(() => downloadFile(fromUrl));
+  }, [fromUrl, isImporting, importFile]);
 
   const file = useMemo(
     () => (database ? readFileSummary(database) : null),
