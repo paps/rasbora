@@ -9,6 +9,8 @@ import {
   Title,
   Tooltip,
   VisuallyHidden,
+  useMantineColorScheme,
+  type MantineColorScheme,
 } from "@mantine/core";
 import { useMemo, type ReactNode } from "react";
 import { Link } from "react-router";
@@ -58,8 +60,23 @@ const SCRIPT_TOOLTIPS: Record<Script, string> = {
 };
 
 /**
- * Where the export comes in, and the one reading preference that decides how
- * every card in it is written.
+ * Light, dark, or whatever the browser asks for. `auto` leads because it is the
+ * default and because it is the only one of the three that is not a decision —
+ * a reader who has never touched this control is on it.
+ *
+ * Mantine names and stores these itself, so there is no `Script`-shaped
+ * provider beside it: `useMantineColorScheme` is the state and
+ * `mantine-color-scheme-value` in `localStorage` is the persistence.
+ */
+const COLOR_SCHEMES: { value: MantineColorScheme; label: string }[] = [
+  { value: "auto", label: "Auto" },
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+];
+
+/**
+ * Where the export comes in, and the two reading preferences that decide how
+ * every card in it is drawn.
  *
  * Both used to sit in the title bar, which ran out of room on a phone: three
  * controls, a burger and the app's mark do not fit across 412 px, and the
@@ -77,6 +94,7 @@ const LoadFile = () => {
   const { database, fileName, isImporting, error, importFile, forgetFile } =
     useDatabase();
   const { script, setScript } = useScript();
+  const { colorScheme, setColorScheme } = useMantineColorScheme();
 
   const file = useMemo(
     () => (database ? readFileSummary(database) : null),
@@ -219,6 +237,30 @@ const LoadFile = () => {
             data={SCRIPTS}
           />
         </Tooltip>
+      </Stack>
+
+      {/*
+        The second reading preference, and here for the same reason as the
+        first: you pick it once, because of the room you are sitting in, not
+        while moving between pages. Its labels are words rather than a glyph,
+        so it needs neither the hidden name nor the tooltip the 繁/简 control
+        does.
+      */}
+      <Stack gap="xs" align="flex-start">
+        <Title order={4}>Light or dark</Title>
+
+        <Text size="sm" c="dimmed">
+          On <b>Auto</b>, Rasbora reads whatever your browser or system is set
+          to and follows it when that changes. Choosing light or dark overrides
+          it here only, and is remembered between visits.
+        </Text>
+
+        <SegmentedControl<MantineColorScheme>
+          aria-label="Color scheme"
+          value={colorScheme}
+          onChange={setColorScheme}
+          data={COLOR_SCHEMES}
+        />
       </Stack>
     </Stack>
   );
