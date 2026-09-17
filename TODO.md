@@ -19,10 +19,17 @@
 
 - [x] Correctly store the sqlite file in cache for immediate no network reload when opening a new tab. Also properly cache efficiently cc-cedict
 
-- [ ] Ability to search for a card anywhere
+- [ ] Ability to search for a card anywhere — there is a `View a card` page
+      that searches now, but "anywhere" would mean reaching it from every page,
+      which is a title bar question and the title bar is full
 
-- [ ] Ability to view a card (whole page view). Can be opened from a direct link with querystring (assuming Pleco file still in cache)
+- [x] Ability to view a card (whole page view) — shipped as `View a card`,
+      searching by headword in either script, by reading with or without
+      tones, and by card number
 
 - [ ] Show estimated number of flashcards left to review, based on the profile settings, what we know empiracally from what Pleco does, and the time of day vs. the time of the pleco export
 - [ ] Update skill with this information, so that an AI agent can also estimate the value properly
 - [ ] Add this next review information when you're looking at an individual flashcard
+- [ ] Open `View a card` from a direct link with a querystring (assuming Pleco
+      file still in cache) — the page holds its search in component state for
+      now, so a search is not linkable and does not survive a reload

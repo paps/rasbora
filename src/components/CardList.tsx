@@ -60,6 +60,12 @@ interface CardListProps<T extends CardListData> {
  * left out because it collapses into lime at ΔE 2.3 under protanopia, and
  * every stop clears 2.4:1 against the white row it sits on. Re-measure if you
  * change one.
+ *
+ * They are the same four in both colour schemes. A shade is a fixed colour in
+ * Mantine — only the semantic variables flip — and shifting these towards the
+ * light end for a dark page was measured and rejected: at two shades lighter
+ * the red and green ends fall to ΔE 2.1 under deuteranopia, against 9.0 here.
+ * See `BAR_TRACK` for the one colour that does change.
  */
 const SCORE_COLORS = ["red.8", "orange.6", "lime.7", "green.9"];
 
@@ -67,6 +73,27 @@ const SCORE_COLORS = ["red.8", "orange.6", "lime.7", "green.9"];
 const BAR_WIDTH = 72;
 const BAR_HEIGHT = 8;
 const BAR_FLOOR = 6;
+
+/**
+ * The empty part of the track, which is the one colour here that has to change
+ * with the scheme: it is a surface rather than data, and `gray.2` on a dark
+ * page is a light slab. The two shades are the ones Mantine's own `Progress`
+ * track uses, so the bar sits on what a Mantine progress bar would.
+ *
+ * `light-dark()` rather than a hook, because Mantine's baseline already sets
+ * `color-scheme: var(--mantine-color-scheme)` on the root — so this follows the
+ * switch on `Load Pleco file`, `auto` included, without `ScoreBar` reading any
+ * state or re-rendering.
+ *
+ * The stops in `SCORE_COLORS` need no such treatment: they are data, and they
+ * were re-measured against this track rather than against the white one. The
+ * weakest fill-on-track contrast is red.8 on dark.4 at **2.23:1**, against
+ * lime.7 on gray.2 at **2.06:1** in light — so the dark scheme is the slightly
+ * better of the two, and the ΔE figures above are properties of the pairs
+ * themselves and do not move with the background at all.
+ */
+const BAR_TRACK =
+  "light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4))";
 
 interface ScoreBarProps {
   score: number;
@@ -111,7 +138,12 @@ const ScoreBar = ({ score, range }: ScoreBarProps) => {
       // the bar, and a bubble there would cover the thing being compared.
       position="top-start"
     >
-      <Box w={BAR_WIDTH} h={BAR_HEIGHT} bg="gray.2" style={{ borderRadius: 2 }}>
+      <Box
+        w={BAR_WIDTH}
+        h={BAR_HEIGHT}
+        bg={BAR_TRACK}
+        style={{ borderRadius: 2 }}
+      >
         <Box
           w={BAR_FLOOR + fraction * (BAR_WIDTH - BAR_FLOOR)}
           h="100%"

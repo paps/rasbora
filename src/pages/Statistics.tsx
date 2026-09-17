@@ -14,6 +14,11 @@ import {
  * the data layer caps the number of category series so that it cannot run out.
  * The order is a colourblind-safe one, checked as a palette rather than picked
  * by eye, so please re-check it before reordering or extending it.
+ *
+ * The same six serve both colour schemes. They were re-measured against the
+ * dark page as well as the white one and the weakest is blue.7 at 3.70:1 there,
+ * against yellow.8 at 2.48:1 in light — so a hue that works on white works
+ * here. See `FIXED_COLORS` for the two that did not.
  */
 const CATEGORY_COLORS = [
   "blue.7",
@@ -24,10 +29,27 @@ const CATEGORY_COLORS = [
   "green.8",
 ];
 
-/** The two series that are not a category always look the same. */
+/**
+ * The two series that are not a category always look the same.
+ *
+ * Unlike `CATEGORY_COLORS`, both of these had to follow the colour scheme. The
+ * total is a neutral by design — it is the one line that is not a hue, so it
+ * cannot be mistaken for a category — and a neutral is exactly the thing that
+ * inverts: `gray.7` reads at 8.18:1 on a white page and 1.90:1 on a dark one,
+ * which is the app's most important line all but gone. `dark.1` puts it back at
+ * 7.83:1, which is the same line. `violet.7` is the same story less severely
+ * (5.55:1 → 2.79:1); `violet.3` reads at 6.43:1 there and also separates
+ * further from the six category hues under all three dichromacy simulations
+ * (worst-case ΔE 11.3, against 7.4 today).
+ *
+ * `CATEGORY_COLORS` above needed none of this: every one of the six is a
+ * saturated mid-shade that clears 3.4:1 on both surfaces.
+ */
 const FIXED_COLORS: Record<string, string> = {
-  [TOTAL_SERIES]: "gray.7",
-  [OTHER_SERIES]: "violet.7",
+  [TOTAL_SERIES]:
+    "light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1))",
+  [OTHER_SERIES]:
+    "light-dark(var(--mantine-color-violet-7), var(--mantine-color-violet-3))",
 };
 
 type Measure = "cumulative" | "monthly";
