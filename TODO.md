@@ -18,3 +18,8 @@
 - [ ] Make the whole thing fully mobile friendly
 
 - [ ] Correctly store the sqlite file in cache for immediate no network reload when opening a new tab. Also properly cache efficiently cc-cedict
+
+- [ ] Ability to search for a card anywhere
+
+- [ ] Ability to view a card (whole page view). Can be opened from a direct link with querystring (assuming Pleco file still in cache)
+
