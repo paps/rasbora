@@ -7,7 +7,6 @@ USER node
 RUN curl -fsSL 'https://raw.githubusercontent.com/paps/dotfiles/refs/heads/master/min-setup-via-curl.sh' | bash
 
 RUN curl -fsSL https://claude.ai/install.sh | bash
-
 RUN curl -fsSL https://chatgpt.com/codex/install.sh | bash
 
 # QoL improvement, e.g. to land there when doing `podman exec -it ID zsh`

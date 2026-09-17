@@ -5,11 +5,12 @@
 
   // Do this in case we're in a GH codespace or somehow forgot to create the .env file
   // so that runArgs below works in all cases, albeit with no additional env loaded.
-  "initializeCommand": "touch .devcontainer/.env ; chmod og-rwx .devcontainer/.env",
+  "initializeCommand": "touch .devcontainer/.env && chmod 0600 .devcontainer/.env",
 
   "runArgs": [
-    // Make the devcontainer join the gluetun's network namespace, the goal
+    // Make the dev container join the gluetun's network namespace, the goal
     // being to force any network traffic through wireguard for analysis
+    // Leaving this commented for now, might use later to force traffic through an inspection proxy
     //"--network=container:gluetun",
 
     // Load the vars needed for execution of setup.sh and beyond
