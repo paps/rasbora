@@ -725,9 +725,9 @@ deployed yet, and `git log origin/prod..origin/main` is exactly what the next
 deploy ships.
 
 That trigger is configured in the Cloudflare dashboard, not in this repository,
-which is why there is no CI file here. To confirm a deploy landed, check that the live
-JavaScript bundle contains a string from the change rather than trusting the
-push alone.
+which is why there is no CI file here. To confirm a deploy landed, check that
+the live JavaScript bundle contains a string from the change rather than
+trusting the push alone.
 
 ## Why there are three React ESLint plugins
 
