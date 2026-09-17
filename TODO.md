@@ -7,6 +7,10 @@
       of 6s adjustable — shipped as `Risky cards`, with both the run length and
       how far back "recently" reaches adjustable on the page
 
+- [ ] IMPORTANT: the 'points per day' config in the profile is what divides the card score to get the number of days Pleco will wait until showing the card again. This should be shown in the app and documented. It will help compute the estimate of review dates etc
+
+- [ ] Have a querystring that is there just to check that the deeplink from AI (or anywhere) correctly matches the currently loaded database, by looking at the exact date of the last review start time. If it doesn't match, unload the database and complain to the user
+
 - [ ] Check what happens for flashcards that refer to a user dict entry only (because the dict entry is not available for now in the app)
 
 - [ ] Make it work for fuller exports of Pleco (that include Pleco settings and, in particular, Pleco user dictionaries, which appear to come as a separate sqlite file?)
