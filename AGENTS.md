@@ -382,6 +382,13 @@ imports, remote imports, forgetting, and profile changes cannot race in a tab.
 fetches and the Google Drive API for public sharing links. The public browser
 key is committed as `GOOGLE_DRIVE_API_KEY` in `LoadFile.remote.ts`, restricted
 to the Drive API and this site. There is no backend or proxy.
+The source URL is saved alongside the file in the same IndexedDB transaction
+and exposed as `sourceUrl` by the provider for the Load page's info panel. It
+is the original input link, never the Drive API URL containing the app key.
+The separate `source` record carries the import ID: profile changes leave it
+alone, and an older app tab that replaces the file cannot leave a stale URL
+attached to the new import. Local imports store a null source; forgetting clears
+it with the file. Missing source metadata on older imports means no panel.
 The saved record still holds the file bytes, never a URL to refetch; restoration
 never contacts the remote host. Opening `/load?fromUrl=…` is a separate explicit
 import request: the page reads it on mount, prefills the URL field, and starts

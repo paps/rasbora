@@ -44,6 +44,14 @@ intact. Reloads and new tabs restore the saved bytes and profile without
 contacting the URL again. There is no automatic sync: load the URL again to
 import a newer export. Explicit URL loads request a fresh download.
 
+A **Loaded from a URL** panel shows the original source as a clickable link.
+The URL is saved alongside the file in IndexedDB and remains visible after
+reloads and in new tabs. For Drive imports, this is the original sharing link,
+not the API request containing Rasbora's key. A failed import preserves the
+previous source along with its file. Loading a local file or choosing
+**Forget file** clears the source. Older saved files without source information
+still restore normally, with no panel.
+
 You can also open `/load?fromUrl=…` to start a download automatically, with the
 URL already filled into the form. Encode the complete source URL as the query
 parameter value, especially if it contains `&`, `+`, or `#`. For example:

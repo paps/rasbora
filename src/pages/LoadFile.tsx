@@ -1,4 +1,5 @@
 import {
+  Alert,
   Anchor,
   Button,
   FileButton,
@@ -77,8 +78,15 @@ const SCRIPT_TOOLTIPS: Record<Script, string> = {
  * rather than to the selected profile.
  */
 const LoadFile = () => {
-  const { database, fileName, isImporting, error, importFile, forgetFile } =
-    useDatabase();
+  const {
+    database,
+    fileName,
+    sourceUrl,
+    isImporting,
+    error,
+    importFile,
+    forgetFile,
+  } = useDatabase();
   const { script, setScript } = useScript();
   const [searchParams] = useSearchParams();
   const [fromUrl] = useState(() => searchParams.get("fromUrl")?.trim() ?? "");
@@ -90,7 +98,7 @@ const LoadFile = () => {
     // link as one import request, including when Strict Mode replays effects.
     if (!fromUrl || isImporting || automaticImportStartedRef.current) return;
     automaticImportStartedRef.current = true;
-    importFile(() => downloadFile(fromUrl));
+    importFile(() => downloadFile(fromUrl), fromUrl);
   }, [fromUrl, isImporting, importFile]);
 
   const file = useMemo(
@@ -106,6 +114,20 @@ const LoadFile = () => {
   return (
     <Stack gap="lg" maw={760}>
       <Title>Load Pleco file</Title>
+
+      {sourceUrl && (
+        <Alert title="Loaded from a URL" color="blue" role="note">
+          <Anchor
+            href={sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            size="sm"
+            style={{ overflowWrap: "anywhere" }}
+          >
+            {sourceUrl}
+          </Anchor>
+        </Alert>
+      )}
 
       <Stack gap="xs" align="flex-start">
         <Text size="sm" c="dimmed">
@@ -130,7 +152,7 @@ const LoadFile = () => {
           w="100%"
           onSubmit={(event) => {
             event.preventDefault();
-            importFile(() => downloadFile(url));
+            importFile(() => downloadFile(url), url);
           }}
         >
           <TextInput
