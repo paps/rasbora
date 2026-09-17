@@ -89,6 +89,14 @@ interface Grade {
  *
  * Colour is not carrying this alone in any case: the bars are as long as the
  * grade, every bar names its grade on hover, and the legend counts them.
+ *
+ * The same six shades serve both colour schemes, which was checked rather than
+ * assumed. A ΔE between two of them is a property of the pair and does not move
+ * with the page behind it, and the bars turn out to sit *better* on a dark page
+ * than on a white one: the weakest of the six is red.9 at 2.84:1 against
+ * `dark.7`, where in light the weakest is green.4 at 1.75:1 against white.
+ * Shifting them towards the light end for dark mode only flattens the scale —
+ * two shades lighter takes red.4 to a chroma of 20, which stops reading as red.
  */
 const GRADES = new Map<string, Grade>([
   ["1", { label: "don’t know", outcome: "incorrect", color: "red.9", step: 1 }],
@@ -154,6 +162,20 @@ const BAR_GAP = 3;
  * along it to fit, on a card with only a handful of reviews to stack up.
  */
 const TIMELINE_MIN_HEIGHT = 160;
+
+/**
+ * The arrow's line, which is meant to read as faintly as an axis does and so is
+ * the one colour on the card that has to follow the scheme: `gray.4` is a
+ * 1.49:1 whisper on white and a 10.4:1 stripe on a dark page. `dark.4` puts it
+ * back at 1.54:1 there, which is the same line.
+ *
+ * `light-dark()` rather than a hook: Mantine's baseline sets `color-scheme`
+ * from its own switch, so this follows `Load Pleco file` — `auto` included —
+ * and `Flashcard` goes on holding no state. The grade shades opposite it do not
+ * change; see `GRADES`.
+ */
+const TIMELINE_LINE =
+  "light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-4))";
 
 interface GradeBarProps {
   grade: Grade;
@@ -227,7 +249,7 @@ const TimelineArrow = ({ duration }: TimelineArrowProps) => (
     <Text size="xs" c="dimmed" lh={1}>
       ▲
     </Text>
-    <Box w={2} bg="gray.4" style={{ flexGrow: 1 }} />
+    <Box w={2} bg={TIMELINE_LINE} style={{ flexGrow: 1 }} />
     {duration !== null && (
       // Rotated so it reads bottom to top, the direction the arrow runs in.
       <Text
@@ -238,7 +260,7 @@ const TimelineArrow = ({ duration }: TimelineArrowProps) => (
         {duration} in review
       </Text>
     )}
-    <Box w={2} bg="gray.4" style={{ flexGrow: 1 }} />
+    <Box w={2} bg={TIMELINE_LINE} style={{ flexGrow: 1 }} />
   </Stack>
 );
 

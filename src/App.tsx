@@ -32,8 +32,14 @@ const Landing = () => {
 // because both are standing app-wide facts, not the export: the written form is
 // a preference, and the dictionary is bundled reference data. Both are already
 // meaningful before an import and unchanged by one.
+//
+// `defaultColorScheme="auto"` is the third such fact and the only one Mantine
+// keeps for itself: it means "follow the browser" until the reader picks light
+// or dark on `Load Pleco file`, after which Mantine's own `localStorage` entry
+// decides. Mantine's default is `light`, which would ignore the preference the
+// browser already states.
 const App = () => (
-  <MantineProvider>
+  <MantineProvider defaultColorScheme="auto">
     <ScriptProvider>
       <DictionaryProvider>
         <DatabaseProvider>

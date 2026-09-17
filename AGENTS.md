@@ -68,6 +68,45 @@ the user typed into Pleco are stored strings, not headwords with two forms, so
 they render as written whatever the setting says. Converting them would take a
 conversion table the app does not have and will not be adding.
 
+## The third global: light or dark
+
+The page itself, and the only one of the three globals the app does not hold.
+`<MantineProvider defaultColorScheme="auto">` and `useMantineColorScheme()` are
+the whole mechanism; the control sits at the bottom of `Load Pleco file`, under
+the script one, because it is the same kind of choice — made once, about the
+room you are in, not about the page you are on.
+
+Three things to keep in mind:
+
+- **`auto` is the default, and it is a real third value.** It means "follow the
+  browser" and keeps following it when the OS flips at sunset; light and dark
+  are overrides. That is why the control has three segments and not two — a
+  two-way toggle can leave `auto` but never return to it. Mantine's own default
+  is `light`, which would ignore a preference the browser already states, so
+  `defaultColorScheme="auto"` on the provider is load-bearing.
+- **Mantine owns the storage, so there is no provider beside `ScriptProvider`.**
+  The value lives in `localStorage` under `mantine-color-scheme-value`, written
+  by Mantine's own manager. Nothing in `src/` should re-roll it. There is no
+  `ColorSchemeScript` either: it exists to stop a flash of the wrong scheme
+  between server-rendered HTML and hydration, and this app has no server —
+  Mantine sets the attribute in a layout effect, before the first paint.
+- **A colour that is a _surface_ follows the scheme; a colour that is _data_
+  does not.** This is the line to hold when adding anything coloured. A shade
+  like `red.8` is a fixed hex in Mantine whatever the scheme, and that is
+  correct for the score ramp and the grade ramp: a ΔE between two of them is a
+  property of the pair and does not move with the page behind it. What inverts
+  is neutrals — a track, a rule, a line that is grey _because_ it is not a hue.
+  Those are written as
+  `light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4))`, built
+  from Mantine's variables as the CSS principle above requires, and they follow
+  the switch without any component reading state. Mantine's baseline already
+  sets `color-scheme` from its own value, so `light-dark()` tracks `auto` too.
+
+Four colours in the app were on the wrong side of that line and were moved:
+`CardList`'s score-bar track, the two halves of the flashcard timeline's arrow,
+and the chart's total and "Other categories" series. Everything else measured
+clean — see the notes on each ramp, which carry the numbers for both surfaces.
+
 ## The bundled dictionary: where meanings come from
 
 An export barely contains meanings. `defn` is a user's own note and is NULL on
@@ -212,6 +251,12 @@ the app lands on when there is no saved export to restore. It holds the
 if there is one, and the 繁/简 `<SegmentedControl>` under a heading that says
 in English what it does —
 which the two characters cannot, to someone still learning to read them.
+
+The **Light or dark** control is last on the page, and is there for the reason
+the script control is: both are read-once preferences about how the app is
+drawn rather than about what it is showing. Its labels are words, so unlike
+繁/简 it needs neither a `VisuallyHidden` name nor a tooltip to say what it
+means. Anything else of this shape belongs here too, and not in the title bar.
 
 It also describes the file: format version, who wrote it, when, and how many
 cards, categories, profiles and reviewed cards are in it. That section used to
@@ -444,7 +489,12 @@ Five things about the review section are load-bearing:
   the middle of the scale, so the order survives as order without hue, and the
   boundary that flips a card from wrong to right — "almost remembered" against
   "barely remembered" — holds ΔE 39 under simulated protanopia, the worst of
-  the three simulations. Re-check it if you change a shade.
+  the three simulations. Re-check it if you change a shade. The same six serve
+  both colour schemes and in fact sit better on a dark page than a white one:
+  the weakest is red.9 at 2.84:1 against `dark.7`, where in light it is green.4
+  at 1.75:1 against white. Only the timeline's arrow follows the scheme, being
+  a rule rather than data — `gray.4` is a 1.49:1 whisper on white and a 10.4:1
+  stripe on dark, so `TIMELINE_LINE` drops it to `dark.4` and 1.54:1 there.
 
 It reads two globals for itself. `useScript()`, which decides which form the big
 glyphs show and which is dimmed underneath; and `useDictionary()`, for the
@@ -484,6 +534,12 @@ The score bar is the part with something to say:
   Within that, `SCORE_COLORS` is the best of the ramps measured: yellow is left
   out because it collapses into lime at ΔE 2.3 under protanopia, and every stop
   clears 2.4:1 against the white row. Re-measure if you change one.
+- **The four stops are the same in both colour schemes; the track is not.**
+  `BAR_TRACK` is `gray.2` on a light page and `dark.4` on a dark one, which is
+  what Mantine's own `Progress` track uses. Against it the weakest fill is
+  red.8 at 2.23:1, a shade better than lime.7 on gray.2 at 2.06:1 in light.
+  Shifting the ramp itself lighter for dark mode was measured and rejected: two
+  shades up, the red and green ends collapse to ΔE 2.1 under deuteranopia.
 
 `Explained.tsx` is the app's **only** "there is more here" affordance: dotted
 underlined text that a hover, a focus or a tap explains. It covers a label that
@@ -540,7 +596,15 @@ the colours. Three things there are load-bearing:
 - **`CATEGORY_COLORS` was checked, not chosen by eye.** The order is
   colourblind-safe as a set and every entry clears the lightness and chroma
   bands against a white surface. Reordering it or adding to it silently
-  invalidates that, so re-check it if you do.
+  invalidates that, so re-check it if you do. The six need no per-scheme
+  treatment — the weakest on a dark page is blue.7 at 3.70:1, better than
+  yellow.8's 2.48:1 on a white one.
+- **`FIXED_COLORS` does follow the scheme, because both of its entries are
+  neutrals.** The total is deliberately not a hue, so it cannot be read as a
+  category — and that is exactly what makes it invert: `gray.7` goes from
+  8.18:1 on white to 1.90:1 on dark, which is the chart's most important line
+  all but gone. It reads as `dark.1` there instead, at 7.83:1, with "Other
+  categories" moving violet.7 → violet.3 for the same reason.
 
 The chart can only say when a card was _created_: the export keeps no history
 of category membership, so a card counts towards the categories it is in today.
