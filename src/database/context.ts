@@ -8,9 +8,13 @@ export interface DatabaseContextValue {
   /** Name of the imported file, kept so the app can show what is loaded. */
   fileName: string | null;
   isImporting: boolean;
+  isRestoring: boolean;
   /** Why the last import failed, or null if it did not. */
   error: string | null;
+  /** Persistence can fail while the imported database remains usable. */
+  storageWarning: string | null;
   importFile: (file: File) => void;
+  forgetFile: () => void;
   /** Every profile in the export, in Pleco's order. Empty until an import. */
   profiles: Profile[];
   /**

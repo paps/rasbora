@@ -1,4 +1,4 @@
-import { Accordion, Stack, Table, Text, Title } from "@mantine/core";
+import { Accordion, Button, Stack, Table, Text, Title } from "@mantine/core";
 import { useMemo, type ReactNode } from "react";
 import Explained from "@/components/Explained";
 import RelativeTime from "@/components/RelativeTime";
@@ -129,7 +129,8 @@ const AllSettings = ({ settings }: AllSettingsProps) => (
 );
 
 const ProfileInfo = () => {
-  const { database, fileName, profile } = useDatabase();
+  const { database, fileName, profile, forgetFile, isImporting } =
+    useDatabase();
 
   const details = useMemo(
     () => (database && profile ? readProfileDetails(database, profile) : null),
@@ -176,6 +177,15 @@ const ProfileInfo = () => {
         <Stack gap="md">
           <Title order={4}>File</Title>
           <DetailTable rows={fileRows} />
+          <Button
+            variant="subtle"
+            color="red"
+            w="fit-content"
+            onClick={forgetFile}
+            disabled={isImporting}
+          >
+            Forget file
+          </Button>
         </Stack>
       </Stack>
     );
@@ -256,6 +266,15 @@ const ProfileInfo = () => {
       <Stack gap="md">
         <Title order={4}>File</Title>
         <DetailTable rows={fileRows} />
+        <Button
+          variant="subtle"
+          color="red"
+          w="fit-content"
+          onClick={forgetFile}
+          disabled={isImporting}
+        >
+          Forget file
+        </Button>
       </Stack>
     </Stack>
   );

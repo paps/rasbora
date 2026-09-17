@@ -1,4 +1,5 @@
 import {
+  Alert,
   AppShell,
   Burger,
   Button,
@@ -96,7 +97,9 @@ const Layout = ({ children }: LayoutProps) => {
     database,
     fileName,
     isImporting,
+    isRestoring,
     error,
+    storageWarning,
     importFile,
     profiles,
     profile,
@@ -139,12 +142,6 @@ const Layout = ({ children }: LayoutProps) => {
           </Title>
 
           <Group gap="xs" wrap="nowrap" ml="auto">
-            {error && (
-              <Text size="sm" c="red" lineClamp={1}>
-                {error}
-              </Text>
-            )}
-
             {database ? (
               <>
                 <Text size="sm" c="dimmed" lineClamp={1} visibleFrom="sm">
@@ -173,6 +170,7 @@ const Layout = ({ children }: LayoutProps) => {
                     aria-label="Profile"
                     placeholder="Profile"
                     allowDeselect={false}
+                    disabled={isImporting}
                     value={profile ? String(profile.id) : null}
                     onChange={(value) => {
                       if (value !== null) {
@@ -218,7 +216,7 @@ const Layout = ({ children }: LayoutProps) => {
             ) : (
               <FileButton accept=".pqb" onChange={importChosenFile}>
                 {(props) => (
-                  <Button {...props} loading={isImporting}>
+                  <Button {...props} loading={isImporting || isRestoring}>
                     Import flashcards
                   </Button>
                 )}
@@ -241,7 +239,25 @@ const Layout = ({ children }: LayoutProps) => {
         ))}
       </AppShell.Navbar>
 
-      <AppShell.Main>{children}</AppShell.Main>
+      <AppShell.Main>
+        {error && (
+          <Alert color="red" mb="md">
+            {error}
+          </Alert>
+        )}
+        {storageWarning && (
+          <Alert color="yellow" mb="md">
+            {storageWarning}
+          </Alert>
+        )}
+        {isRestoring ? (
+          <Text c="dimmed" role="status">
+            Restoring saved flashcards…
+          </Text>
+        ) : (
+          children
+        )}
+      </AppShell.Main>
     </AppShell>
   );
 };

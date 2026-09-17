@@ -22,6 +22,30 @@ So a profile is the top of the tree, and settings, scores and card selection all
 
 Rasbora therefore reads the export through exactly one profile at a time. You import a file and pick a profile at the top of the window, both stay visible everywhere, and every page answers for that profile alone: `Profile info` describes it, `Statistics` charts the cards it draws from, and the card lists all read its scorefile only.
 
+## Remembering your file
+
+After an import, Rasbora saves the original Pleco file and your selected profile
+in your browser. Reloading or opening another tab on the same site restores
+both automatically, without uploading or downloading the export. Importing a
+new file replaces the saved copy and selects its first profile. Existing tabs
+keep their current file and profile until reloaded; their profile changes cannot
+overwrite the selection for a newer import.
+
+Use **Forget file** in the Profile info page's File section to remove that
+export from browser storage and close it in the current tab. Other open tabs
+keep their in-memory copy, but cannot save it again just by changing profiles.
+The original file on your device is untouched.
+
+Storage belongs to this site in this browser profile. Clearing site data,
+private browsing ending, or browser storage eviction can remove the saved copy;
+keep your original Pleco export. If saving fails, the imported file still works
+in the current tab and Rasbora explains that it could not be remembered.
+
+The bundled CC-CEDICT dictionary and SQLite engine use the browser's HTTP cache.
+Production assets have content hashes in their URLs and are cached for a year,
+so ordinary repeat visits reuse them locally; changed assets get new URLs.
+The app itself still requires network access when its resources are not cached.
+
 ## The card lists
 
 Five pages answer "which cards?", and each one opens a card's details when you select it. Every row carries a bar for how well known the card is — filling and turning from red towards green as the score climbs, with the exact score on hover. It reads in doublings rather than in plain numbers, because that is how Pleco spaces reviews: a card at the top of the scale fills the bar and is one you are done with.
