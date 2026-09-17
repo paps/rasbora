@@ -93,7 +93,7 @@ const DatabaseProvider = ({ children }: DatabaseProviderProps) => {
 
   useEffect(() => () => loaded?.database.close(), [loaded]);
 
-  const importFile = useCallback((file: File) => {
+  const importFile = useCallback((source: File | (() => Promise<File>)) => {
     if (busyRef.current) return;
     busyRef.current = true;
     const current = ++generationRef.current;
@@ -103,6 +103,8 @@ const DatabaseProvider = ({ children }: DatabaseProviderProps) => {
     void (async () => {
       let opened: LoadedImport | null = null;
       try {
+        const file = typeof source === "function" ? await source() : source;
+        if (generationRef.current !== current) return;
         opened = await openImport(file);
         if (generationRef.current !== current) return;
         const firstProfileId = opened.profiles[0]?.id ?? null;

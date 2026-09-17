@@ -3,3 +3,5 @@ dist
 tsconfig.tsbuildinfo
 *.pqb
 .wrangler
+.env.local
+.env.*.local

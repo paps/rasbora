@@ -2,19 +2,22 @@ import {
   Anchor,
   Button,
   FileButton,
+  Group,
   SegmentedControl,
   Stack,
   Table,
   Text,
+  TextInput,
   Title,
   Tooltip,
   VisuallyHidden,
 } from "@mantine/core";
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import RelativeTime from "@/components/RelativeTime";
 import { useDatabase } from "@/database/context";
 import { readFileSummary } from "@/pages/LoadFile.db";
+import { downloadFile } from "@/pages/LoadFile.remote";
 import { useScript, type Script } from "@/script/context";
 
 /**
@@ -77,6 +80,7 @@ const LoadFile = () => {
   const { database, fileName, isImporting, error, importFile, forgetFile } =
     useDatabase();
   const { script, setScript } = useScript();
+  const [url, setUrl] = useState("");
 
   const file = useMemo(
     () => (database ? readFileSummary(database) : null),
@@ -103,11 +107,56 @@ const LoadFile = () => {
 
         <FileButton accept=".pqb" onChange={importChosenFile}>
           {(props) => (
-            <Button {...props} loading={isImporting}>
+            <Button {...props} disabled={isImporting}>
               {database ? "Load another file" : "Load a Pleco file"}
             </Button>
           )}
         </FileButton>
+
+        <Stack
+          component="form"
+          gap="xs"
+          w="100%"
+          onSubmit={(event) => {
+            event.preventDefault();
+            importFile(() =>
+              downloadFile(url, import.meta.env.VITE_GOOGLE_DRIVE_API_KEY),
+            );
+          }}
+        >
+          <TextInput
+            label="File URL"
+            description="Paste a direct download URL or a Google Drive file link shared with Anyone with the link."
+            type="url"
+            required
+            value={url}
+            onChange={(event) => {
+              setUrl(event.currentTarget.value);
+            }}
+            disabled={isImporting}
+          />
+          <Group>
+            <Button
+              type="submit"
+              variant="light"
+              disabled={isImporting || !url.trim()}
+            >
+              Load from URL
+            </Button>
+          </Group>
+          <Text size="sm" c="dimmed">
+            Downloads go directly to your browser. Other hosts must allow
+            browser access; links requiring sign-in are not supported. The
+            downloaded file is saved here just like a local file. To get an
+            updated export, load its URL again.
+          </Text>
+        </Stack>
+
+        {isImporting && (
+          <Text size="sm" role="status">
+            Loading flashcards…
+          </Text>
+        )}
 
         {database && (
           <Button
@@ -121,7 +170,7 @@ const LoadFile = () => {
         )}
 
         {error && (
-          <Text size="sm" c="red">
+          <Text size="sm" c="red" role="alert">
             {error}
           </Text>
         )}

@@ -13,7 +13,8 @@ export interface DatabaseContextValue {
   error: string | null;
   /** Persistence can fail while the imported database remains usable. */
   storageWarning: string | null;
-  importFile: (file: File) => void;
+  /** Acquire remote bytes inside the same busy/validation/storage lifecycle. */
+  importFile: (source: File | (() => Promise<File>)) => void;
   forgetFile: () => void;
   /** Every profile in the export, in Pleco's order. Empty until an import. */
   profiles: Profile[];

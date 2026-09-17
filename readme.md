@@ -22,6 +22,61 @@ So a profile is the top of the tree, and settings, scores and card selection all
 
 Rasbora therefore reads the export through exactly one profile at a time. You load a file on the `Load Pleco file` page, which is where the app opens when there is no saved file, and then pick a profile at the top of the window — it stays visible everywhere, and every page answers for that profile alone: `Profile info` describes it, `Statistics` charts the cards it draws from, and the card lists all read its scorefile only.
 
+## Loading from a URL
+
+On **Load Pleco file**, paste a direct HTTP(S) download URL or a public Google
+Drive file sharing link into **File URL**, then choose **Load from URL**.
+Downloads go directly from the host to your browser; Rasbora has no backend
+or download proxy. Other hosts must allow cross-origin browser requests (CORS).
+On an HTTPS deployment, browsers also block insecure HTTP downloads. Links
+requiring sign-in are not supported. If a host blocks browser access, download
+the file yourself and use the local file picker.
+
+For Google Drive, set the file's general access to **Anyone with the link** and
+allow viewers to download it. Paste the complete sharing link, including its
+`resourcekey` parameter if present. Rasbora reads the original file name and
+bytes through the Drive API, without asking the reader to sign in. This needs
+the app-level API key described below.
+
+The downloaded file uses the same validation and IndexedDB storage as a local
+import. A failed download or invalid export leaves the current and saved file
+intact. Reloads and new tabs restore the saved bytes and profile without
+contacting the URL again. There is no automatic sync: load the URL again to
+import a newer export. Explicit URL loads request a fresh download.
+
+### Configuring Google Drive downloads
+
+1. In a Google Cloud project, enable the **Google Drive API** and create a
+   dedicated API key for Rasbora. Public files can be accessed with an API key;
+   OAuth credentials and a service account are not needed.
+2. Restrict the key to the **Google Drive API** and to Rasbora's website using
+   **Websites (HTTP referrers)** restrictions. Include the deployed origin and
+   its `/*` path pattern. Add `http://localhost:5173` and
+   `http://localhost:5173/*` if testing locally.
+3. Copy `.env.example` to `.env.local`, then set
+   `VITE_GOOGLE_DRIVE_API_KEY` to that key. Local environment files are ignored
+   by Git. For a hosted build, set the same environment variable when building.
+4. Restart `npx vite`, or run `npx vite build` and deploy the rebuilt `dist/`.
+   Vite embeds the value at build time; changing Cloudflare runtime settings
+   does not change an already-built site.
+
+This is a browser API key: it is visible in the built JavaScript and network
+requests. Use a dedicated, restricted key, never a server secret or a service
+account key. The app sends it only to the Drive API. Without it, direct URLs and
+local imports still work, while Drive links explain that Drive loading is not
+configured. Google permissions and download/API quotas still apply.
+
+See Google's [API key setup](https://developers.google.com/workspace/guides/create-credentials),
+[key restrictions](https://docs.cloud.google.com/docs/authentication/api-keys),
+[file downloads](https://developers.google.com/workspace/drive/api/guides/manage-downloads),
+and [resource keys](https://developers.google.com/workspace/drive/api/guides/resource-keys).
+
+URL-download checks run with `node --test tests/LoadFile.remote.test.js` on
+Node 24, using its built-in test runner and TypeScript support. They simulate
+HTTP and Drive responses; a live Drive check also needs a configured key and a
+public file. After a successful import, check reload/new-tab restoration,
+profile selection, and **Forget file** in the browser as for a local import.
+
 ## Remembering your file
 
 After an import, Rasbora saves the original Pleco file and your selected profile

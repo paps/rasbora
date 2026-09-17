@@ -171,7 +171,7 @@ src/
     AlmostLearnedCards.tsx   + AlmostLearnedCards.db.ts
     LearnedCards.tsx         + LearnedCards.db.ts
     CustomizedCards.tsx      + CustomizedCards.db.ts
-    LoadFile.tsx             + LoadFile.db.ts
+    LoadFile.tsx             + LoadFile.db.ts + LoadFile.remote.ts
     NotFound.tsx
 ```
 
@@ -373,6 +373,16 @@ the file. Every import has a unique ID, checked in the same transaction when
 saving a profile or forgetting a file, so an older tab cannot change the saved
 selection for a newer export. Existing tabs keep their current views until
 reloaded; new tabs restore the last saved file and profile.
+
+Remote imports enter the same lifecycle: `importFile()` accepts either a local
+`File` or a function that downloads one. The provider invokes that function
+inside its busy guard, before validation and the existing atomic save, so local
+imports, remote imports, forgetting, and profile changes cannot race in a tab.
+`LoadFile.remote.ts` owns URL handling beside the page. It uses direct browser
+fetches and the Google Drive API for public sharing links, with the app's
+`VITE_GOOGLE_DRIVE_API_KEY` supplied by the page. There is no backend or proxy.
+The saved record still holds the file bytes, never a URL to refetch; restoration
+never contacts the remote host. Google Cloud setup is documented in `readme.md`.
 
 Storage failures are reported separately from import errors: the file can stay
 usable in this tab even when saving fails. **Forget file**, on the Load Pleco
