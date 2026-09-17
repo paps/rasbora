@@ -1,4 +1,5 @@
-import { Stack, Text, Title } from "@mantine/core";
+import { Anchor, Stack, Text, Title } from "@mantine/core";
+import { Link } from "react-router";
 import { useMemo, type ReactNode } from "react";
 import CardList, {
   type CardColumn,
@@ -66,7 +67,10 @@ const MostDifficultCards = () => {
       <Stack gap="md">
         <Title>Most difficult cards</Title>
         <Text c="dimmed">
-          Import a set of flashcards to see the cards a profile fails most.
+          <Anchor component={Link} to="/load">
+            Load a Pleco file
+          </Anchor>{" "}
+          to see the cards a profile fails most.
         </Text>
       </Stack>
     );
