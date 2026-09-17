@@ -379,8 +379,9 @@ Remote imports enter the same lifecycle: `importFile()` accepts either a local
 inside its busy guard, before validation and the existing atomic save, so local
 imports, remote imports, forgetting, and profile changes cannot race in a tab.
 `LoadFile.remote.ts` owns URL handling beside the page. It uses direct browser
-fetches and the Google Drive API for public sharing links, with the app's
-`VITE_GOOGLE_DRIVE_API_KEY` supplied by the page. There is no backend or proxy.
+fetches and the Google Drive API for public sharing links. The public browser
+key is committed as `GOOGLE_DRIVE_API_KEY` in `LoadFile.remote.ts`, restricted
+to the Drive API and this site. There is no backend or proxy.
 The saved record still holds the file bytes, never a URL to refetch; restoration
 never contacts the remote host. Google Cloud setup is documented in `readme.md`.
 

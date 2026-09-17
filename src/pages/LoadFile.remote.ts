@@ -1,3 +1,7 @@
+// Public browser key, committed here; restrict it to the Drive API and this site.
+// Set this value to enable Google Drive downloads (see readme.md).
+const GOOGLE_DRIVE_API_KEY = "";
+
 const DRIVE_HOSTS = new Set([
   "drive.google.com",
   "docs.google.com",
@@ -27,10 +31,7 @@ const responseFileName = (response: Response, url: URL): string => {
 };
 
 /** Download only; the provider owns Pleco validation and IndexedDB persistence. */
-export const downloadFile = async (
-  input: string,
-  googleDriveApiKey?: string,
-): Promise<File> => {
+export const downloadFile = async (input: string): Promise<File> => {
   let url: URL;
   try {
     url = new URL(input.trim());
@@ -58,7 +59,7 @@ export const downloadFile = async (
     if (!fileId || !/^[\w-]+$/.test(fileId)) {
       throw new Error("Paste a Google Drive file link, not a folder link.");
     }
-    const apiKey = googleDriveApiKey?.trim();
+    const apiKey = GOOGLE_DRIVE_API_KEY.trim();
     if (!apiKey) {
       throw new Error(
         "Google Drive loading is not configured for this site. Download the file from Drive and load it from your device instead.",

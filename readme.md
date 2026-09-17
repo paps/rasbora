@@ -53,16 +53,14 @@ import a newer export. Explicit URL loads request a fresh download.
    **Websites (HTTP referrers)** restrictions. Include the deployed origin and
    its `/*` path pattern. Add `http://localhost:5173` and
    `http://localhost:5173/*` if testing locally.
-3. Copy `.env.example` to `.env.local`, then set
-   `VITE_GOOGLE_DRIVE_API_KEY` to that key. Local environment files are ignored
-   by Git. For a hosted build, set the same environment variable when building.
-4. Restart `npx vite`, or run `npx vite build` and deploy the rebuilt `dist/`.
-   Vite embeds the value at build time; changing Cloudflare runtime settings
-   does not change an already-built site.
+3. Set `GOOGLE_DRIVE_API_KEY` at the top of
+   `src/pages/LoadFile.remote.ts` to that key and commit it. Run
+   `npx vite build` and deploy the rebuilt `dist/`. No environment variables
+   or separate configuration files are needed.
 
-This is a browser API key: it is visible in the built JavaScript and network
-requests. Use a dedicated, restricted key, never a server secret or a service
-account key. The app sends it only to the Drive API. Without it, direct URLs and
+This public browser key lives in the repository and is visible in the built
+JavaScript and network requests. Keep the API and website restrictions above.
+The app sends it only to the Drive API. Without it, direct URLs and
 local imports still work, while Drive links explain that Drive loading is not
 configured. Google permissions and download/API quotas still apply.
 
@@ -70,12 +68,6 @@ See Google's [API key setup](https://developers.google.com/workspace/guides/crea
 [key restrictions](https://docs.cloud.google.com/docs/authentication/api-keys),
 [file downloads](https://developers.google.com/workspace/drive/api/guides/manage-downloads),
 and [resource keys](https://developers.google.com/workspace/drive/api/guides/resource-keys).
-
-URL-download checks run with `node --test tests/LoadFile.remote.test.js` on
-Node 24, using its built-in test runner and TypeScript support. They simulate
-HTTP and Drive responses; a live Drive check also needs a configured key and a
-public file. After a successful import, check reload/new-tab restoration,
-profile selection, and **Forget file** in the browser as for a local import.
 
 ## Remembering your file
 

@@ -119,9 +119,7 @@ const LoadFile = () => {
           w="100%"
           onSubmit={(event) => {
             event.preventDefault();
-            importFile(() =>
-              downloadFile(url, import.meta.env.VITE_GOOGLE_DRIVE_API_KEY),
-            );
+            importFile(() => downloadFile(url));
           }}
         >
           <TextInput
