@@ -243,6 +243,22 @@ const CardList = <T extends CardListData>({
         position="right"
         title="Card details"
         padding="lg"
+        // The one line of CSS the drawer needs, and it is the difference
+        // between working on a phone and not.
+        //
+        // Mantine sizes the drawer with `position: fixed; top: 0; bottom: 0`,
+        // and a mobile browser resolves that against the viewport it would
+        // have with its toolbar hidden — so the drawer is about 90 px taller
+        // than the screen actually showing it. That is survivable on a page
+        // you scroll, because scrolling hides the toolbar. It is not
+        // survivable here: opening a drawer locks the document, the toolbar
+        // therefore never hides, and the bottom of a long review log sits
+        // behind it with no way to bring it up. `dvh` is the unit that means
+        // "the viewport as it is right now", which is the height this wants.
+        //
+        // On a desktop `100dvh` is `100vh` is what `top: 0; bottom: 0` already
+        // gave, so nothing there changes.
+        styles={{ inner: { height: "100dvh" } }}
       >
         {selected && <Flashcard card={selected} />}
       </Drawer>

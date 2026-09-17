@@ -485,6 +485,21 @@ The score bar is the part with something to say:
   out because it collapses into lime at ΔE 2.3 under protanopia, and every stop
   clears 2.4:1 against the white row. Re-measure if you change one.
 
+The `<Drawer>` it opens carries the app's **only** `styles` override — the one
+place anything reaches into a Mantine component's own elements — and it is there
+for a reason worth keeping: `styles={{ inner: { height: "100dvh" } }}`.
+
+Mantine sizes a drawer with `position: fixed; top: 0; bottom: 0`, and a mobile
+browser resolves that against the viewport it _would_ have with its toolbar
+hidden — roughly 90 px taller than what is actually on screen. On an ordinary
+page that corrects itself, because scrolling is what hides the toolbar. It
+cannot correct itself here: opening a drawer locks the document, so the toolbar
+never hides, and the bottom of a long review log stays behind it however far you
+scroll. `dvh` is the unit that means "the viewport as it is right now", which is
+the height the drawer wanted all along. A browser too old to know the unit drops
+the declaration and gets today's behaviour back, so there is nothing to feature
+detect.
+
 `Explained.tsx` is the app's **only** "there is more here" affordance: dotted
 underlined text that a hover, a focus or a tap explains. It covers a label that
 would otherwise read as something it is not — the flashcard's "Score last
