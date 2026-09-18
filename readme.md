@@ -166,12 +166,12 @@ current time, not export time.
 Missing scores, NULL/zero last-review timestamps, and missing, invalid or
 nonpositive points-per-day settings show **—**, never an invented date.
 
-**Profile info** shows the rate and converts its readable score range and
-free-review bucket thresholds into intervals in days. These settings describe
-intervals, not countdowns: they have no card's last-review date to subtract.
-Difficulty values are not scores and stay unchanged, as does the raw settings
-accordion. **Start date** on Profile info and Load Pleco file labels their
-existing profile creation and `FileCreated` timestamps respectively; it is not
+**Profile info** summarizes cards per session, the new-card limit, and the
+review interval range in days. The interval range divides score bounds by the
+profile's points per day; it is not a countdown because settings have no
+card's last-review date to subtract. Technical settings remain available in
+the raw settings accordion. **Start date** on Profile info and Load Pleco file
+labels their existing profile creation and `FileCreated` timestamps respectively; it is not
 the export's download date.
 
 ## Traditional or simplified

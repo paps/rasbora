@@ -3,7 +3,6 @@ import { useMemo, type ReactNode } from "react";
 import { Link } from "react-router";
 import { scoreToDays } from "@/database/reviewSchedule";
 import { formatDays } from "@/components/days";
-import { readSettingNumbers } from "@/database/plecoFile";
 import Explained from "@/components/Explained";
 import RelativeTime from "@/components/RelativeTime";
 import { useDatabase } from "@/database/context";
@@ -24,10 +23,8 @@ interface DetailRow {
 }
 
 /**
- * The settings worth spelling out, in the order they are shown. Only settings
- * whose meaning `pleco-export-format.md` establishes are here — the remaining
- * ~140 are mostly UI chrome and are shown raw further down rather than
- * captioned with a guess.
+ * The session size and review interval are the useful summary. All remaining
+ * settings stay available in the raw accordion below.
  */
 const KEY_SETTINGS: {
   label: string;
@@ -45,10 +42,6 @@ const KEY_SETTINGS: {
     describe: (setting) => setting("pro_limitunlearnedmaxcards"),
   },
   {
-    label: "Card points per day",
-    describe: (setting) => setting("pro_cardpointsday"),
-  },
-  {
     label: "Review interval range",
     describe: (setting, pointsPerDay) => {
       const min = scoreToDays(
@@ -62,29 +55,6 @@ const KEY_SETTINGS: {
       return min === null || max === null
         ? "—"
         : `${formatDays(min)} to ${formatDays(max)}`;
-    },
-  },
-  {
-    label: "Difficulty range",
-    describe: (setting) =>
-      `${setting("pro_scoremindifficulty")} to ${setting("pro_scoremaxdifficulty")}`,
-  },
-  {
-    label: "Difficulty steps",
-    describe: (setting) =>
-      `${[1, 2, 3, 4, 5, 6]
-        .map((step) => setting(`pro_scorediffchange${String(step)}`))
-        .join(", ")}, divided by ${setting("pro_scorediffdivisor")}`,
-  },
-  {
-    label: "Review interval buckets (free review)",
-    describe: (setting, pointsPerDay) => {
-      const scores = readSettingNumbers(setting("pro_scorefilter_free_starts"));
-      return scores.length === 0 || pointsPerDay === null
-        ? "—"
-        : scores
-            .map((score) => formatDays(scoreToDays(score, pointsPerDay)))
-            .join(", ");
     },
   },
 ];
@@ -246,11 +216,6 @@ const ProfileInfo = () => {
 
       <Stack gap="md">
         <Title order={4}>Session settings</Title>
-        <Text size="sm" c="dimmed">
-          Review intervals are scores divided by this profile’s card points per
-          day. A card’s next review is that interval after its last review;
-          negative time remaining means it is overdue.
-        </Text>
         <DetailTable
           rows={KEY_SETTINGS.map((entry) => ({
             label: entry.label,

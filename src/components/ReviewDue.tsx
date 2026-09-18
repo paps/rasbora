@@ -25,7 +25,7 @@ const ReviewDue = ({ seconds }: ReviewDueProps) => {
 
   return (
     <Explained
-      info={`Estimated next review: ${new Date(seconds * 1000).toLocaleString()}. Negative days mean overdue; positive days are time remaining. Calculated when this display opens.`}
+      info={`Estimated next review: ${new Date(seconds * 1000).toLocaleString()}. Negative days mean overdue; positive days are time remaining.`}
     >
       <Text span inherit c={color} style={{ whiteSpace: "nowrap" }}>
         {formatDays(days)}

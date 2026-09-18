@@ -613,11 +613,12 @@ The exact estimated date is accessible through `Explained`. Missing scores,
 NULL/zero review dates or unusable points-per-day settings show `—` with an
 explanation, including never-reviewed cards found through a left join.
 
-Profile info shows **Card points per day**, **Review interval range**, and
-**Review interval buckets (free review)**. The latter two divide scores by the
-rate without subtracting elapsed time, because settings have no last review.
-Difficulty values are not scores and remain unchanged. The raw accordion
-stays raw. Language and Word length are absent from the readable settings.
+Profile info summarizes **Cards per session**, **New cards per session, at
+most**, and **Review interval range**. The range divides score bounds by the
+profile's points per day without subtracting elapsed time, because settings
+have no last review. Points per day, difficulty, review buckets, language and
+word length stay in the raw accordion rather than the readable summary. The
+session settings need no explanation paragraph.
 Both Profile info and Load Pleco file label their existing creation timestamp
 **Start date**; this relabel does not change the source of either date.
 
