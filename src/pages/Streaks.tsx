@@ -23,7 +23,7 @@ import {
  * `Lapses` control use, because it is the same idea.
  */
 export const RUN_PARAM = "run";
-const DEFAULT_RUN = 1;
+const DEFAULT_RUN = 4;
 
 /**
  * The most the control accepts. The longest review log in an export seen so
@@ -59,7 +59,19 @@ const COLUMNS: CardColumn<StreakCard>[] = [
       </Explained>
     ),
     align: "left",
-    cell: (card) => (card.perfect ? "All perfect" : "Some weaker"),
+    // A card on no run has nothing here to be perfect or not. Every row reads
+    // the same way when the run is zero, but the column stays rather than
+    // appearing and disappearing under a reader stepping through runs.
+    cell: (card) =>
+      card.run === 0 ? (
+        <Explained info="This card was asked and got the last one wrong, so it is on no run at all — there are no answers here to have been perfect or otherwise.">
+          —
+        </Explained>
+      ) : card.perfect ? (
+        "All perfect"
+      ) : (
+        "Some weaker"
+      ),
   },
   {
     key: "reviewed",
@@ -74,7 +86,14 @@ const COLUMNS: CardColumn<StreakCard>[] = [
   },
 ];
 
-/** Why the table has no rows; see `LearnedCards.tsx` for why this is spelled out. */
+/**
+ * Why the table has no rows. Four different questions can be the reason, and
+ * saying the wrong one misleads: without a scorefile the profile scores
+ * nothing, without categories it reviews nothing, with nothing reviewed yet no
+ * card is on a run at all, and only then does an empty list mean no card is on
+ * this particular run. Every list in the app spells its empty state out this
+ * way rather than showing a bare "no results".
+ */
 const emptyReason = (
   profile: Profile,
   run: number,

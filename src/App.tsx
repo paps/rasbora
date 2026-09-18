@@ -3,11 +3,9 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import Layout from "@/Layout";
 import DatabaseProvider from "@/database/DatabaseProvider";
 import DictionaryProvider from "@/cc-cedict/DictionaryProvider";
-import AlmostLearnedCards from "@/pages/AlmostLearnedCards";
 import CardCount from "@/pages/CardCount";
 import CustomizedCards from "@/pages/CustomizedCards";
 import IncomingReviews from "@/pages/IncomingReviews";
-import LearnedCards from "@/pages/LearnedCards";
 import Lapses from "@/pages/Lapses";
 import LearningDistribution from "@/pages/LearningDistribution";
 import Leeches from "@/pages/Leeches";
@@ -62,11 +60,6 @@ const App = () => (
                 <Route path="/new" element={<NewCards />} />
                 <Route path="/leeches" element={<Leeches />} />
                 <Route path="/lapses" element={<Lapses />} />
-                <Route
-                  path="/almost-learned"
-                  element={<AlmostLearnedCards />}
-                />
-                <Route path="/learned" element={<LearnedCards />} />
                 <Route path="/streaks" element={<Streaks />} />
                 <Route path="/customized" element={<CustomizedCards />} />
                 <Route path="*" element={<NotFound />} />

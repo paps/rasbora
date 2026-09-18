@@ -45,7 +45,7 @@ const SEARCH_DELAY = 250;
  * narrower one, because a silently truncated answer reads as a complete one.
  */
 /**
- * Why a search came back with nothing; see `LearnedCards.tsx` for why this is
+ * Why a search came back with nothing; see `Streaks.tsx` for why this is
  * spelled out rather than left as one sentence. The two cases are different
  * advice: a profile drawing from no category has nothing to find whatever is
  * typed, while one that does may simply not hold this card — the export can,
