@@ -122,7 +122,7 @@ server confirms it has not. Changed assets get new content-hashed URLs.
 
 ## The card lists
 
-Five pages answer "which cards?", and each one opens a card's details when you select it. Every row carries a bar for how well known the card is — filling and turning from red towards green as the score climbs, with the exact score on hover. It reads in doublings rather than in plain numbers, because that is how Pleco spaces reviews: a card at the top of the scale fills the bar and is one you are done with.
+Five pages answer "which cards?", and each opens a card's details when you select it. Every row shows the estimated time until its next review in fractional days. Positive values are green; negative values are red with a minus sign. The same display appears beside the review count on card details and **View a card**.
 
 - **Most difficult cards** — the ones this profile has failed most often.
 - **Risky cards** — the ones you had learned and are now getting wrong: a run of correct answers, then a failure among the most recent reviews. You set how long the run has to have been and how far back "recently" reaches. Pleco records no date for an individual review, only the order, so recency here is counted in reviews rather than in weeks.
@@ -131,6 +131,49 @@ Five pages answer "which cards?", and each one opens a card's details when you s
 - **Customized cards** — the ones you have written your own definition on, which is the only meaning a Pleco export itself carries. Open one and the bundled dictionary's definition sits below your own.
 
 Both score bounds are read from the profile you picked rather than assumed, so a profile that scores differently is read differently.
+
+## Time until review
+
+The selected profile's **Card points per day** (`pro_cardpointsday`) converts
+scores into review intervals. It is configuration, not a constant: 100 in the
+sample export does not mean every profile uses 100.
+
+```text
+intervalDays = score / pro_cardpointsday
+nextReviewUnixSeconds = lastreviewedtime + intervalDays × 86400
+daysRemaining = (nextReviewUnixSeconds − currentUnixSeconds) / 86400
+```
+
+Use the card's score and last review date from the profile's scorefile, and the
+points-per-day setting from the profile itself. Two profiles can share a
+scorefile but use different rates. The interval starts at the **last review**,
+not when the score last changed or the file was exported. One day is 86,400
+seconds, not a calendar-day boundary.
+
+A score of 250 at 100 points per day gives a 2.5-day interval. Three days after
+its last review, the card shows **-0.5 days**: half a day overdue. Even cards at
+the score ceiling can become overdue; the ceiling caps the interval and does
+not retire the card. These are estimates from saved state, not a prediction of
+session selection. Reviews after export are unknown until a new file is loaded.
+
+Values strictly between -10 and 10 days round to one decimal with trailing
+zeros omitted; all other values round to whole days. A nonzero magnitude
+under 0.1 days reads **<0.1 days** or **-<0.1 days**, so rounding never hides the
+overdue sign. Negative is red, positive green, and exactly zero neutral. Hover,
+focus or tap reveals the estimated due date. The clock is read when the display
+mounts; a page left open does not tick. Reopening it recalculates against
+current time, not export time.
+
+Missing scores, NULL/zero last-review timestamps, and missing, invalid or
+nonpositive points-per-day settings show **—**, never an invented date.
+
+**Profile info** summarizes cards per session, the new-card limit, and the
+review interval range in days. The interval range divides score bounds by the
+profile's points per day; it is not a countdown because settings have no
+card's last-review date to subtract. Technical settings remain available in
+the raw settings accordion. **Start date** on Profile info and Load Pleco file
+labels their existing profile creation and `FileCreated` timestamps respectively; it is not
+the export's download date.
 
 ## Traditional or simplified
 
@@ -146,3 +189,7 @@ Multi-word phrases and cards you made yourself are often not in CC-CEDICT, and s
 
 [CC-CEDICT]: https://www.mdbg.net/chinese/dictionary?page=cc-cedict
 [CC BY-SA 4.0]: https://creativecommons.org/licenses/by-sa/4.0/
+
+## Checking changes
+
+Run `npm run check`, `npm run format`, and `npx vite build`.

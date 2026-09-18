@@ -168,9 +168,37 @@ Distribution in `pleco_flash_scores_1` is strongly bimodal:
 | 25,600–51,199 | 2,743 |
 | 51,200 (max)  | 4,632 |
 
-**4,632 cards (31.7%) are saturated at the ceiling** and carry no further signal — precisely
-the population that "organization recommendations" should surface for retirement. Another
-2,023 sit at the 100–600 floor: the chronic-failure pile.
+**4,632 cards (31.7%) are saturated at the ceiling**: their intervals cannot
+grow further, but they can still become due or overdue. Another 2,023 sit at
+the 100–600 floor: the chronic-failure pile.
+
+### Review interval and time until review
+
+The profile's `pro_cardpointsday` converts score into days. Read it through
+`propset = profile.id`; it is 100 in the sample export but must not be
+hardcoded. Use the card's score and `lastreviewedtime` from the scorefile named
+by that profile's `pro_scorefile`.
+
+```text
+interval_days = score / pro_cardpointsday
+due_unix_seconds = lastreviewedtime + interval_days * 86400
+days_remaining = (due_unix_seconds - now_unix_seconds) / 86400
+```
+
+This scheduling relationship comes from the project requirement in `TODO.md`,
+not a reconstruction of individual review dates (absent from the export).
+It estimates the next review from saved state, not session selection or
+reviews after export. Two profiles sharing a scorefile can use different rates.
+
+Keep the result signed. A score of 250 at 100 points per day gives a 2.5-day
+interval; three days after the last review it is **-0.5 days**, half a day
+overdue. Use current time, never `FileCreated`, `scoreinctime`, `scoredectime`,
+or the export's modification time. One day means 86,400 elapsed seconds.
+
+Missing scores, NULL/zero last-review times, and missing, invalid or
+nonpositive rates leave the estimate unknown. Never substitute a rate of 100
+or a timestamp of zero. Profile score bounds and bucket thresholds convert by
+the same division, but are intervals rather than countdowns.
 
 ### `difficulty`
 
@@ -275,17 +303,18 @@ as `pleco_flash_properties`, keyed by `(propset, propid)` where `propset` is the
 Most keys are UI chrome (fonts, colors, button layout) and can be ignored. The semantically
 useful ones:
 
-| key                                               | meaning                                                |
-| ------------------------------------------------- | ------------------------------------------------------ |
-| `pro_scorefile`                                   | which `scores_<N>` table this profile writes to        |
-| `pro_categories`                                  | which categories it draws from (comma-terminated list) |
-| `pro_scoreautomin` / `pro_scoreautomax`           | score bounds (100 / 51200 here)                        |
-| `pro_scorediffchange1..6`, `pro_scorediffdivisor` | difficulty adjustment curve                            |
-| `pro_cardcount`                                   | cards per session (50 / 10 / 50)                       |
-| `pro_limitlengthstart` / `pro_limitlengthend`     | word-length filter (1–4)                               |
-| `pro_limitunlearnedmaxcards`                      | new-card cap (500 / 20 / 10)                           |
-| `pro_scorefilter_*_starts` / `_asks` / `_shows`   | SRS bucket thresholds                                  |
-| `pro_language`                                    | `4096`, matching `cards.lang`                          |
+| key                                               | meaning                                                             |
+| ------------------------------------------------- | ------------------------------------------------------------------- |
+| `pro_scorefile`                                   | which `scores_<N>` table this profile writes to                     |
+| `pro_categories`                                  | which categories it draws from (comma-terminated list)              |
+| `pro_scoreautomin` / `pro_scoreautomax`           | score bounds (100 / 51200 here)                                     |
+| `pro_scorediffchange1..6`, `pro_scorediffdivisor` | difficulty adjustment curve                                         |
+| `pro_cardpointsday`                               | score points per day; score divided by this is the interval in days |
+| `pro_cardcount`                                   | cards per session (50 / 10 / 50)                                    |
+| `pro_limitlengthstart` / `pro_limitlengthend`     | word-length filter (1–4)                                            |
+| `pro_limitunlearnedmaxcards`                      | new-card cap (500 / 20 / 10)                                        |
+| `pro_scorefilter_*_starts` / `_asks` / `_shows`   | SRS bucket thresholds                                               |
+| `pro_language`                                    | `4096`, matching `cards.lang`                                       |
 
 **Multi-valued settings are comma-_terminated_, not comma-separated** — `pro_categories=1,`
 and `pro_scorefilter_free_starts=100,200,400,800,1600,3200,6400,12800,`. A naive
@@ -339,7 +368,8 @@ Referential integrity is clean in both directions despite no declared foreign ke
 - [ ] Multi-valued settings are comma-**terminated**.
 - [ ] Follow `pro_scorefile`; `profile.id != scorefile.id`.
 - [ ] `categories.hidden` is not a boolean.
-- [ ] Score bounds come from profile settings, not constants.
+- [ ] Score bounds and points per day come from profile settings, not constants.
+- [ ] Time until review uses lastreviewedtime plus score/rate days minus current time; negative is overdue.
 - [ ] Entity ids are sparse and non-contiguous.
 - [ ] `hw` is not unique.
 - [ ] A correct answer at the score ceiling is logged in `scoredectime`, not `scoreinctime`.

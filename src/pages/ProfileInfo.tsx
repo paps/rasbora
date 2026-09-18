@@ -1,6 +1,8 @@
 import { Accordion, Anchor, Stack, Table, Text, Title } from "@mantine/core";
 import { useMemo, type ReactNode } from "react";
 import { Link } from "react-router";
+import { scoreToDays } from "@/database/reviewSchedule";
+import { formatDays } from "@/components/days";
 import Explained from "@/components/Explained";
 import RelativeTime from "@/components/RelativeTime";
 import { useDatabase } from "@/database/context";
@@ -20,22 +22,16 @@ interface DetailRow {
   info?: string;
 }
 
-/** Reads a comma-**terminated** setting for display: `100,200,` is two values. */
-const formatList = (value: string): string =>
-  value
-    .split(",")
-    .filter((part) => part !== "")
-    .join(", ");
-
 /**
- * The settings worth spelling out, in the order they are shown. Only settings
- * whose meaning `pleco-export-format.md` establishes are here — the remaining
- * ~140 are mostly UI chrome and are shown raw further down rather than
- * captioned with a guess.
+ * The session size and review interval are the useful summary. All remaining
+ * settings stay available in the raw accordion below.
  */
 const KEY_SETTINGS: {
   label: string;
-  describe: (setting: (key: string) => string) => string;
+  describe: (
+    setting: (key: string) => string,
+    pointsPerDay: number | null,
+  ) => string;
 }[] = [
   {
     label: "Cards per session",
@@ -46,34 +42,20 @@ const KEY_SETTINGS: {
     describe: (setting) => setting("pro_limitunlearnedmaxcards"),
   },
   {
-    label: "Word length",
-    describe: (setting) =>
-      `${setting("pro_limitlengthstart")}–${setting("pro_limitlengthend")} characters`,
-  },
-  {
-    label: "Score range",
-    describe: (setting) =>
-      `${setting("pro_scoreautomin")} to ${setting("pro_scoreautomax")}`,
-  },
-  {
-    label: "Difficulty range",
-    describe: (setting) =>
-      `${setting("pro_scoremindifficulty")} to ${setting("pro_scoremaxdifficulty")}`,
-  },
-  {
-    label: "Difficulty steps",
-    describe: (setting) =>
-      `${[1, 2, 3, 4, 5, 6]
-        .map((step) => setting(`pro_scorediffchange${String(step)}`))
-        .join(", ")}, divided by ${setting("pro_scorediffdivisor")}`,
-  },
-  {
-    label: "Score buckets (free review)",
-    describe: (setting) => formatList(setting("pro_scorefilter_free_starts")),
-  },
-  {
-    label: "Language",
-    describe: (setting) => setting("pro_language"),
+    label: "Review interval range",
+    describe: (setting, pointsPerDay) => {
+      const min = scoreToDays(
+        Number(setting("pro_scoreautomin")),
+        pointsPerDay,
+      );
+      const max = scoreToDays(
+        Number(setting("pro_scoreautomax")),
+        pointsPerDay,
+      );
+      return min === null || max === null
+        ? "—"
+        : `${formatDays(min)} to ${formatDays(max)}`;
+    },
   },
 ];
 
@@ -200,7 +182,7 @@ const ProfileInfo = () => {
       value: details.cardCount.toLocaleString(),
       info: "Each card is counted once, however many of the profile's categories it is filed in, so this can be lower than the category counts added together. It is how many cards the profile can put in front of you.",
     },
-    { label: "Created", value: <RelativeTime seconds={details.created} /> },
+    { label: "Start date", value: <RelativeTime seconds={details.created} /> },
     { label: "Modified", value: <RelativeTime seconds={details.modified} /> },
     {
       label: "Last session started",
@@ -237,7 +219,7 @@ const ProfileInfo = () => {
         <DetailTable
           rows={KEY_SETTINGS.map((entry) => ({
             label: entry.label,
-            value: entry.describe(setting),
+            value: entry.describe(setting, details.pointsPerDay),
           }))}
         />
         <AllSettings settings={details.settings} />

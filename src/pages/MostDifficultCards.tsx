@@ -1,15 +1,13 @@
 import { Anchor, Stack, Text, Title } from "@mantine/core";
 import { Link } from "react-router";
 import { useMemo, type ReactNode } from "react";
-import CardList, {
-  type CardColumn,
-  type CardListData,
-} from "@/components/CardList";
+import type { FlashcardData } from "@/components/Flashcard";
+import CardList, { type CardColumn } from "@/components/CardList";
 import { useDatabase } from "@/database/context";
 import type { Profile } from "@/database/plecoFile";
 import { readMostDifficultCards } from "@/pages/MostDifficultCards.db";
 
-const COLUMNS: CardColumn<CardListData>[] = [
+const COLUMNS: CardColumn<FlashcardData>[] = [
   {
     key: "incorrect",
     header: "Failed",
@@ -91,11 +89,7 @@ const MostDifficultCards = () => {
             Select a card to see its details.
           </Text>
 
-          <CardList
-            cards={difficult.cards}
-            columns={COLUMNS}
-            scoreRange={difficult.scoreRange}
-          />
+          <CardList cards={difficult.cards} columns={COLUMNS} />
         </>
       )}
     </Stack>

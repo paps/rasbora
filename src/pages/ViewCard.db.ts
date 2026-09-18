@@ -1,8 +1,15 @@
 /** The search behind `ViewCard.tsx`, and nothing else. */
 
 import type { Database, SqlValue } from "sql.js";
+import { nextReviewTime } from "@/database/reviewSchedule";
 import type { FlashcardData } from "@/components/Flashcard";
-import { asCount, asText, firstValueOf, rowsOf } from "@/database/plecoFile";
+import {
+  readCardPointsPerDay,
+  asCount,
+  asText,
+  firstValueOf,
+  rowsOf,
+} from "@/database/plecoFile";
 import type { Profile } from "@/database/plecoFile";
 
 /**
@@ -277,6 +284,7 @@ export const searchCards = (
 ): CardSearch => {
   const query = parseSearch(raw);
   const table = profile.scorefile?.table ?? null;
+  const pointsPerDay = readCardPointsPerDay(database, profile);
 
   if (query.text === "" || profile.categoryIds.length === 0) {
     return { cards: [], total: 0 };
@@ -330,10 +338,10 @@ export const searchCards = (
   const join = table === null ? "" : `left join ${table} s on s.card = c.id`;
   const review =
     table === null
-      ? `0, 0, 0, '', null, null, null, null`
+      ? `0, 0, 0, '', null, null, null, null, null`
       : `s.correct, s.incorrect, s.reviewed, coalesce(s.history, ''),
          s.firstreviewedtime, s.lastreviewedtime,
-         s.scoreinctime, s.scoredectime`;
+         s.scoreinctime, s.scoredectime, s.score`;
   const rank = `case
       when c.id = $id then 0
       when ${headword} = $exact or ${alternate} = $exact
@@ -371,6 +379,11 @@ export const searchCards = (
       lastReviewed: asTime(row[12] ?? null),
       scoreIncreased: asTime(row[13] ?? null),
       scoreDecreased: asTime(row[14] ?? null),
+      nextReview: nextReviewTime(
+        typeof row[15] === "number" ? row[15] : null,
+        asTime(row[12] ?? null),
+        pointsPerDay,
+      ),
     })),
     total: asCount(
       firstValueOf(

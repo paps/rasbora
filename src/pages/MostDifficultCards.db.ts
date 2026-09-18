@@ -1,9 +1,15 @@
 /** The query behind `MostDifficultCards.tsx`, and nothing else. */
 
 import type { Database, SqlValue } from "sql.js";
-import type { CardListData } from "@/components/CardList";
-import { asCount, asText, readScoreRange, rowsOf } from "@/database/plecoFile";
-import type { Profile, ScoreRange } from "@/database/plecoFile";
+import type { FlashcardData } from "@/components/Flashcard";
+import { nextReviewTime } from "@/database/reviewSchedule";
+import {
+  readCardPointsPerDay,
+  asCount,
+  asText,
+  rowsOf,
+} from "@/database/plecoFile";
+import type { Profile } from "@/database/plecoFile";
 
 /**
  * How many cards the page shows. "Most difficult" is open-ended; this is the
@@ -33,9 +39,7 @@ const asScore = (value: SqlValue | null): number | null =>
 
 export interface MostDifficultCards {
   /** The cards, hardest first. Capped. */
-  cards: CardListData[];
-  /** The bounds the list draws its score bars against. */
-  scoreRange: ScoreRange | null;
+  cards: FlashcardData[];
 }
 
 /**
@@ -61,10 +65,10 @@ export const readMostDifficultCards = (
   profile: Profile,
 ): MostDifficultCards => {
   const table = profile.scorefile?.table ?? null;
-  const scoreRange = readScoreRange(database, profile);
+  const pointsPerDay = readCardPointsPerDay(database, profile);
 
   if (table === null || profile.categoryIds.length === 0) {
-    return { cards: [], scoreRange };
+    return { cards: [] };
   }
 
   const cards = rowsOf(
@@ -97,8 +101,12 @@ export const readMostDifficultCards = (
     lastReviewed: asTime(row[12] ?? null),
     scoreIncreased: asTime(row[13] ?? null),
     scoreDecreased: asTime(row[14] ?? null),
-    score: asScore(row[15] ?? null),
+    nextReview: nextReviewTime(
+      asScore(row[15] ?? null),
+      asTime(row[12] ?? null),
+      pointsPerDay,
+    ),
   }));
 
-  return { cards, scoreRange };
+  return { cards };
 };

@@ -1,19 +1,17 @@
 import { Anchor, Stack, Text, Title } from "@mantine/core";
 import { Link } from "react-router";
 import { useMemo, type ReactNode } from "react";
-import CardList, {
-  type CardColumn,
-  type CardListData,
-} from "@/components/CardList";
+import type { FlashcardData } from "@/components/Flashcard";
+import CardList, { type CardColumn } from "@/components/CardList";
+import { formatDays } from "@/components/days";
+import { scoreToDays } from "@/database/reviewSchedule";
 import Explained from "@/components/Explained";
 import RelativeTime from "@/components/RelativeTime";
 import { useDatabase } from "@/database/context";
 import type { Profile } from "@/database/plecoFile";
 import { readAlmostLearnedCards } from "@/pages/AlmostLearnedCards.db";
 
-// No score column of its own: the bar `CardList` draws sits in every row
-// already, and its tooltip carries the exact number this page used to print.
-const COLUMNS: CardColumn<CardListData>[] = [
+const COLUMNS: CardColumn<FlashcardData>[] = [
   {
     key: "reviewed",
     header: "Reviewed",
@@ -58,8 +56,7 @@ const emptyReason = (
 
   return (
     <>
-      No card in the {name} profile scores between{" "}
-      <b>{threshold.toLocaleString()}</b> and <b>{ceiling.toLocaleString()}</b>.
+      No card in the {name} profile is in its top score band below the ceiling.
     </>
   );
 };
@@ -87,7 +84,7 @@ const AlmostLearnedCards = () => {
           <Anchor component={Link} to="/load">
             Load a Pleco file
           </Anchor>{" "}
-          to see the cards a profile has nearly finished with.
+          to see the cards near a profile’s longest review interval.
         </Text>
       </Stack>
     );
@@ -110,13 +107,23 @@ const AlmostLearnedCards = () => {
           <Text size="sm" c="dimmed">
             <b>{almost.total.toLocaleString()}</b> cards sit in the{" "}
             <b>{profile.name}</b> profile’s{" "}
-            <Explained info="The last of the score bands the profile spaces reviews by, from its pro_scorefilter_*_starts settings. A card above it waits the longest this profile waits before asking again — but it is still asked, unlike a card at the maximum score.">
+            <Explained info="The last of the score bands the profile spaces reviews by, from its pro_scorefilter_*_starts settings. Cards in this band have long review intervals. Even a card at the maximum score can become due again.">
               top score band
             </Explained>
-            , scoring at least <b>{almost.threshold?.toLocaleString()}</b> but
-            short of the maximum{" "}
-            <b>{almost.scoreRange?.max.toLocaleString()}</b> that would make
-            them learned.{" "}
+            , with review intervals from{" "}
+            <b>
+              {formatDays(scoreToDays(almost.threshold, almost.pointsPerDay))}
+            </b>{" "}
+            up to, but below, the maximum of{" "}
+            <b>
+              {formatDays(
+                scoreToDays(
+                  almost.scoreRange?.max ?? null,
+                  almost.pointsPerDay,
+                ),
+              )}
+            </b>
+            .{" "}
             {almost.total > almost.cards.length && (
               <>
                 The <b>{almost.cards.length.toLocaleString()}</b> longest unseen
@@ -126,11 +133,7 @@ const AlmostLearnedCards = () => {
             Least recently reviewed first. Select a card to see its details.
           </Text>
 
-          <CardList
-            cards={almost.cards}
-            columns={COLUMNS}
-            scoreRange={almost.scoreRange}
-          />
+          <CardList cards={almost.cards} columns={COLUMNS} />
         </>
       )}
     </Stack>
