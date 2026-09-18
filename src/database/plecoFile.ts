@@ -322,7 +322,7 @@ export const listProfiles = (database: Database): Profile[] => {
 export interface ScoreRange {
   /** `pro_scoreautomin` — where a card sits after being failed enough. */
   min: number;
-  /** `pro_scoreautomax` — the ceiling, where a card is finished with. */
+  /** `pro_scoreautomax` — the ceiling, the longest interval a card can earn. */
   max: number;
 }
 
@@ -330,11 +330,7 @@ export interface ScoreRange {
  * The bounds this profile scores against, or null when it records neither a
  * usable minimum nor maximum.
  *
- * Shared for the same reason the scorefile lookup is: every card list draws
- * the same score bar, and the bars are only comparable if the scale behind
- * them is one scale. A page working out its own bounds — from the rows it
- * happens to be showing, say — would draw the same card differently on two
- * pages, which is worse than not drawing it at all.
+ * Used to select learned and almost-learned cards against the same bounds.
  *
  * The bounds really are per-profile configuration despite reading 100 and
  * 51,200 in every export seen so far, so they are read rather than assumed.
@@ -353,4 +349,15 @@ export const readScoreRange = (
   return min === undefined || max === undefined || min <= 0 || max <= min
     ? null
     : { min, max };
+};
+
+/** Points per day belong to the profile, even when profiles share a scorefile. */
+export const readCardPointsPerDay = (
+  database: Database,
+  profile: Profile,
+): number | null => {
+  const value = Number(
+    readProfileSetting(database, profile.id, "pro_cardpointsday"),
+  );
+  return Number.isFinite(value) && value > 0 ? value : null;
 };

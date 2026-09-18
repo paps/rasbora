@@ -1,15 +1,16 @@
 /** The query behind `CustomizedCards.tsx`, and nothing else. */
 
 import type { Database, SqlValue } from "sql.js";
-import type { CardListData } from "@/components/CardList";
+import type { FlashcardData } from "@/components/Flashcard";
+import { nextReviewTime } from "@/database/reviewSchedule";
 import {
+  readCardPointsPerDay,
   asCount,
   asText,
   firstValueOf,
-  readScoreRange,
   rowsOf,
 } from "@/database/plecoFile";
-import type { Profile, ScoreRange } from "@/database/plecoFile";
+import type { Profile } from "@/database/plecoFile";
 
 /** How many cards the page lists; see `LearnedCards.db.ts` for the reason. */
 const CUSTOMIZED_LIMIT = 1000;
@@ -31,11 +32,9 @@ const asScore = (value: SqlValue | null): number | null =>
 
 export interface CustomizedCards {
   /** Cards with a definition of the user's own. Capped. */
-  cards: CardListData[];
+  cards: FlashcardData[];
   /** How many there are in all, which may be more than were returned. */
   total: number;
-  /** The bounds the list draws its score bars against. */
-  scoreRange: ScoreRange | null;
 }
 
 /**
@@ -60,10 +59,10 @@ export const readCustomizedCards = (
   profile: Profile,
 ): CustomizedCards => {
   const table = profile.scorefile?.table ?? null;
-  const scoreRange = readScoreRange(database, profile);
+  const pointsPerDay = readCardPointsPerDay(database, profile);
 
   if (profile.categoryIds.length === 0) {
-    return { cards: [], total: 0, scoreRange };
+    return { cards: [], total: 0 };
   }
 
   // Without a scorefile there is no `s` to read, so the review columns are
@@ -109,7 +108,11 @@ export const readCustomizedCards = (
       lastReviewed: asTime(row[12] ?? null),
       scoreIncreased: asTime(row[13] ?? null),
       scoreDecreased: asTime(row[14] ?? null),
-      score: asScore(row[15] ?? null),
+      nextReview: nextReviewTime(
+        asScore(row[15] ?? null),
+        asTime(row[12] ?? null),
+        pointsPerDay,
+      ),
     })),
     total: asCount(
       firstValueOf(
@@ -117,6 +120,5 @@ export const readCustomizedCards = (
         `select count(*) from pleco_flash_cards c ${scope}`,
       ),
     ),
-    scoreRange,
   };
 };

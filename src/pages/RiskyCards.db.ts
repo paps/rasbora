@@ -1,9 +1,15 @@
 /** The query behind `RiskyCards.tsx`, and the reading of the review log. */
 
 import type { Database, SqlValue } from "sql.js";
-import type { CardListData } from "@/components/CardList";
-import { asCount, asText, readScoreRange, rowsOf } from "@/database/plecoFile";
-import type { Profile, ScoreRange } from "@/database/plecoFile";
+import type { FlashcardData } from "@/components/Flashcard";
+import { nextReviewTime } from "@/database/reviewSchedule";
+import {
+  readCardPointsPerDay,
+  asCount,
+  asText,
+  rowsOf,
+} from "@/database/plecoFile";
+import type { Profile } from "@/database/plecoFile";
 
 /** How many cards the page lists; see `LearnedCards.db.ts` for the reason. */
 const RISKY_LIMIT = 1000;
@@ -28,7 +34,7 @@ export interface RiskSettings {
 }
 
 /** A card that was going well and then stopped. */
-export interface RiskyCard extends CardListData {
+export interface RiskyCard extends FlashcardData {
   /** The run of correct answers the failure broke, in reviews. */
   brokenRun: number;
   /** Reviews since that run ended, the failure among them. */
@@ -44,9 +50,7 @@ export interface RiskyCards {
 
 export interface RiskyCandidates {
   /** Every card the filtering below has to consider. */
-  candidates: CardListData[];
-  /** The bounds the list draws its score bars against. */
-  scoreRange: ScoreRange | null;
+  candidates: FlashcardData[];
 }
 
 /**
@@ -115,7 +119,7 @@ const riskOf = (
  * about strings already in memory would be the slower way round.
  */
 export const selectRiskyCards = (
-  candidates: CardListData[],
+  candidates: FlashcardData[],
   settings: RiskSettings,
 ): RiskyCards => {
   const risky = candidates
@@ -148,10 +152,10 @@ export const readRiskyCandidates = (
   profile: Profile,
 ): RiskyCandidates => {
   const table = profile.scorefile?.table ?? null;
-  const scoreRange = readScoreRange(database, profile);
+  const pointsPerDay = readCardPointsPerDay(database, profile);
 
   if (table === null || profile.categoryIds.length === 0) {
-    return { candidates: [], scoreRange };
+    return { candidates: [] };
   }
 
   const candidates = rowsOf(
@@ -182,8 +186,12 @@ export const readRiskyCandidates = (
     lastReviewed: asTime(row[12] ?? null),
     scoreIncreased: asTime(row[13] ?? null),
     scoreDecreased: asTime(row[14] ?? null),
-    score: asScore(row[15] ?? null),
+    nextReview: nextReviewTime(
+      asScore(row[15] ?? null),
+      asTime(row[12] ?? null),
+      pointsPerDay,
+    ),
   }));
 
-  return { candidates, scoreRange };
+  return { candidates };
 };

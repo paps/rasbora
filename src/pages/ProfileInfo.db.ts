@@ -1,7 +1,13 @@
 /** The queries behind `ProfileInfo.tsx`, and nothing else. */
 
 import type { Database, SqlValue } from "sql.js";
-import { asCount, asText, firstValueOf, rowsOf } from "@/database/plecoFile";
+import {
+  asCount,
+  asText,
+  firstValueOf,
+  readCardPointsPerDay,
+  rowsOf,
+} from "@/database/plecoFile";
 import type { Profile } from "@/database/plecoFile";
 
 export interface ProfileCategory {
@@ -18,6 +24,7 @@ export interface ProfileSetting {
 }
 
 export interface ProfileDetails {
+  pointsPerDay: number | null;
   created: number | null;
   modified: number | null;
   lastSessionStart: number | null;
@@ -71,6 +78,7 @@ export const readProfileDetails = (
   const categoryIds = profile.categoryIds.join(", ");
 
   return {
+    pointsPerDay: readCardPointsPerDay(database, profile),
     created: asTime(row[0] ?? null),
     modified: asTime(row[1] ?? null),
     lastSessionStart: asTime(row[2] ?? null),

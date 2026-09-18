@@ -1,6 +1,9 @@
 import { Accordion, Anchor, Stack, Table, Text, Title } from "@mantine/core";
 import { useMemo, type ReactNode } from "react";
 import { Link } from "react-router";
+import { scoreToDays } from "@/database/reviewSchedule";
+import { formatDays } from "@/components/days";
+import { readSettingNumbers } from "@/database/plecoFile";
 import Explained from "@/components/Explained";
 import RelativeTime from "@/components/RelativeTime";
 import { useDatabase } from "@/database/context";
@@ -20,13 +23,6 @@ interface DetailRow {
   info?: string;
 }
 
-/** Reads a comma-**terminated** setting for display: `100,200,` is two values. */
-const formatList = (value: string): string =>
-  value
-    .split(",")
-    .filter((part) => part !== "")
-    .join(", ");
-
 /**
  * The settings worth spelling out, in the order they are shown. Only settings
  * whose meaning `pleco-export-format.md` establishes are here — the remaining
@@ -35,7 +31,10 @@ const formatList = (value: string): string =>
  */
 const KEY_SETTINGS: {
   label: string;
-  describe: (setting: (key: string) => string) => string;
+  describe: (
+    setting: (key: string) => string,
+    pointsPerDay: number | null,
+  ) => string;
 }[] = [
   {
     label: "Cards per session",
@@ -46,14 +45,24 @@ const KEY_SETTINGS: {
     describe: (setting) => setting("pro_limitunlearnedmaxcards"),
   },
   {
-    label: "Word length",
-    describe: (setting) =>
-      `${setting("pro_limitlengthstart")}–${setting("pro_limitlengthend")} characters`,
+    label: "Card points per day",
+    describe: (setting) => setting("pro_cardpointsday"),
   },
   {
-    label: "Score range",
-    describe: (setting) =>
-      `${setting("pro_scoreautomin")} to ${setting("pro_scoreautomax")}`,
+    label: "Review interval range",
+    describe: (setting, pointsPerDay) => {
+      const min = scoreToDays(
+        Number(setting("pro_scoreautomin")),
+        pointsPerDay,
+      );
+      const max = scoreToDays(
+        Number(setting("pro_scoreautomax")),
+        pointsPerDay,
+      );
+      return min === null || max === null
+        ? "—"
+        : `${formatDays(min)} to ${formatDays(max)}`;
+    },
   },
   {
     label: "Difficulty range",
@@ -68,12 +77,15 @@ const KEY_SETTINGS: {
         .join(", ")}, divided by ${setting("pro_scorediffdivisor")}`,
   },
   {
-    label: "Score buckets (free review)",
-    describe: (setting) => formatList(setting("pro_scorefilter_free_starts")),
-  },
-  {
-    label: "Language",
-    describe: (setting) => setting("pro_language"),
+    label: "Review interval buckets (free review)",
+    describe: (setting, pointsPerDay) => {
+      const scores = readSettingNumbers(setting("pro_scorefilter_free_starts"));
+      return scores.length === 0 || pointsPerDay === null
+        ? "—"
+        : scores
+            .map((score) => formatDays(scoreToDays(score, pointsPerDay)))
+            .join(", ");
+    },
   },
 ];
 
@@ -200,7 +212,7 @@ const ProfileInfo = () => {
       value: details.cardCount.toLocaleString(),
       info: "Each card is counted once, however many of the profile's categories it is filed in, so this can be lower than the category counts added together. It is how many cards the profile can put in front of you.",
     },
-    { label: "Created", value: <RelativeTime seconds={details.created} /> },
+    { label: "Start date", value: <RelativeTime seconds={details.created} /> },
     { label: "Modified", value: <RelativeTime seconds={details.modified} /> },
     {
       label: "Last session started",
@@ -234,10 +246,15 @@ const ProfileInfo = () => {
 
       <Stack gap="md">
         <Title order={4}>Session settings</Title>
+        <Text size="sm" c="dimmed">
+          Review intervals are scores divided by this profile’s card points per
+          day. A card’s next review is that interval after its last review;
+          negative time remaining means it is overdue.
+        </Text>
         <DetailTable
           rows={KEY_SETTINGS.map((entry) => ({
             label: entry.label,
-            value: entry.describe(setting),
+            value: entry.describe(setting, details.pointsPerDay),
           }))}
         />
         <AllSettings settings={details.settings} />

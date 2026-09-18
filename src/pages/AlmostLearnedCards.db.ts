@@ -1,9 +1,11 @@
 /** The queries behind `AlmostLearnedCards.tsx`, and nothing else. */
 
 import type { Database, SqlValue } from "sql.js";
-import type { CardListData } from "@/components/CardList";
+import type { FlashcardData } from "@/components/Flashcard";
+import { nextReviewTime } from "@/database/reviewSchedule";
 import {
   asCount,
+  readCardPointsPerDay,
   asText,
   firstValueOf,
   readScoreRange,
@@ -27,12 +29,13 @@ const asScore = (value: SqlValue | null): number | null =>
   typeof value === "number" ? value : null;
 
 export interface AlmostLearnedCards {
+  pointsPerDay: number | null;
   /** Where the profile's longest review interval starts. Null if unknown. */
   threshold: number | null;
   /** The bounds the band sits inside; its `max` is the learned ceiling. */
   scoreRange: ScoreRange | null;
   /** Cards in that band, longest since last reviewed first. Capped. */
-  cards: CardListData[];
+  cards: FlashcardData[];
   /** How many there are in all, which may be more than were returned. */
   total: number;
 }
@@ -41,7 +44,7 @@ export interface AlmostLearnedCards {
  * Where the profile's top score band begins: the last threshold of its
  * `pro_scorefilter_*_starts` settings, which are the score buckets Pleco
  * spaces reviews by. A card above it is in the band that comes back least
- * often without being finished.
+ * often, below the ceiling.
  *
  * There are five of those settings, one per test type (free, multi, review,
  * self, tones), and the profile does not say which one a session runs —
@@ -71,7 +74,7 @@ const readTopBandStart = (
 };
 
 /**
- * The cards the profile has nearly finished with: in its top score band, but
+ * The cards near the profile’s longest interval: in its top score band, but
  * not yet at the ceiling that would make them learned. They still come back,
  * at the longest interval the profile has, which is what makes them the ones
  * worth watching — a failure here costs the most.
@@ -86,6 +89,7 @@ export const readAlmostLearnedCards = (
   profile: Profile,
 ): AlmostLearnedCards => {
   const table = profile.scorefile?.table ?? null;
+  const pointsPerDay = readCardPointsPerDay(database, profile);
   const threshold = readTopBandStart(database, profile);
   const scoreRange = readScoreRange(database, profile);
   const ceiling = scoreRange?.max ?? null;
@@ -96,7 +100,7 @@ export const readAlmostLearnedCards = (
     ceiling === null ||
     profile.categoryIds.length === 0
   ) {
-    return { threshold, scoreRange, cards: [], total: 0 };
+    return { pointsPerDay, threshold, scoreRange, cards: [], total: 0 };
   }
 
   const scope = `where s.score >= ? and s.score < ?
@@ -104,6 +108,7 @@ export const readAlmostLearnedCards = (
                   where cat in (${profile.categoryIds.join(", ")}))`;
 
   return {
+    pointsPerDay,
     threshold,
     scoreRange,
     cards: rowsOf(
@@ -136,7 +141,11 @@ export const readAlmostLearnedCards = (
       lastReviewed: asTime(row[12] ?? null),
       scoreIncreased: asTime(row[13] ?? null),
       scoreDecreased: asTime(row[14] ?? null),
-      score: asScore(row[15] ?? null),
+      nextReview: nextReviewTime(
+        asScore(row[15] ?? null),
+        asTime(row[12] ?? null),
+        pointsPerDay,
+      ),
     })),
     total: asCount(
       firstValueOf(

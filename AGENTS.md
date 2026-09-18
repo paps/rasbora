@@ -93,7 +93,7 @@ Three things to keep in mind:
 - **A colour that is a _surface_ follows the scheme; a colour that is _data_
   does not.** This is the line to hold when adding anything coloured. A shade
   like `red.8` is a fixed hex in Mantine whatever the scheme, and that is
-  correct for the score ramp and the grade ramp: a ΔE between two of them is a
+  correct for the grade ramp: a ΔE between two of them is a
   property of the pair and does not move with the page behind it. What inverts
   is neutrals — a track, a rule, a line that is grey _because_ it is not a hue.
   Those are written as
@@ -102,10 +102,9 @@ Three things to keep in mind:
   the switch without any component reading state. Mantine's baseline already
   sets `color-scheme` from its own value, so `light-dark()` tracks `auto` too.
 
-Four colours in the app were on the wrong side of that line and were moved:
-`CardList`'s score-bar track, the two halves of the flashcard timeline's arrow,
-and the chart's total and "Other categories" series. Everything else measured
-clean — see the notes on each ramp, which carry the numbers for both surfaces.
+The flashcard timeline's arrow and the chart's total and "Other categories"
+series follow this rule. Review countdowns use plain Mantine red and green text,
+with the minus sign preserving the overdue distinction without colour.
 
 ## The bundled dictionary: where meanings come from
 
@@ -185,6 +184,7 @@ src/
   database/             What every page shares, and nothing more
     plecoFile.ts        Opening an export, the shared sql.js opener, reading
                         sql.js values, score tables, profiles
+    reviewSchedule.ts   Score-to-days conversion and estimated due timestamps
     context.ts          DatabaseContext + the useDatabase() hook
     DatabaseProvider.tsx  Restores and holds the export and selected profile
     savedImport.ts      IndexedDB storage of the original file and profile choice
@@ -200,6 +200,8 @@ src/
     CardList.tsx        The table of cards that opens one, with its paging
     Explained.tsx       Dotted-underlined text a hover/focus/tap explains
     RelativeTime.tsx    "3 months ago", with the exact date on hover
+    ReviewDue.tsx       Signed days until review, shared by lists and cards
+    days.ts             Fractional-day formatting, including near-zero signs
     chinese.ts          Headword splitting and numbered-pinyin → tone marks
   pages/                One file per route, plus its queries
     ProfileInfo.tsx     + ProfileInfo.db.ts
@@ -389,7 +391,8 @@ question sharpens, and a shared helper bent to serve both is worse than two
 straightforward queries.
 
 `src/database/` holds only what is true of _any_ export, whatever page is
-looking at it, and `plecoFile.ts` is all of it:
+looking at it. `plecoFile.ts` handles the shared reads below;
+`reviewSchedule.ts` holds the pure score-to-days and due-time arithmetic:
 
 - **Opening an export** — the sql.js bootstrap, the cached WebAssembly
   compilation, and the `FormatString` assertion. One compilation for the whole
@@ -414,11 +417,13 @@ looking at it, and `plecoFile.ts` is all of it:
   seen so far nests them, but a profile naming a parent and quietly losing its
   children would undercount every page. Ids come back as integers, so a page
   can interpolate them into an `in (…)` clause.
-- **Score bounds** — `readScoreRange()`. Shared for the same reason the
-  scorefile lookup is: every card list draws its score bars against one scale,
-  and a page deriving its own would show the same card differently on two
-  pages. The bounds are per-profile configuration despite reading 100 and
-  51,200 everywhere so far.
+- **Score bounds** — `readScoreRange()`. Learned and almost-learned selection
+  use the profile's configured bounds, never constants.
+- **Card points per day** — `readCardPointsPerDay()`. Read through the profile
+  id even if two profiles share a scorefile. Missing, nonfinite or nonpositive
+  settings return null, never an assumed rate of 100. `reviewSchedule.ts`
+  centralizes conversion so no page mixes seconds and days or counts the
+  interval from a score-change date instead of the last review.
 - **Profile settings** — `readProfileSetting()` and `readSettingNumbers()`.
   Both are traps rather than conveniences: the settings bag is keyed by
   `propset`, which is the _profile_ id, so a page reaching for
@@ -528,9 +533,10 @@ one place and pages hand it data.
 shown app-wide: give it a `FlashcardData` and it renders the headword, pinyin,
 any note, the review tally, the review log and the dates, holding no state. Its
 `FlashcardData` is the vocabulary item plus the review state read from the
-caller's profile scorefile. `score` and `difficulty` are left out because they
-only mean something next to the profile settings that bound them. A page that
-needs more can widen the contract; do not fork the component.
+caller's profile scorefile. Its `nextReview` is an estimated due timestamp in
+Unix seconds, computed in each page's query through `nextReviewTime()`. Raw
+score and difficulty stay outside the display contract. A page that needs more
+can widen the contract; do not fork the component.
 
 Five things about the review section are load-bearing:
 
@@ -578,8 +584,8 @@ either way: these are the only things it reaches for, and it still owns no
 state.
 
 `CardList.tsx` is the other half of that: the table every card page renders,
-holding the position, the headword in the chosen script, the pinyin, the score
-bar, then whatever columns the page hands it, plus the paging and the
+holding the position, the headword in the chosen script, the pinyin, the time
+until review, then whatever columns the page hands it, plus the paging and the
 `<Drawer>` that opens a `Flashcard`. Five pages ask "which cards?" and they
 differ in the question, not in the table — so the table is one component, and a
 sixth page gets the same page size, the same first columns and the same click
@@ -587,32 +593,33 @@ behaviour for free. It is the caller's list that is rendered, in the caller's
 order: capping a long list and saying so is the page's job, since only the page
 knows what was left out.
 
-The score bar is the part with something to say:
+`ReviewDue.tsx` is shared by every card list and the review count in the
+flashcard's "Review history in this profile" section, including when no log is
+available. `FlashcardData.nextReview` carries a timestamp, not a countdown:
+queries are memoized, so subtracting the clock there would freeze the answer
+at query time instead of when a card is opened.
 
-- **It is drawn here rather than by a page, because the scale has to be one
-  scale.** `CardListData` widens `FlashcardData` with the score, and the
-  profile's `ScoreRange` comes in beside it; a page working its own bounds out
-  — from the rows it happens to be showing, say — would draw the same card two
-  ways on two pages. A null range drops the column rather than guessing one.
-- **The scale is doublings, not the raw number.** Pleco spaces reviews by
-  doubling the score, so 100 → 200 is the same step as 25,600 → 51,200. Nine
-  doublings span the usual range; a linear bar would leave two thirds of a real
-  deck bunched in its top quarter. A card at the ceiling fills the track, which
-  is what the learned list is: a column of full bars.
-- **Colour is the redundant channel, and was measured.** Simulated against the
-  three dichromacy types, the two _ends_ of any red→green ramp in Mantine's
-  palette land at ΔE 9 under deuteranopia — a red bar and a green bar look
-  nearly alike — so the bar's length carries "how well known" and the exact
-  score is a hover away, the same arrangement as the flashcard's grade bars.
-  Within that, `SCORE_COLORS` is the best of the ramps measured: yellow is left
-  out because it collapses into lime at ΔE 2.3 under protanopia, and every stop
-  clears 2.4:1 against the white row. Re-measure if you change one.
-- **The four stops are the same in both colour schemes; the track is not.**
-  `BAR_TRACK` is `gray.2` on a light page and `dark.4` on a dark one, which is
-  what Mantine's own `Progress` track uses. Against it the weakest fill is
-  red.8 at 2.23:1, a shade better than lime.7 on gray.2 at 2.06:1 in light.
-  Shifting the ramp itself lighter for dark mode was measured and rejected: two
-  shades up, the red and green ends collapse to ΔE 2.1 under deuteranopia.
+The formula is `lastreviewedtime + score / pro_cardpointsday * 86400`, in Unix
+seconds. `ReviewDue` subtracts current Unix seconds and divides by 86,400 for
+the signed days remaining. A negative result is overdue, never clamped, even
+at the score ceiling. The clock is captured once on mount, matching the chosen
+behaviour of `RelativeTime`; there is no timer. Profile/scorefile data changes
+still change the due timestamp supplied to the display.
+
+`days.ts` rounds to one decimal, omitting trailing zeros. Below 0.1 days it
+shows `<0.1 days` or `-<0.1 days` to retain the sign. Negative is plain red,
+positive plain green, exactly zero neutral; no gradient or score bar remains.
+The exact estimated date is accessible through `Explained`. Missing scores,
+NULL/zero review dates or unusable points-per-day settings show `—` with an
+explanation, including never-reviewed cards found through a left join.
+
+Profile info shows **Card points per day**, **Review interval range**, and
+**Review interval buckets (free review)**. The latter two divide scores by the
+rate without subtracting elapsed time, because settings have no last review.
+Difficulty values are not scores and remain unchanged. The raw accordion
+stays raw. Language and Word length are absent from the readable settings.
+Both Profile info and Load Pleco file label their existing creation timestamp
+**Start date**; this relabel does not change the source of either date.
 
 `Explained.tsx` is the app's **only** "there is more here" affordance: dotted
 underlined text that a hover, a focus or a tap explains. It covers a label that
@@ -694,6 +701,8 @@ the job:
   passes it does not mean your change is correct, but it is a good start. It
   uses `--max-warnings 0`, so an ESLint warning fails the check exactly like an
   error does — do not leave warnings behind.
+- `node --test tests/reviewSchedule.test.mjs` checks countdowns and all six card
+  queries against synthetic profiles (Node 24+, no new dependencies).
 - `npm run format` runs Prettier. Run this when your work is done, before
   committing or pushing.
 - `git push origin origin/main:refs/heads/prod` deploys — see "Deployment".

@@ -261,7 +261,7 @@ const LoadFile = () => {
                 </Table.Td>
               </Table.Tr>
               <Table.Tr>
-                <Table.Th>Created</Table.Th>
+                <Table.Th>Start date</Table.Th>
                 <Table.Td>
                   <RelativeTime seconds={file.created} />
                 </Table.Td>

@@ -1,17 +1,17 @@
 import { Anchor, Stack, Text, Title } from "@mantine/core";
 import { Link } from "react-router";
 import { useMemo, type ReactNode } from "react";
-import CardList, {
-  type CardColumn,
-  type CardListData,
-} from "@/components/CardList";
+import type { FlashcardData } from "@/components/Flashcard";
+import CardList, { type CardColumn } from "@/components/CardList";
+import { formatDays } from "@/components/days";
+import { scoreToDays } from "@/database/reviewSchedule";
 import Explained from "@/components/Explained";
 import RelativeTime from "@/components/RelativeTime";
 import { useDatabase } from "@/database/context";
 import type { Profile } from "@/database/plecoFile";
 import { readLearnedCards } from "@/pages/LearnedCards.db";
 
-const COLUMNS: CardColumn<CardListData>[] = [
+const COLUMNS: CardColumn<FlashcardData>[] = [
   {
     key: "reviewed",
     header: "Reviewed",
@@ -50,22 +50,21 @@ const emptyReason = (profile: Profile, ceiling: number | null): ReactNode => {
   if (ceiling === null) {
     return (
       <>
-        The {name} profile records no maximum score, so there is no point at
-        which a card is finished with.
+        The {name} profile records no maximum score, so its longest review
+        interval is unknown.
       </>
     );
   }
 
   return (
     <>
-      No card in the {name} profile has reached its maximum score of{" "}
-      <b>{ceiling.toLocaleString()}</b> yet.
+      No card in the {name} profile has reached its maximum review interval yet.
     </>
   );
 };
 
 /**
- * The cards this profile is done with: score at the profile's ceiling, so
+ * The cards at the longest review interval: score at the profile's ceiling, so
  * Pleco cannot space them out any further. Oldest first, meaning longest since
  * the profile last showed one — the export dates no individual review, so that
  * is the only age a saturated card carries.
@@ -87,7 +86,7 @@ const LearnedCards = () => {
           <Anchor component={Link} to="/load">
             Load a Pleco file
           </Anchor>{" "}
-          to see the cards a profile is finished with.
+          to see the cards at a profile’s longest review interval.
         </Text>
       </Stack>
     );
@@ -107,10 +106,18 @@ const LearnedCards = () => {
             <b>{learned.total.toLocaleString()}</b> cards have reached the{" "}
             <b>{profile.name}</b> profile’s{" "}
             <Explained info="The highest score the profile lets a card reach, from its pro_scoreautomax setting. A card there has no interval left to earn, so it comes back as rarely as this profile ever shows a card.">
-              maximum score
+              maximum review interval
             </Explained>{" "}
-            of <b>{learned.scoreRange?.max.toLocaleString()}</b> in its “
-            <b>{profile.scorefile?.name}</b>” scorefile.{" "}
+            of{" "}
+            <b>
+              {formatDays(
+                scoreToDays(
+                  learned.scoreRange?.max ?? null,
+                  learned.pointsPerDay,
+                ),
+              )}
+            </b>{" "}
+            in its “<b>{profile.scorefile?.name}</b>” scorefile.{" "}
             {learned.total > learned.cards.length && (
               <>
                 The <b>{learned.cards.length.toLocaleString()}</b> longest
@@ -118,15 +125,11 @@ const LearnedCards = () => {
               </>
             )}
             Least recently reviewed first — the export dates no individual
-            review, so that is the only age a finished card carries. Select a
-            card to see its details.
+            review, so that is the only age a card at the ceiling carries.
+            Select a card to see its details.
           </Text>
 
-          <CardList
-            cards={learned.cards}
-            columns={COLUMNS}
-            scoreRange={learned.scoreRange}
-          />
+          <CardList cards={learned.cards} columns={COLUMNS} />
         </>
       )}
     </Stack>

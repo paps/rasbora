@@ -10,6 +10,7 @@ import {
   Tooltip,
 } from "@mantine/core";
 import Explained from "@/components/Explained";
+import ReviewDue from "@/components/ReviewDue";
 import RelativeTime from "@/components/RelativeTime";
 import { splitHeadword } from "@/components/chinese";
 import { useDictionary } from "@/cc-cedict/context";
@@ -27,6 +28,8 @@ import { otherScript, useScript } from "@/script/context";
  * review times and the history are the profile's alone.
  */
 export interface FlashcardData {
+  /** Estimated next review in this profile, in Unix seconds; null if unknown. */
+  nextReview: number | null;
   id: number;
   /** Simplified headword, `@`-separated by syllable. */
   hw: string;
@@ -337,10 +340,6 @@ const ReviewHistory = ({
 
   return (
     <Stack gap="xs">
-      <Text size="sm" fw={500}>
-        {total.toLocaleString()} reviews
-      </Text>
-
       {lastReviewed !== null && (
         <Text size="xs" c="dimmed">
           Last reviewed <RelativeTime seconds={lastReviewed} />
@@ -583,6 +582,10 @@ const Flashcard = ({ card }: FlashcardProps) => {
       <Stack gap="xs">
         <Text size="sm" fw={600}>
           Review history in this profile
+        </Text>
+        <Text size="sm" fw={500}>
+          {card.reviewed.toLocaleString()} reviews · Next review{" "}
+          <ReviewDue seconds={card.nextReview} />
         </Text>
         {card.history === "" ? (
           <Text size="sm" c="dimmed">

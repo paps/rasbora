@@ -205,11 +205,7 @@ const RiskyCards = () => {
             Longest run lost first. Select a card to see its details.
           </Text>
 
-          <CardList
-            cards={risky.cards}
-            columns={COLUMNS}
-            scoreRange={source.scoreRange}
-          />
+          <CardList cards={risky.cards} columns={COLUMNS} />
         </>
       )}
     </Stack>

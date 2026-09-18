@@ -1,9 +1,11 @@
 /** The query behind `LearnedCards.tsx`, and nothing else. */
 
 import type { Database, SqlValue } from "sql.js";
-import type { CardListData } from "@/components/CardList";
+import type { FlashcardData } from "@/components/Flashcard";
+import { nextReviewTime } from "@/database/reviewSchedule";
 import {
   asCount,
+  readCardPointsPerDay,
   asText,
   firstValueOf,
   readScoreRange,
@@ -30,6 +32,7 @@ const asScore = (value: SqlValue | null): number | null =>
   typeof value === "number" ? value : null;
 
 export interface LearnedCards {
+  pointsPerDay: number | null;
   /**
    * The bounds this profile scores against. Its `max` is the ceiling that
    * defines the page; null when the profile records none, which is the one
@@ -37,13 +40,13 @@ export interface LearnedCards {
    */
   scoreRange: ScoreRange | null;
   /** Cards at the ceiling, longest since last reviewed first. Capped. */
-  cards: CardListData[];
+  cards: FlashcardData[];
   /** How many there are in all, which may be more than were returned. */
   total: number;
 }
 
 /**
- * The cards the profile has finished with: those whose score has reached the
+ * The cards at the profile’s longest interval: those whose score has reached the
  * profile's own maximum, so Pleco has nowhere further to push them and they
  * come back as rarely as this profile ever shows a card.
  *
@@ -62,11 +65,12 @@ export const readLearnedCards = (
   profile: Profile,
 ): LearnedCards => {
   const table = profile.scorefile?.table ?? null;
+  const pointsPerDay = readCardPointsPerDay(database, profile);
   const scoreRange = readScoreRange(database, profile);
   const ceiling = scoreRange?.max ?? null;
 
   if (table === null || ceiling === null || profile.categoryIds.length === 0) {
-    return { scoreRange, cards: [], total: 0 };
+    return { pointsPerDay, scoreRange, cards: [], total: 0 };
   }
 
   const scope = `where s.score >= ?
@@ -74,6 +78,7 @@ export const readLearnedCards = (
                   where cat in (${profile.categoryIds.join(", ")}))`;
 
   return {
+    pointsPerDay,
     scoreRange,
     cards: rowsOf(
       database,
@@ -105,7 +110,11 @@ export const readLearnedCards = (
       lastReviewed: asTime(row[12] ?? null),
       scoreIncreased: asTime(row[13] ?? null),
       scoreDecreased: asTime(row[14] ?? null),
-      score: asScore(row[15] ?? null),
+      nextReview: nextReviewTime(
+        asScore(row[15] ?? null),
+        asTime(row[12] ?? null),
+        pointsPerDay,
+      ),
     })),
     total: asCount(
       firstValueOf(
