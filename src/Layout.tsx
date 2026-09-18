@@ -24,6 +24,7 @@ const PAGES: Page[] = [
   { path: "/load", label: "Load Pleco file" },
   { path: "/", label: "Profile info" },
   { path: "/statistics", label: "Statistics" },
+  { path: "/learning-distribution", label: "Learning distribution" },
   { path: "/recommendations", label: "Recommendations" },
   // Between the pages about the profile and the five that ask "which cards?":
   // it is a lookup rather than a question about a set, so it does not belong

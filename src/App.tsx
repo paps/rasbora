@@ -6,6 +6,7 @@ import DictionaryProvider from "@/cc-cedict/DictionaryProvider";
 import AlmostLearnedCards from "@/pages/AlmostLearnedCards";
 import CustomizedCards from "@/pages/CustomizedCards";
 import LearnedCards from "@/pages/LearnedCards";
+import LearningDistribution from "@/pages/LearningDistribution";
 import LoadFile from "@/pages/LoadFile";
 import MostDifficultCards from "@/pages/MostDifficultCards";
 import NotFound from "@/pages/NotFound";
@@ -50,6 +51,10 @@ const App = () => (
                 <Route path="/" element={<Landing />} />
                 <Route path="/load" element={<LoadFile />} />
                 <Route path="/statistics" element={<Statistics />} />
+                <Route
+                  path="/learning-distribution"
+                  element={<LearningDistribution />}
+                />
                 <Route path="/recommendations" element={<Recommendations />} />
                 <Route path="/card" element={<ViewCard />} />
                 <Route path="/difficult" element={<MostDifficultCards />} />

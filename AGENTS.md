@@ -206,6 +206,7 @@ src/
   pages/                One file per route, plus its queries
     ProfileInfo.tsx     + ProfileInfo.db.ts
     Statistics.tsx      + Statistics.db.ts
+    LearningDistribution.tsx + LearningDistribution.db.ts
     Recommendations.tsx
     MostDifficultCards.tsx   + MostDifficultCards.db.ts
     RiskyCards.tsx           + RiskyCards.db.ts
@@ -294,9 +295,39 @@ its session settings (the documented ones spelled out, all ~150 raw in an
 `<Accordion>`). Everything on it moves when the profile picker moves, which is
 the test for whether something belongs here — the file's own facts failed it and
 now live on `Load Pleco file`. `Statistics.tsx` charts the profile's cards over
-time.
+time, and `LearningDistribution.tsx` charts them by how far into learning they
+are.
 `Recommendations.tsx` is a deliberately empty placeholder, and `NotFound.tsx`
 is still just a heading.
+
+`LearningDistribution.tsx` is the deck's shape in one bar chart: one bar per
+run of correct answers the profile's cards are currently on, counted back from
+the last review to the failure that ended the previous run. Read left to right
+it is a pile of unlearned cards, then learning in progress, then a tail of
+cards the profile has not caught out in a long time.
+
+Three things there are load-bearing:
+
+- **"New" is its own bar, before the numbers, and must stay that way.** A card
+  the profile has never reviewed and a card that just failed its last review
+  are both on a run of zero, and one bar for both makes the left end mean
+  nothing: in the sample export's big profile all 909 cards at zero have been
+  reviewed, while in its small one 263 of the 283 there never have. So the
+  query returns `streak: null` for them, the tick reads `New`, and the caption
+  gives both counts in the same sentence. The colour is not what says so — it
+  is what makes the split visible at the glance the page exists for.
+- **Every run between 0 and the longest gets a bar, including the empty ones.**
+  Same reason the Statistics chart draws quiet months: a skipped bucket would
+  compress the axis and misreport where the deck sits. There is no cap at the
+  right end — the run cannot outgrow the review log, which is 83 reviews at its
+  longest in any export seen so far and 21 in the profile this was built
+  against.
+- **The counts above the bars are dropped when the bars are too thin for
+  them.** `LABEL_ROOM` is measured against the chart's real width through
+  `useElementSize` rather than guessed from a breakpoint, because whether the
+  labels fit is a question about the bars: the same phone holds a profile with
+  five of them comfortably and one with twenty-four not at all. The tooltip
+  gives the exact count either way.
 
 `ViewCard.tsx` is the one card page that is not a list, and it is in the
 sidebar between the profile pages and the five that are — a lookup rather than
@@ -658,9 +689,14 @@ both call it, so it is here and not in either. It runs no query — a page's
 
 ## Charts
 
-`@mantine/charts` (and its `recharts` peer) is installed for the Statistics
-page. It is the only reason either package is here, so keep chart work on
-`<LineChart>` and friends rather than dropping to raw recharts.
+`@mantine/charts` (and its `recharts` peer) is installed for the Statistics and
+Learning distribution pages. It is the only reason either package is here, so
+keep chart work on `<LineChart>`, `<BarChart>` and friends rather than dropping
+to raw recharts.
+
+The split is the same on both: the `.db.ts` shapes the data and names the
+buckets, the `.tsx` picks the colours. A chart colour is a rendering decision,
+so a query never returns one.
 
 `Statistics.db.ts` shapes the data and names the series; `Statistics.tsx` picks
 the colours. Three things there are load-bearing:
@@ -690,6 +726,20 @@ the colours. Three things there are load-bearing:
 The chart can only say when a card was _created_: the export keeps no history
 of category membership, so a card counts towards the categories it is in today.
 That caveat is in the caption and should stay there.
+
+`LearningDistribution.tsx` draws the one bar chart, and its two colours were
+checked the same way. They are `blue.7` and `orange.8` — two of the six above,
+but re-measured as a pair rather than assumed safe for being drawn from a
+validated set: worst-case ΔE 26.0 across the three dichromacy simulations, 34.4
+in normal vision, and over 3:1 against both the light and the dark page.
+Neither is a neutral, so neither follows the colour scheme, exactly as
+`CATEGORY_COLORS` does not. Re-check them if you change either.
+
+One series, so there is no legend: the title says what is being counted, and
+the bar that is not in the run colour is named by its own axis tick. The
+per-bar colour is set by putting a `color` on that data point, which Mantine's
+`<BarChart>` reads per cell — reaching for recharts' `<Cell>` is not needed and
+would be the wrong way round.
 
 ## Commands
 
