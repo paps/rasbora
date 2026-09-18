@@ -18,7 +18,7 @@ import { VIEW_CARD_LIMIT, searchCards } from "@/pages/ViewCard.db";
 /**
  * How long the reader has to stop typing before the export is searched.
  *
- * The other page with a control on it, `Risky cards`, re-filters rows it
+ * The other page with a control on it, `Lapses`, re-filters rows it
  * already holds and needs no such thing. This one runs two full scans of the
  * cards table — there is no index that survives `lower()` and a dozen
  * `replace()` calls — which is ~60 ms over 18,000 cards natively and more under

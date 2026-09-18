@@ -7,7 +7,7 @@ import {
   OTHER_SERIES,
   TOTAL_SERIES,
   readCardsOverTime,
-} from "@/pages/Statistics.db";
+} from "@/pages/CardCount.db";
 
 /**
  * Colours for the category lines, assigned in this order and never cycled —
@@ -54,7 +54,7 @@ const FIXED_COLORS: Record<string, string> = {
 
 type Measure = "cumulative" | "monthly";
 
-const Statistics = () => {
+const CardCount = () => {
   const { database, profile } = useDatabase();
   const [measure, setMeasure] = useState<Measure>("cumulative");
 
@@ -96,12 +96,12 @@ const Statistics = () => {
   if (!chart || !profile) {
     return (
       <Stack gap="md">
-        <Title>Statistics</Title>
+        <Title>Card count</Title>
         <Text c="dimmed">
           <Anchor component={Link} to="/load">
             Load a Pleco file
           </Anchor>{" "}
-          to see statistics for a profile.
+          to see how many cards a profile holds.
         </Text>
       </Stack>
     );
@@ -110,7 +110,7 @@ const Statistics = () => {
   if (chart.cumulative.length === 0) {
     return (
       <Stack gap="md">
-        <Title>Statistics</Title>
+        <Title>Card count</Title>
         <Text c="dimmed">
           This profile draws from no category that still holds dated cards, so
           there is nothing to chart.
@@ -121,7 +121,7 @@ const Statistics = () => {
 
   return (
     <Stack gap="md">
-      <Title>Statistics</Title>
+      <Title>Card count</Title>
 
       <SegmentedControl
         w="fit-content"
@@ -175,4 +175,4 @@ const Statistics = () => {
   );
 };
 
-export default Statistics;
+export default CardCount;

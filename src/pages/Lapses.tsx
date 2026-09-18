@@ -7,16 +7,16 @@ import RelativeTime from "@/components/RelativeTime";
 import { useDatabase } from "@/database/context";
 import type { Profile } from "@/database/plecoFile";
 import {
-  readRiskyCandidates,
-  selectRiskyCards,
-  type RiskyCard,
-} from "@/pages/RiskyCards.db";
+  readLapseCandidates,
+  selectLapses,
+  type Lapse,
+} from "@/pages/Lapses.db";
 
 /**
  * Where the two controls start. Four correct answers in a row is a card the
  * user had; a window of three recent reviews catches a card that failed and
  * has been limping since, without reaching so far back that a long-recovered
- * card counts as risky.
+ * card counts as a lapse.
  */
 const DEFAULT_RUN_LENGTH = 4;
 const DEFAULT_RECENT_WINDOW = 3;
@@ -41,7 +41,7 @@ const asReviewCount = (value: string | number): number | null => {
     : null;
 };
 
-const COLUMNS: CardColumn<RiskyCard>[] = [
+const COLUMNS: CardColumn<Lapse>[] = [
   {
     key: "brokenRun",
     header: "Run broken",
@@ -101,29 +101,29 @@ const emptyReason = (
  * because how long a run has to be before losing it matters is a judgement
  * about their own deck rather than something the export says.
  */
-const RiskyCards = () => {
+const Lapses = () => {
   const { database, profile } = useDatabase();
   const [runLength, setRunLength] = useState(DEFAULT_RUN_LENGTH);
   const [recentWindow, setRecentWindow] = useState(DEFAULT_RECENT_WINDOW);
 
   // Read once per profile; the controls re-filter what is already in memory.
   const source = useMemo(
-    () => (database && profile ? readRiskyCandidates(database, profile) : null),
+    () => (database && profile ? readLapseCandidates(database, profile) : null),
     [database, profile],
   );
-  const risky = useMemo(
+  const lapses = useMemo(
     () =>
       source === null
         ? null
-        : selectRiskyCards(source.candidates, { runLength, recentWindow }),
+        : selectLapses(source.candidates, { runLength, recentWindow }),
     [source, runLength, recentWindow],
   );
 
   // The two are null together — a review log belongs to a profile's scorefile.
-  if (!risky || !source || !profile) {
+  if (!lapses || !source || !profile) {
     return (
       <Stack gap="md">
-        <Title>Risky cards</Title>
+        <Title>Lapses</Title>
         <Text c="dimmed">
           <Anchor component={Link} to="/load">
             Load a Pleco file
@@ -136,12 +136,13 @@ const RiskyCards = () => {
 
   return (
     <Stack gap="md">
-      <Title>Risky cards</Title>
+      <Title>Lapses</Title>
 
       <Text size="sm" c="dimmed">
-        Cards the <b>{profile.name}</b> profile had learned and is now getting
-        wrong: a run of correct answers in its “<b>{profile.scorefile?.name}</b>
-        ” scorefile, broken by a failure among the most recent reviews. Pleco{" "}
+        A lapse is a card you had learned and are now getting wrong. In the{" "}
+        <b>{profile.name}</b> profile that means a run of correct answers in its
+        “<b>{profile.scorefile?.name}</b>” scorefile, broken by a failure among
+        the most recent reviews. Pleco{" "}
         <Explained info="The review log is one digit per review and holds no dates, so a card's reviews can be read in order but not placed in time. “Recent” therefore means a number of reviews back, not a number of weeks.">
           dates no individual review
         </Explained>
@@ -185,31 +186,31 @@ const RiskyCards = () => {
         />
       </Group>
 
-      {risky.cards.length === 0 ? (
+      {lapses.cards.length === 0 ? (
         <Text c="dimmed">
           {emptyReason(profile, runLength, source.candidates.length)}
         </Text>
       ) : (
         <>
           <Text size="sm" c="dimmed">
-            <b>{risky.total.toLocaleString()}</b> cards had at least{" "}
+            <b>{lapses.total.toLocaleString()}</b> cards had at least{" "}
             <b>{runLength.toLocaleString()}</b> correct answers in a row and
             then failed within their last <b>{recentWindow.toLocaleString()}</b>{" "}
             reviews.{" "}
-            {risky.total > risky.cards.length && (
+            {lapses.total > lapses.cards.length && (
               <>
-                The <b>{risky.cards.length.toLocaleString()}</b> that lost the
+                The <b>{lapses.cards.length.toLocaleString()}</b> that lost the
                 longest runs are listed.{" "}
               </>
             )}
             Longest run lost first. Select a card to see its details.
           </Text>
 
-          <CardList cards={risky.cards} columns={COLUMNS} />
+          <CardList cards={lapses.cards} columns={COLUMNS} />
         </>
       )}
     </Stack>
   );
 };
 
-export default RiskyCards;
+export default Lapses;
