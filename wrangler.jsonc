@@ -9,7 +9,7 @@
   "send_metrics": false,
   "assets": {
     "directory": "./dist",
-    // The router is client-side, so a request for /statistics matches no file.
+    // The router is client-side, so a request for /card-count matches no file.
     // Serve index.html for those and let React Router sort it out — without
     // this, every URL but / is a 404 on reload.
     "not_found_handling": "single-page-application",

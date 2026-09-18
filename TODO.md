@@ -4,7 +4,7 @@
       beside it for the top score band below the ceiling
 
 - [x] 'Forgotten' page: a list of cards that had 666+ and then got lost, number
-      of 6s adjustable — shipped as `Risky cards`, with both the run length and
+      of 6s adjustable — shipped as `Lapses`, with both the run length and
       how far back "recently" reaches adjustable on the page
 
 - [ ] IMPORTANT: the 'points per day' config in the profile is what divides the card score to get the number of days Pleco will wait until showing the card again. This should be shown in the app and documented. It will help compute the estimate of review dates etc

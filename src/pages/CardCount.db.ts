@@ -1,4 +1,4 @@
-/** The queries behind `Statistics.tsx`, and nothing else. */
+/** The queries behind `CardCount.tsx`, and nothing else. */
 
 import type { Database } from "sql.js";
 import { asCount, asText, firstValueOf, rowsOf } from "@/database/plecoFile";

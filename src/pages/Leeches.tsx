@@ -5,7 +5,7 @@ import type { FlashcardData } from "@/components/Flashcard";
 import CardList, { type CardColumn } from "@/components/CardList";
 import { useDatabase } from "@/database/context";
 import type { Profile } from "@/database/plecoFile";
-import { readMostDifficultCards } from "@/pages/MostDifficultCards.db";
+import { readLeeches } from "@/pages/Leeches.db";
 
 const COLUMNS: CardColumn<FlashcardData>[] = [
   {
@@ -50,20 +50,20 @@ const emptyReason = (profile: Profile): ReactNode => {
   return <>No card has ever failed a review in the {name} profile.</>;
 };
 
-const MostDifficultCards = () => {
+const Leeches = () => {
   const { database, profile } = useDatabase();
 
-  const difficult = useMemo(
-    () =>
-      database && profile ? readMostDifficultCards(database, profile) : null,
+  const leeches = useMemo(
+    () => (database && profile ? readLeeches(database, profile) : null),
     [database, profile],
   );
 
-  // The two are null together — difficulty is asked of one profile.
-  if (!difficult || !profile) {
+  // The two are null together — a card is a leech in one profile, not in the
+  // export: it carries independent review state in every scorefile.
+  if (!leeches || !profile) {
     return (
       <Stack gap="md">
-        <Title>Most difficult cards</Title>
+        <Title>Leeches</Title>
         <Text c="dimmed">
           <Anchor component={Link} to="/load">
             Load a Pleco file
@@ -76,24 +76,25 @@ const MostDifficultCards = () => {
 
   return (
     <Stack gap="md">
-      <Title>Most difficult cards</Title>
+      <Title>Leeches</Title>
 
-      {difficult.cards.length === 0 ? (
+      {leeches.cards.length === 0 ? (
         <Text c="dimmed">{emptyReason(profile)}</Text>
       ) : (
         <>
           <Text size="sm" c="dimmed">
-            The <b>{difficult.cards.length.toLocaleString()}</b> cards the{" "}
-            <b>{profile.name}</b> profile failed most often, counting incorrect
-            reviews in its “<b>{profile.scorefile?.name}</b>” scorefile only.
-            Select a card to see its details.
+            The <b>{leeches.cards.length.toLocaleString()}</b> cards the{" "}
+            <b>{profile.name}</b> profile fails most often — its leeches, the
+            ones soaking up review time without ever being learned. Counting
+            incorrect reviews in its “<b>{profile.scorefile?.name}</b>”
+            scorefile only. Select a card to see its details.
           </Text>
 
-          <CardList cards={difficult.cards} columns={COLUMNS} />
+          <CardList cards={leeches.cards} columns={COLUMNS} />
         </>
       )}
     </Stack>
   );
 };
 
-export default MostDifficultCards;
+export default Leeches;
