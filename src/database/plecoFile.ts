@@ -194,6 +194,8 @@ export const listScorefiles = (database: Database): Scorefile[] => {
 export interface Profile {
   id: number;
   name: string;
+  /** Raw laststart in Unix seconds, including zero; null means missing. */
+  lastSessionStart: number | null;
   /**
    * The scorefile this profile reviews into, followed through
    * `pro_scorefile` — never the profile's own id, which differs from it in
@@ -292,11 +294,12 @@ export const listProfiles = (database: Database): Profile[] => {
 
   return rowsOf(
     database,
-    "select id, name from pleco_flash_profiles order by sort, id",
+    "select id, name, laststart from pleco_flash_profiles order by sort, id",
   )
     .map((row) => ({
       id: asCount(row[0] ?? null),
       name: asText(row[1] ?? null),
+      lastSessionStart: typeof row[2] === "number" ? row[2] : null,
     }))
     .filter((profile) => Number.isInteger(profile.id))
     .map((profile) => {

@@ -16,7 +16,7 @@ import {
   type MantineColorScheme,
 } from "@mantine/core";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useLocation, useSearchParams } from "react-router";
 import RelativeTime from "@/components/RelativeTime";
 import { useDatabase } from "@/database/context";
 import { readFileSummary } from "@/pages/LoadFile.db";
@@ -107,6 +107,12 @@ const LoadFile = () => {
   const { script, setScript } = useScript();
   const { colorScheme, setColorScheme } = useMantineColorScheme();
   const [searchParams] = useSearchParams();
+  const navigationState: unknown = useLocation().state;
+  const wrongExport =
+    typeof navigationState === "object" &&
+    navigationState !== null &&
+    "wrongExport" in navigationState &&
+    navigationState.wrongExport === true;
   const [fromUrl] = useState(() => searchParams.get("fromUrl")?.trim() ?? "");
   const [url, setUrl] = useState(fromUrl);
   const automaticImportStartedRef = useRef(false);
@@ -132,6 +138,20 @@ const LoadFile = () => {
   return (
     <Stack gap="lg" maw={760}>
       <Title>Load Pleco file</Title>
+
+      {wrongExport && !database && (
+        <Alert
+          color="red"
+          variant="filled"
+          title="This link targets another Pleco export"
+          p="lg"
+        >
+          <Text>
+            Load the Pleco export this link was meant for here, then click the
+            original link again to open the right page.
+          </Text>
+        </Alert>
+      )}
 
       {sourceUrl && (
         <Alert title="Loaded from a URL" color="blue" role="note">
@@ -211,7 +231,9 @@ const LoadFile = () => {
           <Button
             variant="subtle"
             color="red"
-            onClick={forgetFile}
+            onClick={() => {
+              forgetFile();
+            }}
             disabled={isImporting}
           >
             Forget file

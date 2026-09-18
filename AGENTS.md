@@ -181,6 +181,8 @@ src/
   App.tsx               <MantineProvider> + <ScriptProvider> +
                         <DictionaryProvider> + <DatabaseProvider> + router
   Layout.tsx            <AppShell>: the title bar and the sidebar
+  LinkedExport.tsx      Checks incoming link constraints before routes mount
+  linkTarget.ts         Parses constraints and matches profile metadata
   database/             What every page shares, and nothing more
     plecoFile.ts        Opening an export, the shared sql.js opener, reading
                         sql.js values, score tables, profiles
@@ -232,6 +234,25 @@ there is not. `Layout` waits for restoration before mounting the routes, so a
 returning reader is not redirected while the saved file is still loading.
 `Landing` is the only place that chooses a page from `database` rather than
 showing the requested page's empty state.
+
+`LinkedExport.tsx` gates all routes inside Layout, after saved-file restoration.
+It reads optional `profileId` and `lastSessionStart` parameters through the pure
+resolver in `linkTarget.ts`. Profile metadata carries the raw `laststart` as
+`lastSessionStart`, including zero and preserving NULL. Both constraints must
+match the same profile; a timestamp alone searches all profiles and selects a
+match, preferring the current profile on ties, then Pleco's order. Malformed,
+empty and repeated values fail rather than silently dropping a constraint.
+
+A successful link selects the matching profile and consumes only these two
+parameters. A mismatch immediately unloads the export through
+`forgetFile({ unloadImmediately: true })`, attempts the same guarded IndexedDB
+removal as the normal Forget action, and replaces the URL with plain `/load`.
+The navigation state carries only a `wrongExport` flag for the Load page's alert;
+the original destination and query parameters are deliberately lost. The user
+loads a file and follows the original link again. Routes do not mount while
+validation is pending, so a rejected `/load?fromUrl=…` cannot start a download.
+Storage deletion failure leaves the tab unloaded and reports a warning; the
+ordinary Forget button keeps its existing retry behavior on failure.
 
 `Layout.tsx` wraps every route. Its title bar holds the app's mark, its name and
 one control — a `<Select>` of the export's profiles — and all of it is
