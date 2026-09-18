@@ -29,10 +29,15 @@ const PAGES: Page[] = [
   // it is a lookup rather than a question about a set, so it does not belong
   // inside that run, and it is reached often enough not to sit under it.
   { path: "/card", label: "View a card" },
+  { path: "/new", label: "New cards" },
   { path: "/leeches", label: "Leeches" },
   { path: "/lapses", label: "Lapses" },
   { path: "/almost-learned", label: "Almost learned cards" },
   { path: "/learned", label: "Learned cards" },
+  // Last of the card lists rather than inside their "most work needed first"
+  // run: the run it lists is the reader's to pick, so it sits at no one point
+  // along that axis.
+  { path: "/streaks", label: "Streaks" },
   { path: "/customized", label: "Customized cards" },
 ];
 
