@@ -208,6 +208,7 @@ src/
     ProfileInfo.tsx     + ProfileInfo.db.ts
     CardCount.tsx       + CardCount.db.ts
     LearningDistribution.tsx + LearningDistribution.db.ts
+    IncomingReviews.tsx      + IncomingReviews.db.ts
     NewCards.tsx             + NewCards.db.ts
     Leeches.tsx              + Leeches.db.ts
     Lapses.tsx               + Lapses.db.ts
@@ -743,12 +744,12 @@ both call it, so it is here and not in either. It runs no query — a page's
 
 ## Charts
 
-`@mantine/charts` (and its `recharts` peer) is installed for the Card count and
-Learning distribution pages. It is the only reason either package is here, so
-keep chart work on `<LineChart>`, `<BarChart>` and friends rather than dropping
-to raw recharts.
+`@mantine/charts` (and its `recharts` peer) is installed for the Card count,
+Learning distribution and Incoming reviews pages. These are the only reason
+either package is here, so keep chart work on `<LineChart>`, `<BarChart>` and
+friends rather than dropping to raw recharts.
 
-The split is the same on both: the `.db.ts` shapes the data and names the
+The split is the same on all three: the `.db.ts` shapes the data and names the
 buckets, the `.tsx` picks the colours. A chart colour is a rendering decision,
 so a query never returns one.
 
@@ -781,7 +782,17 @@ The chart can only say when a card was _created_: the export keeps no history
 of category membership, so a card counts towards the categories it is in today.
 That caveat is in the caption and should stay there.
 
-`LearningDistribution.tsx` draws the one bar chart, and its colours were
+`IncomingReviews.tsx` draws one bar per whole day until the estimated next
+review, from the earliest to the latest in the selected profile. Its query uses
+`nextReviewTime()` and the profile's own points per day, and receives the clock
+captured on page mount in Unix seconds. It rounds down, so -0.2 days is -1 and
+0 means the next 24 hours. Every intervening day stays on the axis, including
+empty days; there is no weekly grouping or range cap. A left join retains
+never-reviewed cards in the total, and cards without usable scheduling data are
+counted below the chart rather than assigned an invented day. Category
+membership must not count a card twice.
+
+`LearningDistribution.tsx` draws the stacked bar chart, and its colours were
 checked the same way. Three of its four are hues — `orange.8`, `blue.7` and
 `teal.8`, all drawn from the six above but re-measured as their own set rather
 than assumed safe for their provenance: worst all-pairs ΔE 9.5 under
