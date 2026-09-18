@@ -2,6 +2,7 @@
 
 import type { Database } from "sql.js";
 import { asCount, asText, rowsOf } from "@/database/plecoFile";
+import { runOf } from "@/database/reviewLog";
 import type { Profile } from "@/database/plecoFile";
 
 /** Series key of the cards the profile has never put in front of the reader. */
@@ -19,67 +20,6 @@ export const PERFECT_SERIES = "perfect";
 
 /** Series key of the runs holding at least one answer graded below that. */
 export const WEAKER_SERIES = "weaker";
-
-/**
- * Whether a grade counts as a right answer. `4`, `5` and `6` are the correct
- * half of Pleco's six-point scale, and the split is exact rather than
- * approximate: every scorefile's `correct` tally equals the count of those
- * three digits. Anything else — including a digit no export has ever held —
- * reads as not correct.
- *
- * `Lapses.db.ts` reads the same encoding for its own question. The two are
- * deliberately not shared: each page owns what it asks of the review log, and
- * this one asks about the run at the head of it rather than a break inside it.
- */
-const isCorrect = (grade: string): boolean =>
-  grade === "4" || grade === "5" || grade === "6";
-
-/**
- * The default a plain right answer records, and the only grade that grows the
- * review interval at the card's full rate.
- *
- * This is the distinction the chart is split on, and it is not cosmetic. A `4`
- * ("barely remembered") and a `5` ("remembered") are correct, so they extend
- * the run — but `pro_scoreintervalmult4` is 90 against `pro_scoreintervalmult6`
- * at 110, and a `4` also takes `pro_scorediffchange4` off the card's
- * difficulty, which is the very multiplier the interval grows by
- * (`difficulty / pro_scorediffdivisor`). A run of them therefore decays its own
- * multiplier towards the difficulty floor, and the card keeps coming back in
- * weeks while the run grows without bound.
- *
- * Measured on the sample export by diffing two dated snapshots: a `6` multiplies
- * the score by 3.11 and reaches the 512-day ceiling in six answers, which is
- * why no run of eleven or more in that profile is made of them alone.
- */
-const isPerfect = (grade: string): boolean => grade === "6";
-
-/**
- * The run a card is currently on: how many correct answers it has strung
- * together, counted back from its most
- * recent review to the failure that ended the previous run — or to the start
- * of the log, for a card that has never been failed.
- *
- * `history` is **newest first**, so the run is the prefix: index 0 is the last
- * review and the walk stops at the first digit that is not a right answer. A
- * card whose whole log is one run stops by running off the end of the string,
- * where the missing character reads as not correct.
- *
- * Whether every answer in it was perfect is settled in the same walk, since
- * both questions are about the same prefix.
- */
-const runOf = (history: string): { length: number; perfect: boolean } => {
-  let length = 0;
-  let perfect = true;
-
-  while (isCorrect(history[length] ?? "")) {
-    perfect = perfect && isPerfect(history[length] ?? "");
-    length += 1;
-  }
-
-  // A card that just failed has no run, so it is neither kind: `perfect` would
-  // otherwise come back true from a walk that never ran.
-  return { length, perfect: length > 0 && perfect };
-};
 
 export interface StreakBucket {
   /**
@@ -131,8 +71,8 @@ const EMPTY: LearningDistribution = {
  * The rows are grouped by the log itself rather than read one per card: the
  * same short digit string is shared by thousands of cards in a real export,
  * and the run only depends on that string. SQLite cannot walk it — there is no
- * regex and no way to count a prefix — so the walk is `runOf` above, run once
- * per distinct log instead of once per card.
+ * regex and no way to count a prefix — so the walk is `runOf`, run once per
+ * distinct log instead of once per card.
  */
 export const readLearningDistribution = (
   database: Database,
