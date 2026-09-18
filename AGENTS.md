@@ -306,7 +306,7 @@ the last review to the failure that ended the previous run. Read left to right
 it is a pile of unlearned cards, then learning in progress, then a tail of
 cards the profile has not caught out in a long time.
 
-Three things there are load-bearing:
+Four things there are load-bearing:
 
 - **"New" is its own bar, before the numbers, and must stay that way.** A card
   the profile has never reviewed and a card that just failed its last review
@@ -314,20 +314,41 @@ Three things there are load-bearing:
   nothing: in the sample export's big profile all 909 cards at zero have been
   reviewed, while in its small one 263 of the 283 there never have. So the
   query returns `streak: null` for them, the tick reads `New`, and the caption
-  gives both counts in the same sentence. The colour is not what says so — it
-  is what makes the split visible at the glance the page exists for.
+  gives both counts in the same sentence.
+- **Each bar is split by what the run is _made of_, and that is the page's
+  point rather than decoration.** A run of correct answers is not a run of
+  perfect ones. `4` ("barely remembered") and `5` ("remembered") are in Pleco's
+  correct half, so they extend the run — but `pro_scoreintervalmult4` is 90
+  against `pro_scoreintervalmult6` at 110, and a `4` also takes
+  `pro_scorediffchange4` off the card's difficulty, which is the very
+  multiplier the interval grows by (`difficulty / pro_scorediffdivisor`). A run
+  of them decays its own multiplier towards the difficulty floor, so the card
+  keeps coming back in weeks while the run grows without bound. Measured by
+  diffing two dated snapshots of the sample export: a `6` multiplies the score
+  by 3.11 and a failure resets it to 100, so the 512-day ceiling arrives in six
+  perfect answers — and in that profile **no run of eleven or more is made of
+  perfect answers alone**, against a longest run of 21. Without the split the
+  right tail reads as mastery when it is closer to the opposite.
+- **A run of zero is neither kind, and gets its own neutral series.** An empty
+  run would answer "every answer was perfect" vacuously, which is why `runOf`
+  returns `perfect: false` for it and `LAPSED_SERIES` exists. It is the one
+  series drawn in a neutral rather than a hue, and so the only one that follows
+  the colour scheme: a card that just failed is the _absence_ of a run, not a
+  third quality of one.
 - **Every run between 0 and the longest gets a bar, including the empty ones.**
   Same reason the Statistics chart draws quiet months: a skipped bucket would
   compress the axis and misreport where the deck sits. There is no cap at the
   right end — the run cannot outgrow the review log, which is 83 reviews at its
   longest in any export seen so far and 21 in the profile this was built
   against.
-- **The counts above the bars are dropped when the bars are too thin for
-  them.** `LABEL_ROOM` is measured against the chart's real width through
-  `useElementSize` rather than guessed from a breakpoint, because whether the
-  labels fit is a question about the bars: the same phone holds a profile with
-  five of them comfortably and one with twenty-four not at all. The tooltip
-  gives the exact count either way.
+
+Note what the page does **not** do. There are no counts printed above the bars:
+Mantine cannot label a stacked bar, and `minBarSize` is not a way round the
+tail being only a few cards tall either — recharts hands that callback the
+stack's cumulative top rather than the segment's own value, so a 2px floor
+draws a sliver of "includes a weaker answer" under every bucket that has none.
+The tooltip carries the exact numbers, and a tail that rounds to nothing on a
+linear axis is telling the truth: it is 129 cards out of 15,004.
 
 `ViewCard.tsx` is the one card page that is not a list, and it is in the
 sidebar between the profile pages and the five that are — a lookup rather than
@@ -727,19 +748,20 @@ The chart can only say when a card was _created_: the export keeps no history
 of category membership, so a card counts towards the categories it is in today.
 That caveat is in the caption and should stay there.
 
-`LearningDistribution.tsx` draws the one bar chart, and its two colours were
-checked the same way. They are `blue.7` and `orange.8` — two of the six above,
-but re-measured as a pair rather than assumed safe for being drawn from a
-validated set: worst-case ΔE 26.0 across the three dichromacy simulations, 34.4
-in normal vision, and over 3:1 against both the light and the dark page.
-Neither is a neutral, so neither follows the colour scheme, exactly as
-`CATEGORY_COLORS` does not. Re-check them if you change either.
+`LearningDistribution.tsx` draws the one bar chart, and its colours were
+checked the same way. Three of its four are hues — `orange.8`, `blue.7` and
+`teal.8`, all drawn from the six above but re-measured as their own set rather
+than assumed safe for their provenance: worst all-pairs ΔE 9.5 under
+protanopia and 19.6 in normal vision, each clearing 3:1 on both pages.
+`perfect` and `weaker` are the pair that actually sit against each other inside
+a bar, at ΔE 18.7 protan / 19.6 normal.
 
-One series, so there is no legend: the title says what is being counted, and
-the bar that is not in the run colour is named by its own axis tick. The
-per-bar colour is set by putting a `color` on that data point, which Mantine's
-`<BarChart>` reads per cell — reaching for recharts' `<Cell>` is not needed and
-would be the wrong way round.
+Their weak spot is tritanopia, where blue and teal fall to ΔE 3.8, and that is
+covered by **stacking order** rather than by hue: `perfect` is always the
+segment on the baseline and `weaker` always the one above it, so the split
+survives with no colour vision at all. Keep that order if you touch the series
+list. The fourth, `lapsed`, is a neutral and therefore the only one that
+follows the colour scheme, for the same reason `FIXED_COLORS` does above.
 
 ## Commands
 
