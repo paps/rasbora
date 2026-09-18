@@ -27,7 +27,7 @@ export const WEAKER_SERIES = "weaker";
  * three digits. Anything else — including a digit no export has ever held —
  * reads as not correct.
  *
- * `RiskyCards.db.ts` reads the same encoding for its own question. The two are
+ * `Lapses.db.ts` reads the same encoding for its own question. The two are
  * deliberately not shared: each page owns what it asks of the review log, and
  * this one asks about the run at the head of it rather than a break inside it.
  */
@@ -107,12 +107,6 @@ export interface LearningDistribution {
   totalCards: number;
   /** The longest run in the profile, in reviews. Zero when nothing is on one. */
   longestStreak: number;
-  /**
-   * The longest run of nothing but "remembered perfectly". Below
-   * `longestStreak` whenever weaker answers are propping the tail up, which is
-   * the whole reason the chart is split.
-   */
-  longestPerfectStreak: number;
 }
 
 const EMPTY: LearningDistribution = {
@@ -121,7 +115,6 @@ const EMPTY: LearningDistribution = {
   lapsedCards: 0,
   totalCards: 0,
   longestStreak: 0,
-  longestPerfectStreak: 0,
 };
 
 /**
@@ -173,7 +166,6 @@ export const readLearningDistribution = (
   let newCards = 0;
   let totalCards = 0;
   let longestStreak = 0;
-  let longestPerfectStreak = 0;
 
   for (const row of logs) {
     const history = asText(row[0] ?? null);
@@ -194,10 +186,6 @@ export const readLearningDistribution = (
     series.set(key, (series.get(key) ?? 0) + cards);
     counted.set(length, series);
     longestStreak = Math.max(longestStreak, length);
-
-    if (perfect) {
-      longestPerfectStreak = Math.max(longestPerfectStreak, length);
-    }
   }
 
   const buckets: StreakBucket[] = [
@@ -232,6 +220,5 @@ export const readLearningDistribution = (
     lapsedCards: counted.get(0)?.get(LAPSED_SERIES) ?? 0,
     totalCards,
     longestStreak,
-    longestPerfectStreak,
   };
 };

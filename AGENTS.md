@@ -205,11 +205,10 @@ src/
     chinese.ts          Headword splitting and numbered-pinyin → tone marks
   pages/                One file per route, plus its queries
     ProfileInfo.tsx     + ProfileInfo.db.ts
-    Statistics.tsx      + Statistics.db.ts
+    CardCount.tsx       + CardCount.db.ts
     LearningDistribution.tsx + LearningDistribution.db.ts
-    Recommendations.tsx
-    MostDifficultCards.tsx   + MostDifficultCards.db.ts
-    RiskyCards.tsx           + RiskyCards.db.ts
+    Leeches.tsx              + Leeches.db.ts
+    Lapses.tsx               + Lapses.db.ts
     AlmostLearnedCards.tsx   + AlmostLearnedCards.db.ts
     LearnedCards.tsx         + LearnedCards.db.ts
     CustomizedCards.tsx      + CustomizedCards.db.ts
@@ -294,11 +293,9 @@ selected profile and nothing else: what it reviews into, what it draws from, and
 its session settings (the documented ones spelled out, all ~150 raw in an
 `<Accordion>`). Everything on it moves when the profile picker moves, which is
 the test for whether something belongs here — the file's own facts failed it and
-now live on `Load Pleco file`. `Statistics.tsx` charts the profile's cards over
+now live on `Load Pleco file`. `CardCount.tsx` charts the profile's cards over
 time, and `LearningDistribution.tsx` charts them by how far into learning they
-are.
-`Recommendations.tsx` is a deliberately empty placeholder, and `NotFound.tsx`
-is still just a heading.
+are. `NotFound.tsx` is still just a heading.
 
 `LearningDistribution.tsx` is the deck's shape in one bar chart: one bar per
 run of correct answers the profile's cards are currently on, counted back from
@@ -336,7 +333,7 @@ Four things there are load-bearing:
   the colour scheme: a card that just failed is the _absence_ of a run, not a
   third quality of one.
 - **Every run between 0 and the longest gets a bar, including the empty ones.**
-  Same reason the Statistics chart draws quiet months: a skipped bucket would
+  Same reason the Card count chart draws quiet months: a skipped bucket would
   compress the axis and misreport where the deck sits. There is no cap at the
   right end — the run cannot outgrow the review log, which is 83 reviews at its
   longest in any export seen so far and 21 in the profile this was built
@@ -395,7 +392,7 @@ Its search is the part with something to say, and it lives in `ViewCard.db.ts`:
 The scorefile is joined rather than required, as on `Customized cards`: a card
 the profile has never put in front of anyone still has a headword to find it
 by, and only its tallies come back empty. The query is debounced, unlike
-`Risky cards`' controls — that page re-filters rows it already holds, while
+`Lapses`' controls — that page re-filters rows it already holds, while
 this one runs two full scans of the cards table, which no index survives
 `lower()` and a dozen `replace()` calls to help with.
 
@@ -404,8 +401,9 @@ and differ only in the question — the SQL, the extra columns, and the sentence
 above the table. In sidebar order, which runs from the cards that need work to
 the cards that do not:
 
-- **Most difficult cards** — failed most often in the profile's scorefile.
-- **Risky cards** — a run of correct answers, then a failure among the most
+- **Leeches** — failed most often in the profile's scorefile: the cards
+  soaking up review time without ever being learned.
+- **Lapses** — a run of correct answers, then a failure among the most
   recent reviews. Both lengths are the reader's to set: the export dates no
   individual review, so "recently" can only be counted in reviews, and how long
   a run has to be before losing it matters is a judgement about their own deck.
@@ -497,7 +495,7 @@ checklist now has to be respected in each `.db.ts` rather than in one place.
 hand; read the checklist before writing a new query.
 
 **A page query takes the profile.** `readCardsOverTime(database, profile)`,
-`readMostDifficultCards(database, profile)`: the scope comes in as an argument
+`readLeeches(database, profile)`: the scope comes in as an argument
 rather than being decided inside the SQL, so a page cannot accidentally answer
 for the whole export. A page that has no profile in view renders its "import a
 set of flashcards" sentence instead of querying — which is a link to
@@ -704,13 +702,13 @@ is not worth a timer over a file the user imported by hand.
 
 `chinese.ts` is the pure text side of that: splitting a headword on `@` into
 aligned simplified/traditional/pinyin syllables, and turning numbered pinyin
-(`duan4`) into tone marks (`duàn`). The difficult-cards table and the flashcard
+(`duan4`) into tone marks (`duàn`). The `Leeches` table and the flashcard
 both call it, so it is here and not in either. It runs no query — a page's
 `.db.ts` returns the raw columns and this shapes them for the eye.
 
 ## Charts
 
-`@mantine/charts` (and its `recharts` peer) is installed for the Statistics and
+`@mantine/charts` (and its `recharts` peer) is installed for the Card count and
 Learning distribution pages. It is the only reason either package is here, so
 keep chart work on `<LineChart>`, `<BarChart>` and friends rather than dropping
 to raw recharts.
@@ -719,7 +717,7 @@ The split is the same on both: the `.db.ts` shapes the data and names the
 buckets, the `.tsx` picks the colours. A chart colour is a rendering decision,
 so a query never returns one.
 
-`Statistics.db.ts` shapes the data and names the series; `Statistics.tsx` picks
+`CardCount.db.ts` shapes the data and names the series; `CardCount.tsx` picks
 the colours. Three things there are load-bearing:
 
 - **The chart is the profile's, not the file's.** Only the categories the
@@ -792,7 +790,7 @@ an assets-only Worker needs — four of them, plus `send_metrics: false` to keep
 Wrangler from reporting usage back to Cloudflare.
 
 `not_found_handling: "single-page-application"` is the one line that is not
-boilerplate. Routing is client-side, so `/statistics` matches no file in
+boilerplate. Routing is client-side, so `/card-count` matches no file in
 `dist/`; this returns `index.html` for those requests and lets React Router
 read the URL. Without it every route but `/` 404s when reloaded or opened from
 a link, and `NotFound.tsx` would never render.

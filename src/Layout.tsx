@@ -23,15 +23,14 @@ interface Page {
 const PAGES: Page[] = [
   { path: "/load", label: "Load Pleco file" },
   { path: "/", label: "Profile info" },
-  { path: "/statistics", label: "Statistics" },
+  { path: "/card-count", label: "Card count" },
   { path: "/learning-distribution", label: "Learning distribution" },
-  { path: "/recommendations", label: "Recommendations" },
   // Between the pages about the profile and the five that ask "which cards?":
   // it is a lookup rather than a question about a set, so it does not belong
   // inside that run, and it is reached often enough not to sit under it.
   { path: "/card", label: "View a card" },
-  { path: "/difficult", label: "Most difficult cards" },
-  { path: "/risky", label: "Risky cards" },
+  { path: "/leeches", label: "Leeches" },
+  { path: "/lapses", label: "Lapses" },
   { path: "/almost-learned", label: "Almost learned cards" },
   { path: "/learned", label: "Learned cards" },
   { path: "/customized", label: "Customized cards" },

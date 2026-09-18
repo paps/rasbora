@@ -1,4 +1,4 @@
-/** The query behind `MostDifficultCards.tsx`, and nothing else. */
+/** The query behind `Leeches.tsx`, and nothing else. */
 
 import type { Database, SqlValue } from "sql.js";
 import type { FlashcardData } from "@/components/Flashcard";
@@ -12,11 +12,10 @@ import {
 import type { Profile } from "@/database/plecoFile";
 
 /**
- * How many cards the page shows. "Most difficult" is open-ended; this is the
- * one criterion for now — the cards failed the most often — so the list is
- * capped rather than shown in full.
+ * How many cards the page shows. "Leech" is open-ended; failing most often is
+ * the one criterion for now, so the list is capped rather than shown in full.
  */
-const MOST_DIFFICULT_LIMIT = 1000;
+const LEECH_LIMIT = 1000;
 
 /**
  * A Unix-seconds column as a timestamp, or null when missing or zero. Pleco
@@ -37,7 +36,7 @@ const asTime = (value: SqlValue | null): number | null => {
 const asScore = (value: SqlValue | null): number | null =>
   typeof value === "number" ? value : null;
 
-export interface MostDifficultCards {
+export interface Leeches {
   /** The cards, hardest first. Capped. */
   cards: FlashcardData[];
 }
@@ -49,7 +48,7 @@ export interface MostDifficultCards {
  * independent review state in every scorefile, and the profile says which one
  * counts. Cards outside the profile's categories are left out even when they
  * have review state, since the profile never puts them in front of the user.
- * Cards that have never failed are left out too — they are not difficult, and
+ * Cards that have never failed are left out too — they are not leeches, and
  * they would pad the tail with the whole deck.
  *
  * The review log and the four review timestamps come from that same scorefile
@@ -60,10 +59,7 @@ export interface MostDifficultCards {
  * its name is safe to interpolate because it comes from the table list, and so
  * are the category ids, which `listProfiles` resolved to integers.
  */
-export const readMostDifficultCards = (
-  database: Database,
-  profile: Profile,
-): MostDifficultCards => {
+export const readLeeches = (database: Database, profile: Profile): Leeches => {
   const table = profile.scorefile?.table ?? null;
   const pointsPerDay = readCardPointsPerDay(database, profile);
 
@@ -84,7 +80,7 @@ export const readMostDifficultCards = (
        and c.id in (select card from pleco_flash_categoryassigns
                     where cat in (${profile.categoryIds.join(", ")}))
      order by s.incorrect desc, s.reviewed desc, c.id
-     limit ${String(MOST_DIFFICULT_LIMIT)}`,
+     limit ${String(LEECH_LIMIT)}`,
   ).map((row) => ({
     id: asCount(row[0] ?? null),
     hw: asText(row[1] ?? null),

@@ -1,4 +1,4 @@
-/** The query behind `RiskyCards.tsx`, and the reading of the review log. */
+/** The query behind `Lapses.tsx`, and the reading of the review log. */
 
 import type { Database, SqlValue } from "sql.js";
 import type { FlashcardData } from "@/components/Flashcard";
@@ -12,7 +12,7 @@ import {
 import type { Profile } from "@/database/plecoFile";
 
 /** How many cards the page lists; see `LearnedCards.db.ts` for the reason. */
-const RISKY_LIMIT = 1000;
+const LAPSE_LIMIT = 1000;
 
 /** A Unix-seconds column as a timestamp, or null when missing or zero. */
 const asTime = (value: SqlValue | null): number | null => {
@@ -26,7 +26,7 @@ const asScore = (value: SqlValue | null): number | null =>
   typeof value === "number" ? value : null;
 
 /** What the page's two controls mean, in reviews. */
-export interface RiskSettings {
+export interface LapseSettings {
   /** How long the run of correct answers has to have been. */
   runLength: number;
   /** How many of the most recent reviews the failure has to be inside. */
@@ -34,21 +34,21 @@ export interface RiskSettings {
 }
 
 /** A card that was going well and then stopped. */
-export interface RiskyCard extends FlashcardData {
+export interface Lapse extends FlashcardData {
   /** The run of correct answers the failure broke, in reviews. */
   brokenRun: number;
   /** Reviews since that run ended, the failure among them. */
   reviewsSince: number;
 }
 
-export interface RiskyCards {
+export interface Lapses {
   /** The cards, worst break first. Capped. */
-  cards: RiskyCard[];
+  cards: Lapse[];
   /** How many there are in all, which may be more than were returned. */
   total: number;
 }
 
-export interface RiskyCandidates {
+export interface LapseCandidates {
   /** Every card the filtering below has to consider. */
   candidates: FlashcardData[];
 }
@@ -78,9 +78,9 @@ const isCorrect = (grade: string): boolean =>
  * run has to have been broken by the first of the recent failures, and
  * anything after it is part of the slipping.
  */
-const riskOf = (
+const lapseOf = (
   history: string,
-  { runLength, recentWindow }: RiskSettings,
+  { runLength, recentWindow }: LapseSettings,
 ): { brokenRun: number; reviewsSince: number } | null => {
   const window = Math.min(recentWindow, history.length);
   let failure = -1;
@@ -118,15 +118,15 @@ const riskOf = (
  * anyway, and re-reading the export on every keystroke to answer a question
  * about strings already in memory would be the slower way round.
  */
-export const selectRiskyCards = (
+export const selectLapses = (
   candidates: FlashcardData[],
-  settings: RiskSettings,
-): RiskyCards => {
-  const risky = candidates
+  settings: LapseSettings,
+): Lapses => {
+  const lapses = candidates
     .flatMap((card) => {
-      const risk = riskOf(card.history, settings);
+      const lapse = lapseOf(card.history, settings);
 
-      return risk === null ? [] : [{ ...card, ...risk }];
+      return lapse === null ? [] : [{ ...card, ...lapse }];
     })
     .sort(
       (left, right) =>
@@ -135,22 +135,22 @@ export const selectRiskyCards = (
         left.id - right.id,
     );
 
-  return { cards: risky.slice(0, RISKY_LIMIT), total: risky.length };
+  return { cards: lapses.slice(0, LAPSE_LIMIT), total: lapses.length };
 };
 
 /**
  * Every card the profile has both failed and answered correctly, which is as
  * far as SQL can narrow "was going well and then stopped": the rest of the
- * question is the shape of the review log, and `selectRiskyCards` reads that.
+ * question is the shape of the review log, and `selectLapses` reads that.
  *
  * The whole candidate set is read once, so the page's controls re-filter in
  * memory. It is a few thousand short strings at most — `history` is one digit
  * per review and the longest in this export is 83.
  */
-export const readRiskyCandidates = (
+export const readLapseCandidates = (
   database: Database,
   profile: Profile,
-): RiskyCandidates => {
+): LapseCandidates => {
   const table = profile.scorefile?.table ?? null;
   const pointsPerDay = readCardPointsPerDay(database, profile);
 

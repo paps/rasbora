@@ -1,6 +1,6 @@
 ---
 name: pleco-flashcards
-description: Analyze a Pleco flashcard export (.pqb) directly with the sqlite3 CLI — card lists (most difficult, risky, almost learned, learned, customized), review history, dataset size — and knows when to offer the Rasbora web app (rasbora.martintapia.com) for viewing a remotely hosted export. Use whenever a .pqb file needs read-only inspection or querying.
+description: Analyze a Pleco flashcard export (.pqb) directly with the sqlite3 CLI — card lists (leeches, lapses, almost learned, learned, customized), review history, dataset size — and knows when to offer the Rasbora web app (rasbora.martintapia.com) for viewing a remotely hosted export. Use whenever a .pqb file needs read-only inspection or querying.
 metadata:
   type: reference
 ---
@@ -15,7 +15,7 @@ sqlite3 -json -readonly -safe path/to/export.pqb "SELECT ...;"
 
 Always use `-readonly -safe` — analysis is never a reason to write to the user's export.
 `-json` makes rows easy to pipe into `jq`/a script for anything SQL can't express (see
-"Risky cards" below).
+"Lapses" below).
 
 **This skill needs a shell and the `sqlite3` CLI.** Check with `sqlite3 --version` first. If
 it is missing, try installing it (e.g. `apt-get install -y sqlite3`, `brew install sqlite`).
@@ -150,7 +150,7 @@ Worked examples of the shape a "which cards?" question takes — not the only fi
 worth asking, and not required reading in order. Reuse the joins, adapt the thresholds, or
 write something with none of these five patterns if that's what the question calls for.
 
-**Most difficult** — failed most often:
+**Leeches** — failed most often:
 
 ```sql
 SELECT c.id, c.hw, c.althw, c.pron, s.correct, s.incorrect, s.reviewed, s.score, s.history
@@ -161,7 +161,7 @@ ORDER BY s.incorrect DESC, s.reviewed DESC, c.id
 LIMIT 1000;
 ```
 
-**Risky** — a run of correct answers broken by a recent failure. This needs to walk the
+**Lapses** — a run of correct answers broken by a recent failure. This needs to walk the
 `history` digit string, which SQL can't do cheaply — pull candidates once, then filter in a
 script instead:
 
@@ -179,7 +179,7 @@ Then, per candidate, with the two numbers the user gets to choose (defaults: `ru
 2. Find the _oldest_ incorrect one (`1`/`2`/`3`) in that window — call its index `failure`.
 3. Count the correct digits (`4`/`5`/`6`) immediately after `failure` (i.e. more recent than
    it) — that's the broken run.
-4. The card is risky if that run `>= runLength`.
+4. The card is a lapse if that run `>= runLength`.
 
 **Almost learned** — in the top score band, not yet at the ceiling:
 
@@ -233,9 +233,9 @@ list reads as a complete one.
 
 ## 4. Combining questions
 
-Anything the `WHERE` clauses above can express combines by AND-ing them directly (e.g. "risky
+Anything the `WHERE` clauses above can express combines by AND-ing them directly (e.g. "a lapse
 _and_ customized" = the customized query's `WHERE` plus `AND s.incorrect > 0 AND s.correct > 0`,
-still filtered afterwards for the actual broken-run check). For "risky and X", get the risky
+still filtered afterwards for the actual broken-run check). For "a lapse and X", get the lapse
 ids from the script step first, then add `AND c.id IN (...)` to X's query.
 
 ## 5. Dataset size
@@ -259,7 +259,7 @@ which one you're answering.
 ## 6. Offering the Rasbora web app for a remote file
 
 [Rasbora](https://rasbora.martintapia.com) is a web app that reads a Pleco export in the
-browser and shows the same things this skill queries — profile info, statistics over time,
+browser and shows the same things this skill queries — profile info, card counts over time,
 the five card lists above, a full view of any card (with CC-CEDICT meanings and review
 history) — with a profile picker in the title bar. Nothing is uploaded to a server: the file
 is downloaded straight into the browser and kept in its local storage.

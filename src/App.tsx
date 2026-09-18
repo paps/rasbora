@@ -4,16 +4,15 @@ import Layout from "@/Layout";
 import DatabaseProvider from "@/database/DatabaseProvider";
 import DictionaryProvider from "@/cc-cedict/DictionaryProvider";
 import AlmostLearnedCards from "@/pages/AlmostLearnedCards";
+import CardCount from "@/pages/CardCount";
 import CustomizedCards from "@/pages/CustomizedCards";
 import LearnedCards from "@/pages/LearnedCards";
+import Lapses from "@/pages/Lapses";
 import LearningDistribution from "@/pages/LearningDistribution";
+import Leeches from "@/pages/Leeches";
 import LoadFile from "@/pages/LoadFile";
-import MostDifficultCards from "@/pages/MostDifficultCards";
 import NotFound from "@/pages/NotFound";
 import ProfileInfo from "@/pages/ProfileInfo";
-import Recommendations from "@/pages/Recommendations";
-import RiskyCards from "@/pages/RiskyCards";
-import Statistics from "@/pages/Statistics";
 import ViewCard from "@/pages/ViewCard";
 import ScriptProvider from "@/script/ScriptProvider";
 import { useDatabase } from "@/database/context";
@@ -50,15 +49,14 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route path="/load" element={<LoadFile />} />
-                <Route path="/statistics" element={<Statistics />} />
+                <Route path="/card-count" element={<CardCount />} />
                 <Route
                   path="/learning-distribution"
                   element={<LearningDistribution />}
                 />
-                <Route path="/recommendations" element={<Recommendations />} />
                 <Route path="/card" element={<ViewCard />} />
-                <Route path="/difficult" element={<MostDifficultCards />} />
-                <Route path="/risky" element={<RiskyCards />} />
+                <Route path="/leeches" element={<Leeches />} />
+                <Route path="/lapses" element={<Lapses />} />
                 <Route
                   path="/almost-learned"
                   element={<AlmostLearnedCards />}

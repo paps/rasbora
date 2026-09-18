@@ -176,29 +176,12 @@ const LearningDistribution = () => {
       </Text>
 
       <Text size="sm" c="dimmed">
-        A long run is not the same as a well known card, which is why the bars
-        are split. Only{" "}
-        <Explained info="Grade 6 on Pleco's scale, and what a plain correct answer records. It multiplies the review interval at the card's full rate, so a card answered this way every time reaches the profile's longest interval in a handful of reviews and cannot go further.">
-          remembered perfectly
-        </Explained>{" "}
-        grows the interval at full rate: <b>4</b> (“barely remembered”) and{" "}
-        <b>5</b> (“remembered”) are still correct, so they keep the run going,
-        but they grow it far less — and a <b>4</b> also lowers the card’s
-        difficulty, which is the multiplier the interval grows by. A card can
-        therefore be answered correctly twenty times running and still come back
-        every few weeks.{" "}
-        {distribution.longestPerfectStreak < distribution.longestStreak ? (
-          <>
-            Here the longest run of nothing but perfect answers is{" "}
-            <b>{distribution.longestPerfectStreak.toLocaleString()}</b>, so
-            everything past it is held up by weaker ones.
-          </>
-        ) : (
-          <>
-            Here the longest run is perfect throughout, so nothing in this chart
-            is being held up that way.
-          </>
-        )}
+        A long run is not always the same as a very well known card, which is
+        why the bars can have different colors. When using granular Pleco review
+        grades (“remembered perfectly”, “remembered”, “barely remembered”),
+        cards are still considered as correctly reviewed but shown in a
+        different color. A card can be answered correctly twenty times running
+        and still come back every few weeks.
       </Text>
 
       <Text size="sm" c="dimmed">
