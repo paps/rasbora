@@ -156,7 +156,8 @@ the score ceiling can become overdue; the ceiling caps the interval and does
 not retire the card. These are estimates from saved state, not a prediction of
 session selection. Reviews after export are unknown until a new file is loaded.
 
-Values round to one decimal with trailing zeros omitted. A nonzero magnitude
+Values strictly between -10 and 10 days round to one decimal with trailing
+zeros omitted; all other values round to whole days. A nonzero magnitude
 under 0.1 days reads **<0.1 days** or **-<0.1 days**, so rounding never hides the
 overdue sign. Negative is red, positive green, and exactly zero neutral. Hover,
 focus or tap reveals the estimated due date. The clock is read when the display
@@ -191,6 +192,4 @@ Multi-word phrases and cards you made yourself are often not in CC-CEDICT, and s
 
 ## Checking changes
 
-Run `npm run check`, `npm run format`, and `npx vite build`. Review-date
-regressions run with `node --test tests/reviewSchedule.test.mjs` on Node 24+,
-using the installed Vite and sql.js packages and Node's built-in test runner.
+Run `npm run check`, `npm run format`, and `npx vite build`.

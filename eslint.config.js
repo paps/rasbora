@@ -5,9 +5,9 @@ import tseslint from "typescript-eslint";
 
 export default [
   {
-    // `cc-cedict` and `tests` are standalone Node tooling, linted no more than the
+    // `cc-cedict` is standalone Node build tooling, linted no more than the
     // `*.js` config files are — it is not part of the app's TypeScript project.
-    ignores: ["dist", ".wrangler", "*.js", "cc-cedict", "tests"],
+    ignores: ["dist", ".wrangler", "*.js", "cc-cedict"],
   },
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,

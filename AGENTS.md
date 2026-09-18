@@ -606,8 +606,8 @@ at the score ceiling. The clock is captured once on mount, matching the chosen
 behaviour of `RelativeTime`; there is no timer. Profile/scorefile data changes
 still change the due timestamp supplied to the display.
 
-`days.ts` rounds to one decimal, omitting trailing zeros. Below 0.1 days it
-shows `<0.1 days` or `-<0.1 days` to retain the sign. Negative is plain red,
+`days.ts` rounds to one decimal only between -10 and 10 days (exclusive),
+omitting trailing zeros, and to whole days otherwise. Below 0.1 days it shows `<0.1 days` or `-<0.1 days` to retain the sign. Negative is plain red,
 positive plain green, exactly zero neutral; no gradient or score bar remains.
 The exact estimated date is accessible through `Explained`. Missing scores,
 NULL/zero review dates or unusable points-per-day settings show `—` with an
@@ -702,8 +702,6 @@ the job:
   passes it does not mean your change is correct, but it is a good start. It
   uses `--max-warnings 0`, so an ESLint warning fails the check exactly like an
   error does — do not leave warnings behind.
-- `node --test tests/reviewSchedule.test.mjs` checks countdowns and all six card
-  queries against synthetic profiles (Node 24+, no new dependencies).
 - `npm run format` runs Prettier. Run this when your work is done, before
   committing or pushing.
 - `git push origin origin/main:refs/heads/prod` deploys — see "Deployment".
