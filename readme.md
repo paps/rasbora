@@ -121,12 +121,14 @@ server confirms it has not. Changed assets get new content-hashed URLs.
 
 ## The card lists
 
-Five pages answer "which cards?", and each opens a card's details when you select it. Every row shows the estimated time until its next review in fractional days. Positive values are green; negative values are red with a minus sign. The same display appears beside the review count on card details and **View a card**.
+Seven pages answer "which cards?", and each opens a card's details when you select it. Every row shows the estimated time until its next review in fractional days. Positive values are green; negative values are red with a minus sign. The same display appears beside the review count on card details and **View a card**.
 
+- **New cards** — the ones this profile holds but has never reviewed, the ones added longest ago first. This is the left-hand bar of the Learning distribution chart.
 - **Leeches** — the ones this profile has failed most often: cards soaking up review time without ever being learned.
 - **Lapses** — the ones you had learned and are now getting wrong: a run of correct answers, then a failure among the most recent reviews. You set how long the run has to have been and how far back "recently" reaches. Pleco records no date for an individual review, only the order, so recency here is counted in reviews rather than in weeks.
 - **Almost learned cards** — in the profile's top score band, but not yet at its maximum. These still come back, at the longest interval the profile has.
 - **Learned cards** — at the profile's maximum score, where Pleco has nowhere further to space them. Least recently seen first.
+- **Streaks** — the ones on exactly the run of correct answers you pick, soonest due first. Selecting a bar of the Learning distribution chart opens this page at that run, and the run is in the address so a view can be reloaded or shared.
 - **Customized cards** — the ones you have written your own definition on, which is the only meaning a Pleco export itself carries. Open one and the bundled dictionary's definition sits below your own.
 
 Both score bounds are read from the profile you picked rather than assumed, so a profile that scores differently is read differently.

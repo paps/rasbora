@@ -10,6 +10,7 @@ import {
   rowsOf,
 } from "@/database/plecoFile";
 import type { Profile } from "@/database/plecoFile";
+import { isCorrect } from "@/database/reviewLog";
 
 /** How many cards the page lists; see `LearnedCards.db.ts` for the reason. */
 const LAPSE_LIMIT = 1000;
@@ -52,16 +53,6 @@ export interface LapseCandidates {
   /** Every card the filtering below has to consider. */
   candidates: FlashcardData[];
 }
-
-/**
- * Whether a grade counts as a right answer. `4`, `5` and `6` are the correct
- * half of Pleco's six-point scale, and the split is exact rather than
- * approximate: every scorefile's `correct` tally equals the count of those
- * three digits. Anything else — including a digit no export has ever held —
- * reads as not correct.
- */
-const isCorrect = (grade: string): boolean =>
-  grade === "4" || grade === "5" || grade === "6";
 
 /**
  * What the review log says about a card that has slipped, or null when it has

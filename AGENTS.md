@@ -185,6 +185,7 @@ src/
     plecoFile.ts        Opening an export, the shared sql.js opener, reading
                         sql.js values, score tables, profiles
     reviewSchedule.ts   Score-to-days conversion and estimated due timestamps
+    reviewLog.ts        Grade meanings and the run at the head of a review log
     context.ts          DatabaseContext + the useDatabase() hook
     DatabaseProvider.tsx  Restores and holds the export and selected profile
     savedImport.ts      IndexedDB storage of the original file and profile choice
@@ -207,10 +208,12 @@ src/
     ProfileInfo.tsx     + ProfileInfo.db.ts
     CardCount.tsx       + CardCount.db.ts
     LearningDistribution.tsx + LearningDistribution.db.ts
+    NewCards.tsx             + NewCards.db.ts
     Leeches.tsx              + Leeches.db.ts
     Lapses.tsx               + Lapses.db.ts
     AlmostLearnedCards.tsx   + AlmostLearnedCards.db.ts
     LearnedCards.tsx         + LearnedCards.db.ts
+    Streaks.tsx              + Streaks.db.ts
     CustomizedCards.tsx      + CustomizedCards.db.ts
     ViewCard.tsx             + ViewCard.db.ts
     LoadFile.tsx             + LoadFile.db.ts + LoadFile.remote.ts
@@ -339,6 +342,18 @@ Four things there are load-bearing:
   longest in any export seen so far and 21 in the profile this was built
   against.
 
+**Selecting a bar opens the cards it counts**, which is wired twice because
+neither half covers the other's case. `barProps` catches a hit on a bar and is
+the only one that works under a finger — recharts fills the chart-level active
+state from mouse movement, so a tap, which has none, arrives with nothing to
+say; it stops propagation so the two never both fire. `barChartProps` catches
+the rest of the column, which is what makes the tail reachable with a mouse,
+those bars being a couple of pixels tall. Which segment was hit is ignored:
+a bar opens every card it counts and `Streaks` carries the perfect/weaker split
+as a column instead. The `New` bar opens `New cards` rather than a run of zero,
+for the reason it is its own bar at all. A chart is not something a keyboard can
+select from, so both pages are in the sidebar and the caption says so.
+
 Note what the page does **not** do. There are no counts printed above the bars:
 Mantine cannot label a stacked bar, and `minBarSize` is not a way round the
 tail being only a few cards tall either — recharts hands that callback the
@@ -348,7 +363,7 @@ The tooltip carries the exact numbers, and a tail that rounds to nothing on a
 linear axis is telling the truth: it is 129 cards out of 15,004.
 
 `ViewCard.tsx` is the one card page that is not a list, and it is in the
-sidebar between the profile pages and the five that are — a lookup rather than
+sidebar between the profile pages and the seven that are — a lookup rather than
 a question about a set. Everything else that shows cards answers "which
 cards?" and renders `CardList` for it; this one asks "that one, what does it
 say?", so it renders `Flashcard` directly, the same display the drawer opens.
@@ -356,7 +371,7 @@ say?", so it renders `Flashcard` directly, the same display the drawer opens.
 **It shows three cards at most, and says so when more match.** The display is
 tall — a card with a few hundred reviews is a few hundred bars — so a fourth
 result would push the first off the screen, and a reader scrolling past three
-whole cards is reading a list, which the other five pages already are. Past
+whole cards is reading a list, which the other seven pages already are. Past
 three, an `Alert` above the results gives the real count and asks for a
 narrower search; the cap is the same "a truncated list must not read as a
 complete one" rule the card lists follow, at a different scale.
@@ -396,11 +411,15 @@ by, and only its tallies come back empty. The query is debounced, unlike
 this one runs two full scans of the cards table, which no index survives
 `lower()` and a dozen `replace()` calls to help with.
 
-The other five pages all answer "which cards?", so they all render `CardList`
+The other seven pages all answer "which cards?", so they all render `CardList`
 and differ only in the question — the SQL, the extra columns, and the sentence
 above the table. In sidebar order, which runs from the cards that need work to
 the cards that do not:
 
+- **New cards** — held by the profile and never once reviewed. Oldest first,
+  by when the card was added, since with no review state that is the only age
+  it carries. This is the chart's `New` bar, and it is its own page rather than
+  a run of zero for the reason that bar is its own bar.
 - **Leeches** — failed most often in the profile's scorefile: the cards
   soaking up review time without ever being learned.
 - **Lapses** — a run of correct answers, then a failure among the most
@@ -412,6 +431,14 @@ the cards that do not:
 - **Almost learned cards** — in the profile's top score band but short of its
   ceiling: still asked, at the longest interval the profile has.
 - **Learned cards** — at the ceiling, so Pleco cannot space them further.
+- **Streaks** — on one exact run of correct answers, the run being the
+  reader's to pick. It is the list behind a bar of the `Learning distribution`
+  chart, so "exactly" is load-bearing: a bar of 530 has to open a list of 530,
+  which is why both count through `runOf` in `src/database/reviewLog.ts` rather
+  than each walking the log itself. Soonest due first, because every card in
+  it shares a run and the run cannot order them. Its control's value lives in
+  the querystring rather than in state, so the chart can link to it and a view
+  survives a reload.
 - **Customized cards** — carrying a definition the user wrote. This one is
   about the card rather than the review state, so its scorefile join is a
   `left join` and a card the profile has never shown still appears.
@@ -442,7 +469,15 @@ straightforward queries.
 
 `src/database/` holds only what is true of _any_ export, whatever page is
 looking at it. `plecoFile.ts` handles the shared reads below;
-`reviewSchedule.ts` holds the pure score-to-days and due-time arithmetic:
+`reviewSchedule.ts` holds the pure score-to-days and due-time arithmetic, and
+`reviewLog.ts` the grade encoding and the run at the head of a card's log.
+
+`reviewLog.ts` is there on the correctness test rather than because three pages
+wanted it: `Learning distribution` counts cards into run buckets and `Streaks`
+lists the cards in one of them, so a bar saying 530 that opens a list of 529 is
+a bug, and two copies of that walk are exactly how it happens. `Lapses` reads
+the same encoding for its own question. Like `reviewSchedule.ts` it runs no
+query — it is arithmetic over columns a page already read.
 
 - **Opening an export** — the sql.js bootstrap, the cached WebAssembly
   compilation, and the `FormatString` assertion. One compilation for the whole
@@ -636,9 +671,9 @@ state.
 `CardList.tsx` is the other half of that: the table every card page renders,
 holding the position, the headword in the chosen script, the pinyin, the time
 until review, then whatever columns the page hands it, plus the paging and the
-`<Drawer>` that opens a `Flashcard`. Five pages ask "which cards?" and they
-differ in the question, not in the table — so the table is one component, and a
-sixth page gets the same page size, the same first columns and the same click
+`<Drawer>` that opens a `Flashcard`. Seven pages ask "which cards?" and they
+differ in the question, not in the table — so the table is one component, and an
+eighth page gets the same page size, the same first columns and the same click
 behaviour for free. It is the caller's list that is rendered, in the caller's
 order: capping a long list and saying so is the page's job, since only the page
 knows what was left out.

@@ -1,5 +1,5 @@
 import { Anchor, Stack, Text, Title } from "@mantine/core";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { BarChart } from "@mantine/charts";
 import { useMemo } from "react";
 import Explained from "@/components/Explained";
@@ -11,6 +11,7 @@ import {
   WEAKER_SERIES,
   readLearningDistribution,
 } from "@/pages/LearningDistribution.db";
+import { RUN_PARAM } from "@/pages/Streaks";
 
 /**
  * The four kinds of bar, stacked bottom to top in this order.
@@ -46,6 +47,17 @@ const SERIES_LABELS: Record<string, string> = {
   [PERFECT_SERIES]: "Remembered perfectly",
   [WEAKER_SERIES]: "Includes a weaker answer",
 };
+
+/** The tick under the bar that is not a point on the run axis. */
+const NEW_BUCKET = "New";
+
+/**
+ * Where a bucket's cards are listed. The `New` bar goes to its own page rather
+ * than to a run of zero, because a card never asked and a card just failed are
+ * different things — the same split the bar itself exists to draw.
+ */
+const bucketLink = (bucket: string): string =>
+  bucket === NEW_BUCKET ? "/new" : `/streaks?${RUN_PARAM}=${bucket}`;
 
 /** Bottom of the stack first, which is also the order the legend reads in. */
 const SERIES_ORDER = [
@@ -89,6 +101,7 @@ const SERIES = SERIES_ORDER.map((name) => ({
  */
 const LearningDistribution = () => {
   const { database, profile } = useDatabase();
+  const navigate = useNavigate();
 
   const distribution = useMemo(
     () =>
@@ -99,7 +112,7 @@ const LearningDistribution = () => {
   const data = useMemo(
     () =>
       distribution?.buckets.map(({ streak, counts }) => ({
-        bucket: streak === null ? "New" : streak.toLocaleString(),
+        bucket: streak === null ? NEW_BUCKET : String(streak),
         ...counts,
       })) ?? [],
     [distribution],
@@ -143,6 +156,43 @@ const LearningDistribution = () => {
         dataKey="bucket"
         series={SERIES}
         type="stacked"
+        style={{ cursor: "pointer" }}
+        // Selecting a bucket opens its cards. It is wired twice on purpose,
+        // because neither handler covers the other's case:
+        //
+        // `barProps` catches a hit on the bar itself and is the only one that
+        // works under a finger — recharts fills the chart-level active state
+        // from mouse movement, so a tap, which has none, arrives with nothing
+        // to say. It stops propagation so the two never both fire.
+        //
+        // `barChartProps` catches the rest of the column, which is what makes
+        // the tail usable with a mouse: those bars are a couple of pixels tall
+        // and hitting one exactly is not something to ask of anyone.
+        //
+        // Which segment was hit is ignored either way. A bar opens every card
+        // it counts, and `Streaks` carries the perfect/weaker split as a
+        // column so it is not lost on the way.
+        barProps={{
+          onClick: (_bar, barIndex, event) => {
+            const bucket = data[barIndex]?.bucket;
+
+            if (bucket !== undefined) {
+              event.stopPropagation();
+              void navigate(bucketLink(bucket));
+            }
+          },
+        }}
+        barChartProps={{
+          onClick: (state) => {
+            // recharts types this loosely; it is the `bucket` string this
+            // chart was given, but only a check can say so here.
+            const bucket: unknown = state.activeLabel;
+
+            if (typeof bucket === "string") {
+              void navigate(bucketLink(bucket));
+            }
+          },
+        }}
         withLegend
         legendProps={{ verticalAlign: "top" }}
         // A profile whose longest run is short leaves only a handful of
@@ -182,6 +232,19 @@ const LearningDistribution = () => {
         cards are still considered as correctly reviewed but shown in a
         different color. A card can be answered correctly twenty times running
         and still come back every few weeks.
+      </Text>
+
+      <Text size="sm" c="dimmed">
+        Selecting a bar lists the cards it counts: the numbered ones open{" "}
+        <Anchor component={Link} to="/streaks">
+          Streaks
+        </Anchor>{" "}
+        at that run, and <b>New</b> opens{" "}
+        <Anchor component={Link} to="/new">
+          New cards
+        </Anchor>
+        . Both are in the sidebar too — a chart is not something a keyboard can
+        select from.
       </Text>
 
       <Text size="sm" c="dimmed">

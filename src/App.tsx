@@ -10,10 +10,12 @@ import LearnedCards from "@/pages/LearnedCards";
 import Lapses from "@/pages/Lapses";
 import LearningDistribution from "@/pages/LearningDistribution";
 import Leeches from "@/pages/Leeches";
+import NewCards from "@/pages/NewCards";
 import LoadFile from "@/pages/LoadFile";
 import NotFound from "@/pages/NotFound";
 import ProfileInfo from "@/pages/ProfileInfo";
 import ViewCard from "@/pages/ViewCard";
+import Streaks from "@/pages/Streaks";
 import ScriptProvider from "@/script/ScriptProvider";
 import { useDatabase } from "@/database/context";
 
@@ -55,6 +57,7 @@ const App = () => (
                   element={<LearningDistribution />}
                 />
                 <Route path="/card" element={<ViewCard />} />
+                <Route path="/new" element={<NewCards />} />
                 <Route path="/leeches" element={<Leeches />} />
                 <Route path="/lapses" element={<Lapses />} />
                 <Route
@@ -62,6 +65,7 @@ const App = () => (
                   element={<AlmostLearnedCards />}
                 />
                 <Route path="/learned" element={<LearnedCards />} />
+                <Route path="/streaks" element={<Streaks />} />
                 <Route path="/customized" element={<CustomizedCards />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
