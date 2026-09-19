@@ -3,7 +3,16 @@ import { Anchor, Stack, Text, Title } from "@mantine/core";
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import { useDatabase } from "@/database/context";
-import { readIncomingReviews } from "@/pages/IncomingReviews.db";
+import {
+  DUE_SERIES,
+  UPCOMING_SERIES,
+  readIncomingReviews,
+} from "@/pages/IncomingReviews.db";
+
+const SERIES = [
+  { name: DUE_SERIES, label: "Due", color: "red.8" },
+  { name: UPCOMING_SERIES, label: "Upcoming", color: "blue.7" },
+];
 
 const IncomingReviews = () => {
   const { database, profile } = useDatabase();
@@ -44,12 +53,20 @@ const IncomingReviews = () => {
     <Stack gap="md">
       <Title>Incoming reviews</Title>
 
+      <Title order={3} c={distribution.dueCards > 0 ? "red.8" : undefined}>
+        {distribution.dueCards.toLocaleString()}{" "}
+        {distribution.dueCards === 1 ? "card" : "cards"} due for review
+      </Title>
+
       {distribution.buckets.length > 0 ? (
         <BarChart
           h={440}
           data={distribution.buckets}
           dataKey="day"
-          series={[{ name: "cards", label: "Cards", color: "blue.7" }]}
+          series={SERIES}
+          type="stacked"
+          withLegend
+          legendProps={{ verticalAlign: "top" }}
           maxBarWidth={72}
           xAxisLabel="Days until review"
           yAxisLabel="Cards"
@@ -79,9 +96,10 @@ const IncomingReviews = () => {
         </b>{" "}
         have an estimated review date. Each bar counts cards due that many days
         from when this page was opened, rounded down to a whole day. Negative
-        days mean overdue; <b>0</b> means due within the next 24 hours. Every
-        day between the earliest and latest estimates is included, even when no
-        cards are due.
+        days are red and included in the total above because their estimated
+        review time has passed; <b>0</b> means due within the next 24 hours.
+        Every day between the earliest and latest estimates is included, even
+        when no cards are due.
       </Text>
 
       <Text size="sm" c="dimmed">

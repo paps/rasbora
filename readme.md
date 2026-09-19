@@ -206,9 +206,11 @@ nonpositive points-per-day settings show **—**, never an invented date.
 review date, one bar per day from the earliest estimate to the latest. Days are
 rounded down: 2.7 days goes in **2**, and -0.2 days goes in **-1**. Negative
 days are overdue; **0** means due within the next 24 hours. Empty days stay on
-the axis, with no weekly grouping or limit on the range. Cards without enough
-data for an estimate are counted below the chart. Like the individual card
-countdowns, the chart uses the time when the page opens and does not tick.
+the axis, with no weekly grouping or limit on the range. Negative-day bars are
+red, and their sum is shown above the chart as the number of cards due for
+review. Cards without enough data for an estimate are counted below the chart.
+Like the individual card countdowns, the chart uses the time when the page
+opens and does not tick.
 
 **Profile info** summarizes cards per session, the new-card limit, and the
 review interval range in days. The interval range divides score bounds by the
