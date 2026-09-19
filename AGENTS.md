@@ -811,7 +811,11 @@ captured on page mount in Unix seconds. It rounds down, so -0.2 days is -1 and
 empty days; there is no weekly grouping or range cap. A left join retains
 never-reviewed cards in the total, and cards without usable scheduling data are
 counted below the chart rather than assigned an invented day. Category
-membership must not count a card twice.
+membership must not count a card twice. Negative-day buckets are the `due`
+series in fixed `red.8`; zero and positive days are `upcoming` in fixed
+`blue.7`. The due-card figure above the chart is accumulated from exactly the
+same negative buckets, so it must equal the sum of every red bar. Day zero is
+not part of it: it means due within the next 24 hours, not already due.
 
 `LearningDistribution.tsx` draws the stacked bar chart, and its colours were
 checked the same way. Three of its four are hues — `orange.8`, `blue.7` and
