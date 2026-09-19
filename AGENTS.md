@@ -370,9 +370,10 @@ say; it stops propagation so the two never both fire. `barChartProps` catches
 the rest of the column, which is what makes the tail reachable with a mouse,
 those bars being a couple of pixels tall. Which segment was hit is ignored:
 a bar opens every card it counts and `Streaks` carries the perfect/weaker split
-as a column instead. The `New` bar opens `New cards` rather than a run of zero,
-for the reason it is its own bar at all. A chart is not something a keyboard can
-select from, so both pages are in the sidebar and the caption says so.
+as its `Quality` column instead. The `New` bar opens `New cards` rather than a
+run of zero, for the reason it is its own bar at all. A chart is not something a
+keyboard can select from, so both pages are in the sidebar and the caption says
+so.
 
 Note what the page does **not** do. There are no counts printed above the bars:
 Mantine cannot label a stacked bar, and `minBarSize` is not a way round the
@@ -448,17 +449,35 @@ the cards that do not:
   a run has to be before losing it matters is a judgement about their own deck.
   The candidate rows are read once per profile and the controls re-filter them
   in memory, so a keystroke does not re-query.
-- **Streaks** — on one exact run of correct answers, the run being the
-  reader's to pick. It is the list behind a bar of the `Learning distribution`
-  chart, so "exactly" is load-bearing: a bar of 530 has to open a list of 530,
-  which is why both count through `runOf` in `src/database/reviewLog.ts` rather
-  than each walking the log itself. Soonest due first, because every card in
-  it shares a run and the run cannot order them. Its control's value lives in
-  the querystring rather than in state, so the chart can link to it and a view
-  survives a reload.
+- **Streaks** — on a run of correct answers, the runs being the reader's to
+  pick: one exact run, or a range of them. It is the list behind a bar of the
+  `Learning distribution` chart, so **a range of one stays exact**: a bar of
+  530 has to open a list of 530, which is why both count through `runOf` in
+  `src/database/reviewLog.ts` rather than each walking the log itself. Soonest
+  due first whatever the range — widening it does not change which card the
+  reader should look at next, and the run each card is on is a column rather
+  than the ordering. Its controls' values live in the querystring rather than
+  in state, so the chart can link to it and a view survives a reload.
 - **Customized cards** — carrying a definition the user wrote. This one is
   about the card rather than the review state, so its scorefile join is a
   `left join` and a card the profile has never shown still appears.
+
+Two things about the range on `Streaks` are worth keeping straight, because
+the page has two readers with different questions:
+
+- **`run` alone still means one run, and `runTo` is optional.** `runTo` is a
+  second parameter rather than a range syntax inside `run`, so every address
+  written before it existed opens what it always did, and `bucketLink` on the
+  chart keeps emitting `?run=N`. That is not backwards compatibility for its
+  own sake: the chart's promise is that a bar of 530 opens 530 cards, and a
+  link that could widen on its own would break it.
+- **An impossible range collapses rather than listing nothing.** A `runTo`
+  below `run`, or either value unusable, falls back to the single run — an
+  empty table would otherwise be indistinguishable from a profile that
+  genuinely has no card there, and the page's empty state exists to tell those
+  four cases apart. The controls hold the same invariant from the other side:
+  raising `from` carries `to` up with it, and `to` has `from` as its floor, so
+  neither the steppers nor a typed value can name a band no card can sit in.
 
 Two things about that group are load-bearing. **"Oldest" means least recently
 reviewed**, because `lastreviewedtime`
@@ -485,8 +504,9 @@ looking at it. `plecoFile.ts` handles the shared reads below;
 
 `reviewLog.ts` is there on the correctness test rather than because three pages
 wanted it: `Learning distribution` counts cards into run buckets and `Streaks`
-lists the cards in one of them, so a bar saying 530 that opens a list of 529 is
-a bug, and two copies of that walk are exactly how it happens. `Lapses` reads
+lists the cards in one of them — or in a band of them — so a bar saying 530
+that opens a list of 529 is a bug, and two copies of that walk are exactly how
+it happens. `Lapses` reads
 the same encoding for its own question. Like `reviewSchedule.ts` it runs no
 query — it is arithmetic over columns a page already read.
 
