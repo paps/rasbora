@@ -12,7 +12,7 @@ import {
 } from "@/database/plecoFile";
 import type { Profile } from "@/database/plecoFile";
 
-/** How many cards the page lists; see `LearnedCards.db.ts` for the reason. */
+/** How many cards the page lists; see `Streaks.db.ts` for the reason. */
 const CUSTOMIZED_LIMIT = 1000;
 
 /** A Unix-seconds column as a timestamp, or null when missing or zero. */

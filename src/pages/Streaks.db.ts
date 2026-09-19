@@ -12,7 +12,12 @@ import {
 } from "@/database/plecoFile";
 import type { Profile } from "@/database/plecoFile";
 
-/** How many cards the page lists; see `LearnedCards.db.ts` for the reason. */
+/**
+ * How many cards the page lists. A single run can hold thousands — a third of
+ * the sample export's deck sits on one of them — so every list in the app is
+ * capped at this and says what the cap left out. A silently truncated list
+ * reads as a complete one.
+ */
 const STREAK_LIMIT = 1000;
 
 /** A Unix-seconds column as a timestamp, or null when missing or zero. */

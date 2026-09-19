@@ -246,14 +246,6 @@ const LearningDistribution = () => {
         . Both are in the sidebar too — a chart is not something a keyboard can
         select from.
       </Text>
-
-      <Text size="sm" c="dimmed">
-        For the cards that really have run out of review interval to earn, see{" "}
-        <Anchor component={Link} to="/learned">
-          Learned cards
-        </Anchor>
-        .
-      </Text>
     </Stack>
   );
 };

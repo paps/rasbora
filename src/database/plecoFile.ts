@@ -321,39 +321,6 @@ export const listProfiles = (database: Database): Profile[] => {
     });
 };
 
-/** The scores a profile clamps its cards between. */
-export interface ScoreRange {
-  /** `pro_scoreautomin` — where a card sits after being failed enough. */
-  min: number;
-  /** `pro_scoreautomax` — the ceiling, the longest interval a card can earn. */
-  max: number;
-}
-
-/**
- * The bounds this profile scores against, or null when it records neither a
- * usable minimum nor maximum.
- *
- * Used to select learned and almost-learned cards against the same bounds.
- *
- * The bounds really are per-profile configuration despite reading 100 and
- * 51,200 in every export seen so far, so they are read rather than assumed.
- */
-export const readScoreRange = (
-  database: Database,
-  profile: Profile,
-): ScoreRange | null => {
-  const min = readSettingNumbers(
-    readProfileSetting(database, profile.id, "pro_scoreautomin"),
-  )[0];
-  const max = readSettingNumbers(
-    readProfileSetting(database, profile.id, "pro_scoreautomax"),
-  )[0];
-
-  return min === undefined || max === undefined || min <= 0 || max <= min
-    ? null
-    : { min, max };
-};
-
 /** Points per day belong to the profile, even when profiles share a scorefile. */
 export const readCardPointsPerDay = (
   database: Database,
