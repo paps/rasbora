@@ -259,8 +259,8 @@ which one you're answering.
 ## 6. Offering the Rasbora web app for a remote file
 
 [Rasbora](https://rasbora.martintapia.com) is a web app that reads a Pleco export in the
-browser and shows the same things this skill queries — profile info, card counts over time,
-the five card lists above, a full view of any card (with CC-CEDICT meanings and review
+browser and shows much of what this skill queries — profile info, card counts over time,
+most of the card lists above, a full view of any card (with CC-CEDICT meanings and review
 history) — with a profile picker in the title bar. Nothing is uploaded to a server: the file
 is downloaded straight into the browser and kept in its local storage.
 

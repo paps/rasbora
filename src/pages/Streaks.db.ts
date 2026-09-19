@@ -12,7 +12,12 @@ import {
 } from "@/database/plecoFile";
 import type { Profile } from "@/database/plecoFile";
 
-/** How many cards the page lists; see `LearnedCards.db.ts` for the reason. */
+/**
+ * How many cards the page lists. A single run can hold thousands — a third of
+ * the sample export's deck sits on one of them — so every list in the app is
+ * capped at this and says what the cap left out. A silently truncated list
+ * reads as a complete one.
+ */
 const STREAK_LIMIT = 1000;
 
 /** A Unix-seconds column as a timestamp, or null when missing or zero. */
@@ -35,10 +40,25 @@ export interface StreakCard extends FlashcardData {
 }
 
 export interface StreakCards {
-  /** The cards on that exact run, soonest due first. Capped. */
+  /** The cards on a run in that range, soonest due first. Capped. */
   cards: StreakCard[];
   /** How many there are in all, which may be more than were returned. */
   total: number;
+}
+
+/**
+ * The runs a list covers, both ends included.
+ *
+ * A single run is `from` and `to` being equal rather than a second shape, so
+ * one filter answers both and the exactness the `Learning distribution` chart
+ * needs is the range's degenerate case rather than a separate path through
+ * the code.
+ */
+export interface StreakRange {
+  /** The shortest run listed, and the only one when `to` equals it. */
+  from: number;
+  /** The longest run listed. Callers keep it at or above `from`. */
+  to: number;
 }
 
 export interface StreakCandidates {
@@ -49,24 +69,27 @@ export interface StreakCandidates {
 }
 
 /**
- * The cards on exactly `run` correct answers in a row, soonest due first.
+ * The cards on a run between `from` and `to`, both ends included, soonest due
+ * first.
  *
- * **Exactly**, not "at least": this page is what the `Learning distribution`
- * chart opens when a bar is clicked, so a bar of 530 has to open a list of 530.
+ * A range of one is **exact**, not "at least": this page is what the
+ * `Learning distribution` chart opens when a bar is clicked, and that link
+ * carries the run alone, so a bar of 530 still has to open a list of 530.
  * Both sides count through `runOf`, which is in `src/database/` rather than
  * beside either page for that reason.
  *
- * Soonest due first because every card here shares a run, so the run cannot
- * order them and the next review is the one thing left that says which to look
- * at. Cards with no usable due date sort last, where an absent timestamp would
- * otherwise read as 1970 and put unknowns at the top of the list.
+ * Soonest due first whatever the range, because the question the list answers
+ * — which of these to look at next — does not change when it widens, and the
+ * run each card is on is a column rather than the order. Cards with no usable
+ * due date sort last, where an absent timestamp would otherwise read as 1970
+ * and put unknowns at the top of a list about what is coming back.
  */
-export const selectStreak = (
+export const selectStreaks = (
   candidates: StreakCard[],
-  run: number,
+  { from, to }: StreakRange,
 ): StreakCards => {
   const matching = candidates
-    .filter((card) => card.run === run)
+    .filter((card) => card.run >= from && card.run <= to)
     .sort(
       (left, right) =>
         (left.nextReview ?? Infinity) - (right.nextReview ?? Infinity) ||

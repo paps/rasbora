@@ -215,8 +215,6 @@ src/
     NewCards.tsx             + NewCards.db.ts
     Leeches.tsx              + Leeches.db.ts
     Lapses.tsx               + Lapses.db.ts
-    AlmostLearnedCards.tsx   + AlmostLearnedCards.db.ts
-    LearnedCards.tsx         + LearnedCards.db.ts
     Streaks.tsx              + Streaks.db.ts
     CustomizedCards.tsx      + CustomizedCards.db.ts
     ViewCard.tsx             + ViewCard.db.ts
@@ -371,9 +369,10 @@ say; it stops propagation so the two never both fire. `barChartProps` catches
 the rest of the column, which is what makes the tail reachable with a mouse,
 those bars being a couple of pixels tall. Which segment was hit is ignored:
 a bar opens every card it counts and `Streaks` carries the perfect/weaker split
-as a column instead. The `New` bar opens `New cards` rather than a run of zero,
-for the reason it is its own bar at all. A chart is not something a keyboard can
-select from, so both pages are in the sidebar and the caption says so.
+as its `Quality` column instead. The `New` bar opens `New cards` rather than a
+run of zero, for the reason it is its own bar at all. A chart is not something a
+keyboard can select from, so both pages are in the sidebar and the caption says
+so.
 
 Note what the page does **not** do. There are no counts printed above the bars:
 Mantine cannot label a stacked bar, and `minBarSize` is not a way round the
@@ -384,7 +383,7 @@ The tooltip carries the exact numbers, and a tail that rounds to nothing on a
 linear axis is telling the truth: it is 129 cards out of 15,004.
 
 `ViewCard.tsx` is the one card page that is not a list, and it is in the
-sidebar between the profile pages and the seven that are — a lookup rather than
+sidebar between the profile pages and the five that are — a lookup rather than
 a question about a set. Everything else that shows cards answers "which
 cards?" and renders `CardList` for it; this one asks "that one, what does it
 say?", so it renders `Flashcard` directly, the same display the drawer opens.
@@ -392,7 +391,7 @@ say?", so it renders `Flashcard` directly, the same display the drawer opens.
 **It shows three cards at most, and says so when more match.** The display is
 tall — a card with a few hundred reviews is a few hundred bars — so a fourth
 result would push the first off the screen, and a reader scrolling past three
-whole cards is reading a list, which the other seven pages already are. Past
+whole cards is reading a list, which the other five pages already are. Past
 three, an `Alert` above the results gives the real count and asks for a
 narrower search; the cap is the same "a truncated list must not read as a
 complete one" rule the card lists follow, at a different scale.
@@ -432,7 +431,7 @@ by, and only its tallies come back empty. The query is debounced, unlike
 this one runs two full scans of the cards table, which no index survives
 `lower()` and a dozen `replace()` calls to help with.
 
-The other seven pages all answer "which cards?", so they all render `CardList`
+The other five pages all answer "which cards?", so they all render `CardList`
 and differ only in the question — the SQL, the extra columns, and the sentence
 above the table. In sidebar order, which runs from the cards that need work to
 the cards that do not:
@@ -449,29 +448,38 @@ the cards that do not:
   a run has to be before losing it matters is a judgement about their own deck.
   The candidate rows are read once per profile and the controls re-filter them
   in memory, so a keystroke does not re-query.
-- **Almost learned cards** — in the profile's top score band but short of its
-  ceiling: still asked, at the longest interval the profile has.
-- **Learned cards** — at the ceiling, so Pleco cannot space them further.
-- **Streaks** — on one exact run of correct answers, the run being the
-  reader's to pick. It is the list behind a bar of the `Learning distribution`
-  chart, so "exactly" is load-bearing: a bar of 530 has to open a list of 530,
-  which is why both count through `runOf` in `src/database/reviewLog.ts` rather
-  than each walking the log itself. Soonest due first, because every card in
-  it shares a run and the run cannot order them. Its control's value lives in
-  the querystring rather than in state, so the chart can link to it and a view
-  survives a reload.
+- **Streaks** — on a run of correct answers, the runs being the reader's to
+  pick: one exact run, or a range of them. It is the list behind a bar of the
+  `Learning distribution` chart, so **a range of one stays exact**: a bar of
+  530 has to open a list of 530, which is why both count through `runOf` in
+  `src/database/reviewLog.ts` rather than each walking the log itself. Soonest
+  due first whatever the range — widening it does not change which card the
+  reader should look at next, and the run each card is on is a column rather
+  than the ordering. Its controls' values live in the querystring rather than
+  in state, so the chart can link to it and a view survives a reload.
 - **Customized cards** — carrying a definition the user wrote. This one is
   about the card rather than the review state, so its scorefile join is a
   `left join` and a card the profile has never shown still appears.
 
-Three things about that group are load-bearing. **The score bounds come from
-the profile**, never from a constant: `pro_scoreautomax` is 51,200 in every
-export seen so far and is still configuration, and the five
-`pro_scorefilter_*_starts` settings are the bands. Since the export does not
-say which of the five test types a session runs — `pro_type` reads the same on
-every profile seen so far, so its mapping is unverified — the top band is taken
-as the highest of the five, which is the same number until a user sets them
-apart. **"Oldest" means least recently reviewed**, because `lastreviewedtime`
+Two things about the range on `Streaks` are worth keeping straight, because
+the page has two readers with different questions:
+
+- **`run` alone still means one run, and `runTo` is optional.** `runTo` is a
+  second parameter rather than a range syntax inside `run`, so every address
+  written before it existed opens what it always did, and `bucketLink` on the
+  chart keeps emitting `?run=N`. That is not backwards compatibility for its
+  own sake: the chart's promise is that a bar of 530 opens 530 cards, and a
+  link that could widen on its own would break it.
+- **An impossible range collapses rather than listing nothing.** A `runTo`
+  below `run`, or either value unusable, falls back to the single run — an
+  empty table would otherwise be indistinguishable from a profile that
+  genuinely has no card there, and the page's empty state exists to tell those
+  four cases apart. The controls hold the same invariant from the other side:
+  raising `from` carries `to` up with it, and `to` has `from` as its floor, so
+  neither the steppers nor a typed value can name a band no card can sit in.
+
+Two things about that group are load-bearing. **"Oldest" means least recently
+reviewed**, because `lastreviewedtime`
 is the only age a card carries once its score has stopped moving; cards the
 scorefile never dated sort last, where a zero would otherwise read as 1970 at
 the top of a list about age. And **every list is capped at 1,000 rows**, with
@@ -495,8 +503,9 @@ looking at it. `plecoFile.ts` handles the shared reads below;
 
 `reviewLog.ts` is there on the correctness test rather than because three pages
 wanted it: `Learning distribution` counts cards into run buckets and `Streaks`
-lists the cards in one of them, so a bar saying 530 that opens a list of 529 is
-a bug, and two copies of that walk are exactly how it happens. `Lapses` reads
+lists the cards in one of them — or in a band of them — so a bar saying 530
+that opens a list of 529 is a bug, and two copies of that walk are exactly how
+it happens. `Lapses` reads
 the same encoding for its own question. Like `reviewSchedule.ts` it runs no
 query — it is arithmetic over columns a page already read.
 
@@ -523,8 +532,6 @@ query — it is arithmetic over columns a page already read.
   seen so far nests them, but a profile naming a parent and quietly losing its
   children would undercount every page. Ids come back as integers, so a page
   can interpolate them into an `in (…)` clause.
-- **Score bounds** — `readScoreRange()`. Learned and almost-learned selection
-  use the profile's configured bounds, never constants.
 - **Card points per day** — `readCardPointsPerDay()`. Read through the profile
   id even if two profiles share a scorefile. Missing, nonfinite or nonpositive
   settings return null, never an assumed rate of 100. `reviewSchedule.ts`
@@ -692,9 +699,9 @@ state.
 `CardList.tsx` is the other half of that: the table every card page renders,
 holding the position, the headword in the chosen script, the pinyin, the time
 until review, then whatever columns the page hands it, plus the paging and the
-`<Drawer>` that opens a `Flashcard`. Seven pages ask "which cards?" and they
-differ in the question, not in the table — so the table is one component, and an
-eighth page gets the same page size, the same first columns and the same click
+`<Drawer>` that opens a `Flashcard`. Five pages ask "which cards?" and they
+differ in the question, not in the table — so the table is one component, and a
+sixth page gets the same page size, the same first columns and the same click
 behaviour for free. It is the caller's list that is rendered, in the caller's
 order: capping a long list and saying so is the page's job, since only the page
 knows what was left out.

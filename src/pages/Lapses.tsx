@@ -60,7 +60,7 @@ const COLUMNS: CardColumn<Lapse>[] = [
   },
 ];
 
-/** Why the table has no rows; see `LearnedCards.tsx` for why this is spelled out. */
+/** Why the table has no rows; see `Streaks.tsx` for why this is spelled out. */
 const emptyReason = (
   profile: Profile,
   runLength: number,

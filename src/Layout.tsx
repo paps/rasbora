@@ -34,8 +34,6 @@ const PAGES: Page[] = [
   { path: "/new", label: "New cards" },
   { path: "/leeches", label: "Leeches" },
   { path: "/lapses", label: "Lapses" },
-  { path: "/almost-learned", label: "Almost learned cards" },
-  { path: "/learned", label: "Learned cards" },
   // Last of the card lists rather than inside their "most work needed first"
   // run: the run it lists is the reader's to pick, so it sits at no one point
   // along that axis.
