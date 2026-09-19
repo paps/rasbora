@@ -90,7 +90,6 @@ const COLOR_SCHEMES: { value: MantineColorScheme; label: string }[] = [
  * so a page of their own costs nothing and leaves the title bar with only the
  * profile, which really does change while reading.
  *
- * It is also where the app lands when there is no saved export to restore.
  * File removal belongs here alongside import, since both apply to the export
  * rather than to the selected profile.
  */
@@ -260,7 +259,7 @@ const LoadFile = () => {
 
           <Text size="sm" c="dimmed">
             The export as a whole, read without a profile —{" "}
-            <Anchor component={Link} to="/">
+            <Anchor component={Link} to="/profile">
               Profile info
             </Anchor>{" "}
             describes the one you are reading it through.
