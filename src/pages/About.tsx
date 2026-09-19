@@ -1,9 +1,12 @@
-import { Anchor, Group, Stack, Text, Title } from "@mantine/core";
+import { Alert, Anchor, Group, Stack, Text, Title } from "@mantine/core";
 import { Link } from "react-router";
 
 // Replace these home-page placeholders with the post URLs once they exist.
 const PLECO_FORUM_POST_URL = "https://www.plecoforums.com/";
 const REDDIT_POST_URL = "https://www.reddit.com/r/ChineseLanguage/";
+
+const SKILL_URL =
+  "https://raw.githubusercontent.com/paps/rasbora/refs/heads/main/.agents/skills/pleco-flashcards/SKILL.md";
 
 const About = () => (
   <Stack gap="md" maw={760}>
@@ -52,6 +55,32 @@ const About = () => (
       </Anchor>
       .
     </Text>
+
+    <Alert
+      title="Ask your AI agent about your flashcards"
+      color="blue"
+      role="note"
+    >
+      <Stack gap="xs">
+        <Text size="sm">
+          Rasbora comes with a skill — one Markdown file that teaches an AI
+          agent how to read a Pleco export: its tables, the traps in them, and
+          the queries behind the pages here. Give it to whichever agent you use,
+          point it at your own <b>.pqb</b> file, and you can ask questions in
+          plain language, including ones this app has no page for. It is a great
+          companion to the website: the agent answers, Rasbora shows.
+        </Text>
+        <Anchor
+          href={SKILL_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          size="sm"
+          style={{ overflowWrap: "anywhere" }}
+        >
+          {SKILL_URL}
+        </Anchor>
+      </Stack>
+    </Alert>
 
     <Text>
       I would be very happy to hear your feedback. You can reach me at{" "}
