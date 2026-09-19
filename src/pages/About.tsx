@@ -1,4 +1,4 @@
-import { Alert, Anchor, Group, Stack, Text, Title } from "@mantine/core";
+import { Alert, Anchor, Group, List, Stack, Text, Title } from "@mantine/core";
 import { Link } from "react-router";
 
 // Replace these home-page placeholders with the post URLs once they exist.
@@ -63,12 +63,26 @@ const About = () => (
     >
       <Stack gap="xs">
         <Text size="sm">
-          Rasbora comes with a skill — one Markdown file that teaches an AI
-          agent how to read a Pleco export: its tables, the traps in them, and
-          the queries behind the pages here. Give it to whichever agent you use,
-          point it at your own <b>.pqb</b> file, and you can ask questions in
-          plain language, including ones this app has no page for. It is a great
-          companion to the website: the agent answers, Rasbora shows.
+          Rasbora comes with an AI agent skill. Once loaded into the AI agent of
+          your choice, you’ll be able to give it your Pleco export file (
+          <b>.pqb</b>) and ask it any questions you have in plain language.
+        </Text>
+        <Text size="sm">For example, ask your agent to:</Text>
+        <List size="sm" withPadding>
+          <List.Item>
+            Suggest definition updates for the worst leeches
+          </List.Item>
+          <List.Item>Organize a plan over the next few weeks</List.Item>
+          <List.Item>
+            Compare your last 10 exports to see if you’re improving review speed
+            or not
+          </List.Item>
+          <List.Item>etc</List.Item>
+        </List>
+        <Text size="sm">
+          An AI agent with this skill makes a great (and powerful) companion to
+          this website, and can even link to it to help you visualize what the
+          agent is talking about.
         </Text>
         <Anchor
           href={SKILL_URL}
