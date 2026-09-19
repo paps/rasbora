@@ -30,20 +30,21 @@
 
 - [x] Correctly store the sqlite file in cache for immediate no network reload when opening a new tab. Also properly cache efficiently cc-cedict
 
-- [ ] Ability to search for a card anywhere — there is a `View a card` page
-      that searches now, but "anywhere" would mean reaching it from every page,
-      which is a title bar question and the title bar is full
+- [ ] Ability to search for a card anywhere — there is a `Search for a card`
+      page that searches now, but "anywhere" would mean reaching it from
+      every page, which is a title bar question and the title bar is full
 
-- [x] Ability to view a card (whole page view) — shipped as `View a card`,
-      searching by headword in either script, by reading with or without
-      tones, and by card number
+- [x] Ability to view a card (whole page view) — shipped as
+      `Search for a card`, searching by headword in either script, by reading
+      with or without tones, and by card number
 
 - [ ] Update skill with this information, so that an AI agent can also estimate the value properly
 - [ ] Add this next review information when you're looking at an individual flashcard
 
-- [ ] Open `View a card` from a direct link with a querystring (assuming Pleco
-      file still in cache) — the page holds its search in component state for
-      now, so a search is not linkable and does not survive a reload
+- [ ] Open `Search for a card` from a direct link with a querystring
+      (assuming Pleco file still in cache) — the page holds its search in
+      component state for now, so a search is not linkable and does not
+      survive a reload
 
 - [ ] Rename `Learned cards` to `Cards to revive` (or find the right SRS name
       for it) and sort it oldest first. Update the page accordingly: the goal is

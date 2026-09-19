@@ -1,4 +1,4 @@
-/** The search behind `ViewCard.tsx`, and nothing else. */
+/** The search behind `SearchCard.tsx`, and nothing else. */
 
 import type { Database, SqlValue } from "sql.js";
 import { nextReviewTime } from "@/database/reviewSchedule";
@@ -19,7 +19,7 @@ import type { Profile } from "@/database/plecoFile";
  * so and asks for a narrower one; it does not quietly show the first three of
  * fifty.
  */
-export const VIEW_CARD_LIMIT = 3;
+export const SEARCH_CARD_LIMIT = 3;
 
 /** A Unix-seconds column as a timestamp, or null when missing or zero. */
 const asTime = (value: SqlValue | null): number | null => {
@@ -250,7 +250,7 @@ const escapeLike = (value: string): string =>
   value.replace(/[\\%_]/gu, (char) => `\\${char}`);
 
 export interface CardSearch {
-  /** The matches, best first. At most `VIEW_CARD_LIMIT` of them. */
+  /** The matches, best first. At most `SEARCH_CARD_LIMIT` of them. */
   cards: FlashcardData[];
   /** How many matched in all, which may be more than were returned. */
   total: number;
@@ -361,7 +361,7 @@ export const searchCards = (
        ${join}
        ${scope}
        order by ${rank}, c.id
-       limit ${String(VIEW_CARD_LIMIT)}`,
+       limit ${String(SEARCH_CARD_LIMIT)}`,
       params,
     ).map((row) => ({
       id: asCount(row[0] ?? null),

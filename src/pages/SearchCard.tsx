@@ -13,7 +13,7 @@ import { Link } from "react-router";
 import Flashcard from "@/components/Flashcard";
 import { useDatabase } from "@/database/context";
 import type { Profile } from "@/database/plecoFile";
-import { VIEW_CARD_LIMIT, searchCards } from "@/pages/ViewCard.db";
+import { SEARCH_CARD_LIMIT, searchCards } from "@/pages/SearchCard.db";
 
 /**
  * How long the reader has to stop typing before the export is searched.
@@ -66,7 +66,7 @@ const emptyReason = (profile: Profile, search: string): ReactNode => {
   );
 };
 
-const ViewCard = () => {
+const SearchCard = () => {
   const { database, profile } = useDatabase();
   const [search, setSearch] = useState("");
   const [debounced] = useDebouncedValue(search, SEARCH_DELAY);
@@ -81,7 +81,7 @@ const ViewCard = () => {
   if (!found || !profile) {
     return (
       <Stack gap="md">
-        <Title>View a card</Title>
+        <Title>Search for a card</Title>
         <Text c="dimmed">
           <Anchor component={Link} to="/load">
             Load a Pleco file
@@ -94,13 +94,13 @@ const ViewCard = () => {
 
   return (
     <Stack gap="md" maw={760}>
-      <Title>View a card</Title>
+      <Title>Search for a card</Title>
 
       <Text size="sm" c="dimmed">
         Search the <b>{profile.name}</b> profile’s cards by headword in either
         script (<b>學</b> or <b>学</b>), by reading with or without tones (
         <b>xue</b>, <b>xué</b>, <b>xue2</b>), or by card number. Up to{" "}
-        {VIEW_CARD_LIMIT} cards are shown in full.
+        {SEARCH_CARD_LIMIT} cards are shown in full.
       </Text>
 
       <TextInput
@@ -120,7 +120,7 @@ const ViewCard = () => {
       {found.total > found.cards.length && (
         <Alert color="yellow" title="More cards match than are shown">
           <b>{found.total.toLocaleString()}</b> cards match “{debounced.trim()}
-          ”, and only the closest {VIEW_CARD_LIMIT} are below. Add the rest of
+          ”, and only the closest {SEARCH_CARD_LIMIT} are below. Add the rest of
           the word, a tone, or the card number to narrow it down.
         </Alert>
       )}
@@ -138,4 +138,4 @@ const ViewCard = () => {
   );
 };
 
-export default ViewCard;
+export default SearchCard;
