@@ -20,7 +20,8 @@ export interface DatabaseContextValue {
     source: File | (() => Promise<File>),
     sourceUrl?: string,
   ) => void;
-  forgetFile: () => void;
+  /** Rejected links unload immediately, even if removing saved bytes fails. */
+  forgetFile: (options?: { unloadImmediately?: boolean }) => void;
   /** Every profile in the export, in Pleco's order. Empty until an import. */
   profiles: Profile[];
   /**

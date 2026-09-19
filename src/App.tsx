@@ -1,6 +1,7 @@
 import { MantineProvider } from "@mantine/core";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import Layout from "@/Layout";
+import LinkedExport from "@/LinkedExport";
 import DatabaseProvider from "@/database/DatabaseProvider";
 import DictionaryProvider from "@/cc-cedict/DictionaryProvider";
 import CardCount from "@/pages/CardCount";
@@ -47,23 +48,28 @@ const App = () => (
         <DatabaseProvider>
           <BrowserRouter>
             <Layout>
-              <Routes>
-                <Route path="/" element={<Landing />} />
-                <Route path="/load" element={<LoadFile />} />
-                <Route path="/card-count" element={<CardCount />} />
-                <Route
-                  path="/learning-distribution"
-                  element={<LearningDistribution />}
-                />
-                <Route path="/incoming-reviews" element={<IncomingReviews />} />
-                <Route path="/card" element={<ViewCard />} />
-                <Route path="/new" element={<NewCards />} />
-                <Route path="/leeches" element={<Leeches />} />
-                <Route path="/lapses" element={<Lapses />} />
-                <Route path="/streaks" element={<Streaks />} />
-                <Route path="/customized" element={<CustomizedCards />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <LinkedExport>
+                <Routes>
+                  <Route path="/" element={<Landing />} />
+                  <Route path="/load" element={<LoadFile />} />
+                  <Route path="/card-count" element={<CardCount />} />
+                  <Route
+                    path="/learning-distribution"
+                    element={<LearningDistribution />}
+                  />
+                  <Route
+                    path="/incoming-reviews"
+                    element={<IncomingReviews />}
+                  />
+                  <Route path="/card" element={<ViewCard />} />
+                  <Route path="/new" element={<NewCards />} />
+                  <Route path="/leeches" element={<Leeches />} />
+                  <Route path="/lapses" element={<Lapses />} />
+                  <Route path="/streaks" element={<Streaks />} />
+                  <Route path="/customized" element={<CustomizedCards />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </LinkedExport>
             </Layout>
           </BrowserRouter>
         </DatabaseProvider>

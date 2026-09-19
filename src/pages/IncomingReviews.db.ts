@@ -5,10 +5,20 @@ import { asCount, readCardPointsPerDay, rowsOf } from "@/database/plecoFile";
 import type { Profile } from "@/database/plecoFile";
 import { nextReviewTime } from "@/database/reviewSchedule";
 
+/** Series keys for estimates that are already due and those still ahead. */
+export const DUE_SERIES = "due";
+export const UPCOMING_SERIES = "upcoming";
+
 export interface IncomingReviewsDistribution {
   /** Every whole day from the earliest estimate to the latest, including gaps. */
-  buckets: { day: number; cards: number }[];
+  buckets: {
+    day: number;
+    [DUE_SERIES]: number;
+    [UPCOMING_SERIES]: number;
+  }[];
   totalCards: number;
+  /** Cards in negative-day buckets: their estimated review time has passed. */
+  dueCards: number;
   /** In-scope cards without enough data to estimate a review date. */
   unknownCards: number;
 }
@@ -19,7 +29,7 @@ export const readIncomingReviews = (
   now: number,
 ): IncomingReviewsDistribution => {
   if (profile.categoryIds.length === 0) {
-    return { buckets: [], totalCards: 0, unknownCards: 0 };
+    return { buckets: [], totalCards: 0, dueCards: 0, unknownCards: 0 };
   }
 
   const table = profile.scorefile?.table ?? null;
@@ -43,6 +53,7 @@ export const readIncomingReviews = (
 
   const counts = new Map<number, number>();
   let totalCards = 0;
+  let dueCards = 0;
   let unknownCards = 0;
   let firstDay = Infinity;
   let lastDay = -Infinity;
@@ -66,14 +77,20 @@ export const readIncomingReviews = (
     // overdue signs: -0.2 days belongs to -1; 0 means the next 24 hours.
     const day = Math.floor((due - now) / 86_400);
     counts.set(day, (counts.get(day) ?? 0) + cards);
+    if (day < 0) dueCards += cards;
     firstDay = Math.min(firstDay, day);
     lastDay = Math.max(lastDay, day);
   }
 
   const buckets: IncomingReviewsDistribution["buckets"] = [];
   for (let day = firstDay; day <= lastDay; day += 1) {
-    buckets.push({ day, cards: counts.get(day) ?? 0 });
+    const cards = counts.get(day) ?? 0;
+    buckets.push({
+      day,
+      [DUE_SERIES]: day < 0 ? cards : 0,
+      [UPCOMING_SERIES]: day < 0 ? 0 : cards,
+    });
   }
 
-  return { buckets, totalCards, unknownCards };
+  return { buckets, totalCards, dueCards, unknownCards };
 };

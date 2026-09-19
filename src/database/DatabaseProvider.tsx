@@ -178,32 +178,49 @@ const DatabaseProvider = ({ children }: DatabaseProviderProps) => {
     [loaded],
   );
 
-  const forgetFile = useCallback(() => {
-    if (busyRef.current) return;
-    busyRef.current = true;
-    const current = ++generationRef.current;
-    setIsImporting(true);
-    setError(null);
-    void forgetImport(loaded?.importId ?? null)
-      .then(() => {
-        if (generationRef.current === current) {
-          setLoaded(null);
-          setProfileId(null);
-          setStorageWarning(null);
-        }
-      })
-      .catch(() => {
-        if (generationRef.current === current) {
-          setError("The saved file could not be removed. Please try again.");
-        }
-      })
-      .finally(() => {
-        if (generationRef.current === current) {
-          busyRef.current = false;
-          setIsImporting(false);
-        }
-      });
-  }, [loaded]);
+  const forgetFile = useCallback<DatabaseContextValue["forgetFile"]>(
+    (options) => {
+      const unloadImmediately = options?.unloadImmediately ?? false;
+      if (busyRef.current) return;
+      busyRef.current = true;
+      const current = ++generationRef.current;
+      setIsImporting(true);
+      setError(null);
+      if (unloadImmediately) {
+        setLoaded(null);
+        setProfileId(null);
+        setStorageWarning(null);
+      }
+      void forgetImport(loaded?.importId ?? null)
+        .then(() => {
+          if (generationRef.current === current) {
+            setLoaded(null);
+            setProfileId(null);
+            setStorageWarning(null);
+          }
+        })
+        .catch(() => {
+          if (generationRef.current === current) {
+            if (unloadImmediately) {
+              setStorageWarning(
+                "The export was unloaded, but its saved browser copy could not be removed. Reloading may restore it. Load the intended Pleco file to replace it.",
+              );
+            } else {
+              setError(
+                "The saved file could not be removed. Please try again.",
+              );
+            }
+          }
+        })
+        .finally(() => {
+          if (generationRef.current === current) {
+            busyRef.current = false;
+            setIsImporting(false);
+          }
+        });
+    },
+    [loaded],
+  );
 
   const value = useMemo<DatabaseContextValue>(
     () => ({
