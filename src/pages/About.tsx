@@ -63,16 +63,22 @@ const About = () => (
     >
       <Stack gap="xs">
         <Text size="sm">
-          Rasbora comes with an AI agent skill. Once loaded into the AI agent of
-          your choice, you’ll be able to give it your Pleco export file (
-          <b>.pqb</b>) and ask it any questions you have in plain language.
+          Rasbora comes with an{" "}
+          <Anchor href={SKILL_URL} target="_blank" rel="noopener noreferrer">
+            AI agent skill
+          </Anchor>
+          . Once loaded into the AI agent of your choice, you’ll be able to give
+          it your Pleco export file (<b>.pqb</b>) and ask it any questions you
+          have in plain language.
         </Text>
         <Text size="sm">For example, ask your agent to:</Text>
         <List size="sm" withPadding>
           <List.Item>
             Suggest definition updates for the worst leeches
           </List.Item>
-          <List.Item>Organize a plan over the next few weeks</List.Item>
+          <List.Item>
+            Organize a card review plan over the next few weeks if you’re late
+          </List.Item>
           <List.Item>
             Compare your last 10 exports to see if you’re improving review speed
             or not
@@ -84,15 +90,17 @@ const About = () => (
           this website, and can even link to it to help you visualize what the
           agent is talking about.
         </Text>
-        <Anchor
-          href={SKILL_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          size="sm"
-          style={{ overflowWrap: "anywhere" }}
-        >
-          {SKILL_URL}
-        </Anchor>
+        <Text size="sm">
+          Direct link to skill file:{" "}
+          <Anchor
+            href={SKILL_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ overflowWrap: "anywhere" }}
+          >
+            {SKILL_URL}
+          </Anchor>
+        </Text>
       </Stack>
     </Alert>
 
