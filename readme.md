@@ -21,6 +21,40 @@ So a profile is the top of the tree, and settings, scores and card selection all
 
 Rasbora therefore reads the export through exactly one profile at a time. You load a file on the `Load Pleco file` page, which is where the app opens when there is no saved file, and then pick a profile at the top of the window — it stays visible everywhere, and every page answers for that profile alone: `Profile info` describes it, `Card count` charts the cards it draws from, and the card lists all read its scorefile only.
 
+## Links to a specific export
+
+Every page accepts optional `profileId` and `lastSessionStart` query parameters:
+
+```text
+/streaks?run=4&profileId=2&lastSessionStart=1789722000
+/card?profileId=2
+/incoming-reviews?lastSessionStart=1789722000
+```
+
+`profileId` must exist in the loaded export and selects that profile.
+`lastSessionStart` is the exact Unix-seconds value of a profile's `laststart`
+column in the export, not a formatted date or milliseconds. With both parameters,
+both must match the same profile. With only `lastSessionStart`, any profile can
+match, and Rasbora selects it. If several match, the selected profile wins when
+it is one of them; otherwise the first in Pleco's order wins. Values must be
+nonnegative decimal integers; empty, repeated, or malformed parameters are
+rejected. Missing timestamps do not match zero.
+
+Validation waits for saved-file restoration and any import already in progress.
+The destination page stays hidden until the link is checked. Successful links
+consume these two parameters while preserving the path and other parameters,
+so subsequent profile choices work normally.
+
+If either constraint fails, or no export is loaded, Rasbora unloads the current
+export and forgets its saved browser copy, using the same protection against
+removing a newer export saved by another tab as **Forget file**. It opens
+`/load` with a prominent error and drops the original destination and all query
+parameters, including `fromUrl`. Load the intended export there, then click the
+original link again. Loading a replacement does not automatically return to the
+old destination or validate it against the discarded link. If browser storage
+prevents deletion, the current tab still unloads the export and explains that
+its saved copy may return on reload.
+
 ## Loading from a URL
 
 On **Load Pleco file**, paste a direct HTTP(S) download URL or a public Google
