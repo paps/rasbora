@@ -216,7 +216,7 @@ src/
     Lapses.tsx               + Lapses.db.ts
     Streaks.tsx              + Streaks.db.ts
     CustomizedCards.tsx      + CustomizedCards.db.ts
-    ViewCard.tsx             + ViewCard.db.ts
+    SearchCard.tsx           + SearchCard.db.ts
     LoadFile.tsx             + LoadFile.db.ts + LoadFile.remote.ts
     NotFound.tsx
 ```
@@ -383,11 +383,17 @@ draws a sliver of "includes a weaker answer" under every bucket that has none.
 The tooltip carries the exact numbers, and a tail that rounds to nothing on a
 linear axis is telling the truth: it is 129 cards out of 15,004.
 
-`ViewCard.tsx` is the one card page that is not a list, and it is in the
+`SearchCard.tsx` is the one card page that is not a list, and it is in the
 sidebar between the profile pages and the five that are — a lookup rather than
 a question about a set. Everything else that shows cards answers "which
 cards?" and renders `CardList` for it; this one asks "that one, what does it
 say?", so it renders `Flashcard` directly, the same display the drawer opens.
+
+Its title says **Search for a card** rather than naming the reading, because
+searching is the part the reader does: the display below is the same
+`Flashcard` three other pages already open in a drawer, and what this page
+adds is the way in. Its route stays `/card`, which is about the destination
+and not about how you got there, so links already shared keep working.
 
 **It shows three cards at most, and says so when more match.** The display is
 tall — a card with a few hundred reviews is a few hundred bars — so a fourth
@@ -397,7 +403,8 @@ three, an `Alert` above the results gives the real count and asks for a
 narrower search; the cap is the same "a truncated list must not read as a
 complete one" rule the card lists follow, at a different scale.
 
-Its search is the part with something to say, and it lives in `ViewCard.db.ts`:
+Its search is the part with something to say, and it lives in
+`SearchCard.db.ts`:
 
 - **Both sides are reduced to a shape that can meet.** `pron` is `@`-separated
   numbered pinyin with Pleco's own notation hanging off it (`you1-`, `ru4, `,

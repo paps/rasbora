@@ -163,7 +163,7 @@ server confirms it has not. Changed assets get new content-hashed URLs.
 
 ## The card lists
 
-Five pages answer "which cards?", and each opens a card's details when you select it. Every row shows the estimated time until its next review in fractional days. Positive values are green; negative values are red with a minus sign. The same display appears beside the review count on card details and **View a card**.
+Five pages answer "which cards?", and each opens a card's details when you select it. Every row shows the estimated time until its next review in fractional days. Positive values are green; negative values are red with a minus sign. The same display appears beside the review count on card details and **Search for a card**.
 
 - **New cards** — the ones this profile holds but has never reviewed, the ones added longest ago first. This is the left-hand bar of the Learning distribution chart.
 - **Leeches** — the ones this profile has failed most often: cards soaking up review time without ever being learned.

@@ -29,7 +29,7 @@ const PAGES: Page[] = [
   // Between the pages about the profile and the seven that ask "which cards?":
   // it is a lookup rather than a question about a set, so it does not belong
   // inside that run, and it is reached often enough not to sit under it.
-  { path: "/card", label: "View a card" },
+  { path: "/card", label: "Search for a card" },
   { path: "/new", label: "New cards" },
   { path: "/leeches", label: "Leeches" },
   { path: "/lapses", label: "Lapses" },

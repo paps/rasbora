@@ -14,7 +14,7 @@ import NewCards from "@/pages/NewCards";
 import LoadFile from "@/pages/LoadFile";
 import NotFound from "@/pages/NotFound";
 import ProfileInfo from "@/pages/ProfileInfo";
-import ViewCard from "@/pages/ViewCard";
+import SearchCard from "@/pages/SearchCard";
 import Streaks from "@/pages/Streaks";
 import ScriptProvider from "@/script/ScriptProvider";
 import { useDatabase } from "@/database/context";
@@ -61,7 +61,7 @@ const App = () => (
                     path="/incoming-reviews"
                     element={<IncomingReviews />}
                   />
-                  <Route path="/card" element={<ViewCard />} />
+                  <Route path="/card" element={<SearchCard />} />
                   <Route path="/new" element={<NewCards />} />
                   <Route path="/leeches" element={<Leeches />} />
                   <Route path="/lapses" element={<Lapses />} />
