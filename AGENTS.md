@@ -186,7 +186,8 @@ src/
   database/             What every page shares, and nothing more
     plecoFile.ts        Opening an export, the shared sql.js opener, reading
                         sql.js values, score tables, profiles
-    reviewSchedule.ts   Score-to-days conversion and estimated due timestamps
+    reviewSchedule.ts   Score-to-days conversion, estimated due timestamps
+                        and the whole day until one
     reviewLog.ts        Grade meanings and the run at the head of a review log
     context.ts          DatabaseContext + the useDatabase() hook
     DatabaseProvider.tsx  Restores and holds the export and selected profile
@@ -216,6 +217,7 @@ src/
     Leeches.tsx              + Leeches.db.ts
     Lapses.tsx               + Lapses.db.ts
     Streaks.tsx              + Streaks.db.ts
+    DueCards.tsx             + DueCards.db.ts
     CustomizedCards.tsx      + CustomizedCards.db.ts
     SearchCard.tsx           + SearchCard.db.ts
     LoadFile.tsx             + LoadFile.db.ts + LoadFile.remote.ts
@@ -383,7 +385,7 @@ The tooltip carries the exact numbers, and a tail that rounds to nothing on a
 linear axis is telling the truth: it is 129 cards out of 15,004.
 
 `SearchCard.tsx` is the one card page that is not a list, and it is in the
-sidebar between the profile pages and the five that are — a lookup rather than
+sidebar between the profile pages and the six that are — a lookup rather than
 a question about a set. Everything else that shows cards answers "which
 cards?" and renders `CardList` for it; this one asks "that one, what does it
 say?", so it renders `Flashcard` directly, the same display the drawer opens.
@@ -397,7 +399,7 @@ and not about how you got there, so links already shared keep working.
 **It shows three cards at most, and says so when more match.** The display is
 tall — a card with a few hundred reviews is a few hundred bars — so a fourth
 result would push the first off the screen, and a reader scrolling past three
-whole cards is reading a list, which the other five pages already are. Past
+whole cards is reading a list, which the other six pages already are. Past
 three, an `Alert` above the results gives the real count and asks for a
 narrower search; the cap is the same "a truncated list must not read as a
 complete one" rule the card lists follow, at a different scale.
@@ -438,7 +440,7 @@ by, and only its tallies come back empty. The query is debounced, unlike
 this one runs two full scans of the cards table, which no index survives
 `lower()` and a dozen `replace()` calls to help with.
 
-The other five pages all answer "which cards?", so they all render `CardList`
+The other six pages all answer "which cards?", so they all render `CardList`
 and differ only in the question — the SQL, the extra columns, and the sentence
 above the table. In sidebar order, which runs from the cards that need work to
 the cards that do not:
@@ -464,6 +466,15 @@ the cards that do not:
   reader should look at next, and the run each card is on is a column rather
   than the ordering. Its controls' values live in the querystring rather than
   in state, so the chart can link to it and a view survives a reload.
+- **Due cards** — estimated due within a band of days, the band being the
+  reader's to pick and either end of it able to be negative. It is the list
+  behind a bar of the `Incoming reviews` chart, so **a range of one day stays
+  exact** for the reason a range of one run does on `Streaks`, and both sides
+  floor through `wholeDaysUntil` in `src/database/reviewSchedule.ts` rather
+  than each dividing by 86,400 themselves. Its controls live in the
+  querystring for the same reason `Streaks`' do. Sitting beside `Streaks`
+  rather than in the "most work needed first" run, since a band of days is no
+  one point along it.
 - **Customized cards** — carrying a definition the user wrote. This one is
   about the card rather than the review state, so its scorefile join is a
   `left join` and a card the profile has never shown still appears.
@@ -484,6 +495,23 @@ the page has two readers with different questions:
   four cases apart. The controls hold the same invariant from the other side:
   raising `from` carries `to` up with it, and `to` has `from` as its floor, so
   neither the steppers nor a typed value can name a band no card can sit in.
+
+`Due cards` holds both of those invariants — `days` alone is one exact day,
+and an impossible range collapses rather than listing nothing — and differs in
+two ways that follow from days not being runs:
+
+- **Its default is a range rather than a single value, and it is everything
+  overdue**: the profile's earliest estimated day through -1, which is exactly
+  the set behind the chart's red bars and its "cards due for review" heading.
+  So that heading links here with no parameters at all. It stops at -1 because
+  day zero means "due within the next 24 hours" and is not yet due, the same
+  line the heading's own count draws.
+- **Both ends are signed and the day is not a property of the card.** A run is
+  a fact about a review log; a day until review is a distance from a clock, so
+  `readDueCandidates` takes the mount-time `now` the chart also takes, and a
+  card sitting on a day boundary can move a bucket between the two pages. That
+  is the same "the clock is read on mount" rule every countdown in the app
+  follows, and both pages say they recalculate when reopened.
 
 Two things about that group are load-bearing. **"Oldest" means least recently
 reviewed**, because `lastreviewedtime`
@@ -515,6 +543,13 @@ that opens a list of 529 is a bug, and two copies of that walk are exactly how
 it happens. `Lapses` reads
 the same encoding for its own question. Like `reviewSchedule.ts` it runs no
 query — it is arithmetic over columns a page already read.
+
+`wholeDaysUntil()` in `reviewSchedule.ts` is there on the same test, one page
+later: `Incoming reviews` counts cards into whole-day buckets and `Due cards`
+lists the cards in one of them, so the floor that decides which bucket -0.2
+days lands in has to be one line and not two. It is a division and a
+`Math.floor`, which is exactly the size of thing that gets quietly rewritten
+with a `Math.round` in one of the two places.
 
 - **Opening an export** — the sql.js bootstrap, the cached WebAssembly
   compilation, and the `FormatString` assertion. One compilation for the whole
@@ -706,9 +741,9 @@ state.
 `CardList.tsx` is the other half of that: the table every card page renders,
 holding the position, the headword in the chosen script, the pinyin, the time
 until review, then whatever columns the page hands it, plus the paging and the
-`<Drawer>` that opens a `Flashcard`. Five pages ask "which cards?" and they
+`<Drawer>` that opens a `Flashcard`. Six pages ask "which cards?" and they
 differ in the question, not in the table — so the table is one component, and a
-sixth page gets the same page size, the same first columns and the same click
+seventh page gets the same page size, the same first columns and the same click
 behaviour for free. It is the caller's list that is rendered, in the caller's
 order: capping a long list and saying so is the page's job, since only the page
 knows what was left out.
@@ -829,6 +864,18 @@ series in fixed `red.8`; zero and positive days are `upcoming` in fixed
 `blue.7`. The due-card figure above the chart is accumulated from exactly the
 same negative buckets, so it must equal the sum of every red bar. Day zero is
 not part of it: it means due within the next 24 hours, not already due.
+
+**Selecting a bar opens the cards it counts**, on `Due cards`, at that one day
+— `/due?days=-3` — and it is wired twice for the reasons the same click is on
+`Learning distribution`: `barProps` is the half that survives a tap, and
+`barChartProps` catches the rest of the column, which is what makes a day
+holding three cards reachable with a mouse. Which series was hit is ignored,
+as there too: a day opens every card it counts, and only the day the range
+turns on could hold both series anyway. The due-card heading is a link as
+well, to `/due` with no parameters, which is that page's own default — and it
+keeps `red.8` through `c="inherit"` rather than taking the link colour, since
+that red is the same data the bars carry. A chart is not something a keyboard
+can select from, so `Due cards` is in the sidebar and the caption says so.
 
 `LearningDistribution.tsx` draws the stacked bar chart, and its colours were
 checked the same way. Three of its four are hues — `orange.8`, `blue.7` and
