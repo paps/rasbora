@@ -36,8 +36,10 @@ const PAGES: Page[] = [
   { path: "/lapses", label: "Lapses" },
   // Last of the card lists rather than inside their "most work needed first"
   // run: the run it lists is the reader's to pick, so it sits at no one point
-  // along that axis.
+  // along that axis. `Due cards` is beside it for the same reason, its band of
+  // days being the reader's to pick too.
   { path: "/streaks", label: "Streaks" },
+  { path: "/due", label: "Due cards" },
   { path: "/customized", label: "Customized cards" },
 ];
 

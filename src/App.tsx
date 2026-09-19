@@ -7,6 +7,7 @@ import DictionaryProvider from "@/cc-cedict/DictionaryProvider";
 import About from "@/pages/About";
 import CardCount from "@/pages/CardCount";
 import CustomizedCards from "@/pages/CustomizedCards";
+import DueCards from "@/pages/DueCards";
 import IncomingReviews from "@/pages/IncomingReviews";
 import Lapses from "@/pages/Lapses";
 import LearningDistribution from "@/pages/LearningDistribution";
@@ -55,6 +56,7 @@ const App = () => (
                   <Route path="/leeches" element={<Leeches />} />
                   <Route path="/lapses" element={<Lapses />} />
                   <Route path="/streaks" element={<Streaks />} />
+                  <Route path="/due" element={<DueCards />} />
                   <Route path="/customized" element={<CustomizedCards />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

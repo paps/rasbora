@@ -57,13 +57,21 @@ it is one of them; otherwise the first in Pleco's order wins. Values must be
 nonnegative decimal integers; empty, repeated, or malformed parameters are
 rejected. Missing timestamps do not match zero.
 
-Pages can carry parameters of their own beside these, and **Streaks** is the
-one that does: `run` is the run of correct answers to list, and the optional
+Pages can carry parameters of their own beside these, and two do.
+
+**Streaks** takes `run`, the run of correct answers to list, and the optional
 `runTo` raises it into a range, so `/streaks?run=4&runTo=10` lists every card
 on a run of 4 through 10. `run` on its own lists that one exact run, which is
 what the Learning distribution chart links to. A `runTo` below `run`, or a
 value that is not a whole number from 0 to 100, is ignored and leaves the
 single run showing.
+
+**Due cards** takes `days` and the optional `daysTo` the same way, and both
+can be negative: `/due?days=-3&daysTo=7` lists every card estimated due from
+three days overdue through a week out, and `/due?days=-3` lists that one day
+exactly, which is what the Incoming reviews chart links to. A `daysTo` below
+`days`, or a value that is not a whole number within 36,500 days, is ignored.
+With neither parameter — `/due` — the page lists every card already overdue.
 
 Validation waits for saved-file restoration and any import already in progress.
 The destination page stays hidden until the link is checked. Successful links
@@ -180,12 +188,13 @@ server confirms it has not. Changed assets get new content-hashed URLs.
 
 ## The card lists
 
-Five pages answer "which cards?", and each opens a card's details when you select it. Every row shows the estimated time until its next review in fractional days. Positive values are green; negative values are red with a minus sign. The same display appears beside the review count on card details and **Search for a card**.
+Six pages answer "which cards?", and each opens a card's details when you select it. Every row shows the estimated time until its next review in fractional days. Positive values are green; negative values are red with a minus sign. The same display appears beside the review count on card details and **Search for a card**.
 
 - **New cards** — the ones this profile holds but has never reviewed, the ones added longest ago first. This is the left-hand bar of the Learning distribution chart.
 - **Leeches** — the ones this profile has failed most often: cards soaking up review time without ever being learned.
 - **Lapses** — the ones you had learned and are now getting wrong: a run of correct answers, then a failure among the most recent reviews. You set how long the run has to have been and how far back "recently" reaches. Pleco records no date for an individual review, only the order, so recency here is counted in reviews rather than in weeks.
 - **Streaks** — the ones on the run of correct answers you pick, soonest due first. You can ask for one exact run, or for a range of them — runs 4 to 10 in one list, say, with each card's own run in a column. Selecting a bar of the Learning distribution chart opens this page at that single run, and both ends of the range are in the address, so a view can be reloaded or shared.
+- **Due cards** — the ones estimated due within a band of days you pick, soonest due first. Both ends can be negative, since a card whose review time has passed is a negative number of days away: -30 to -1 is everything overdue by up to a month, and 0 to 7 is the week ahead. Selecting a bar of the Incoming reviews chart opens this page at that single day, and opening it with no range at all lists every card already overdue.
 - **Customized cards** — the ones you have written your own definition on, which is the only meaning a Pleco export itself carries. Open one and the bundled dictionary's definition sits below your own.
 
 ## Time until review
@@ -229,7 +238,9 @@ rounded down: 2.7 days goes in **2**, and -0.2 days goes in **-1**. Negative
 days are overdue; **0** means due within the next 24 hours. Empty days stay on
 the axis, with no weekly grouping or limit on the range. Negative-day bars are
 red, and their sum is shown above the chart as the number of cards due for
-review. Cards without enough data for an estimate are counted below the chart.
+review; that count is a link to **Due cards**, which with no range shows
+exactly those cards. Selecting a bar opens the same page at that one day.
+Cards without enough data for an estimate are counted below the chart.
 Like the individual card countdowns, the chart uses the time when the page
 opens and does not tick.
 
