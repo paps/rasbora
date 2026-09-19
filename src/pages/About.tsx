@@ -1,9 +1,12 @@
-import { Anchor, Group, Stack, Text, Title } from "@mantine/core";
+import { Alert, Anchor, Group, List, Stack, Text, Title } from "@mantine/core";
 import { Link } from "react-router";
 
 // Replace these home-page placeholders with the post URLs once they exist.
 const PLECO_FORUM_POST_URL = "https://www.plecoforums.com/";
 const REDDIT_POST_URL = "https://www.reddit.com/r/ChineseLanguage/";
+
+const SKILL_URL =
+  "https://raw.githubusercontent.com/paps/rasbora/refs/heads/main/.agents/skills/pleco-flashcards/SKILL.md";
 
 const About = () => (
   <Stack gap="md" maw={760}>
@@ -52,6 +55,54 @@ const About = () => (
       </Anchor>
       .
     </Text>
+
+    <Alert
+      title="Ask your AI agent about your flashcards"
+      color="blue"
+      role="note"
+    >
+      <Stack gap="xs">
+        <Text size="sm">
+          Rasbora comes with an{" "}
+          <Anchor href={SKILL_URL} target="_blank" rel="noopener noreferrer">
+            AI agent skill
+          </Anchor>
+          . Once loaded into the AI agent of your choice, you’ll be able to give
+          it your Pleco export file (<b>.pqb</b>) and ask it any questions you
+          have in plain language.
+        </Text>
+        <Text size="sm">For example, ask your agent to:</Text>
+        <List size="sm" withPadding>
+          <List.Item>
+            Suggest definition updates for the worst leeches
+          </List.Item>
+          <List.Item>
+            Organize a card review plan over the next few weeks if you’re late
+          </List.Item>
+          <List.Item>
+            Compare your last 10 exports to see if you’re improving review speed
+            or not
+          </List.Item>
+          <List.Item>etc</List.Item>
+        </List>
+        <Text size="sm">
+          An AI agent with this skill makes a great (and powerful) companion to
+          this website, and can even link to it to help you visualize what the
+          agent is talking about.
+        </Text>
+        <Text size="sm">
+          Direct link to skill file:{" "}
+          <Anchor
+            href={SKILL_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ overflowWrap: "anywhere" }}
+          >
+            {SKILL_URL}
+          </Anchor>
+        </Text>
+      </Stack>
+    </Alert>
 
     <Text>
       I would be very happy to hear your feedback. You can reach me at{" "}

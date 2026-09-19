@@ -233,6 +233,18 @@ about the app rather than an export. `ProfileInfo.tsx` lives at `/profile`.
 can validate incoming constraints against the saved export before any page
 effects run.
 
+`About.tsx` carries one highlighted panel, pointing at the repo's own agent
+skill (`.agents/skills/pleco-flashcards/SKILL.md`). It is the page's only
+`<Alert>`, and it is one because the skill is a second way to read an export
+rather than another sentence about this one. Three things there are
+deliberate. It sits **right after the _load a Pleco export_ line**, since it is
+the next thing to do with an export and not a footnote. The `SKILL_URL` is
+printed **in full rather than behind link text**, because its use is being
+copied into an agent somewhere else — which is also why it is the raw
+`raw.githubusercontent.com` URL: a person can read it and an agent can fetch
+it unchanged. And it points at **`main`, never a pinned commit** — a reader who
+followed one would get a skill older than the app it describes.
+
 `LinkedExport.tsx` gates all routes inside Layout, after saved-file restoration.
 It reads optional `profileId` and `lastSessionStart` parameters through the pure
 resolver in `linkTarget.ts`. Profile metadata carries the raw `laststart` as

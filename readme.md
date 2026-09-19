@@ -21,6 +21,23 @@ So a profile is the top of the tree, and settings, scores and card selection all
 
 Rasbora therefore reads the export through exactly one profile at a time. You load a file on the `Load Pleco file` page and then pick a profile at the top of the window — it stays visible everywhere, and every page answers for that profile alone: `Profile info` describes it, `Card count` charts the cards it draws from, and the card lists all read its scorefile only. The root page is `About 🙂`, so it is useful before an export has been loaded too.
 
+## The AI agent skill
+
+Rasbora ships an agent skill: [`.agents/skills/pleco-flashcards/SKILL.md`][skill],
+a single Markdown file that teaches any AI agent — whichever one you use — how to
+read a Pleco `.pqb` export for itself. It documents the schema, the traps in it
+(dynamically named score tables, comma-terminated settings, newest-first review
+history) and working queries for the same lists the card pages show.
+
+Give the file to your agent, point it at your export, and you can ask questions
+about your own flashcards in plain language, including ones no page here
+answers. The skill also knows about this app, so an agent working from a Google
+Drive or other public link can hand you a `/load?fromUrl=…` link straight into
+Rasbora. The two go together: the agent answers a question, Rasbora shows the
+cards. The **About** page links to the file.
+
+[skill]: https://raw.githubusercontent.com/paps/rasbora/refs/heads/main/.agents/skills/pleco-flashcards/SKILL.md
+
 ## Links to a specific export
 
 Every page accepts optional `profileId` and `lastSessionStart` query parameters:
