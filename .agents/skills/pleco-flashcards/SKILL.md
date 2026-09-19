@@ -1,6 +1,6 @@
 ---
 name: pleco-flashcards
-description: Analyze a Pleco flashcard export (.pqb) directly with the sqlite3 CLI — card lists (leeches, lapses, almost learned, learned, customized), review history, dataset size — and knows when to offer the Rasbora web app (rasbora.martintapia.com) for viewing a remotely hosted export. Use whenever a .pqb file needs read-only inspection or querying.
+description: Analyze a Pleco flashcard export (.pqb) directly with read-only SQLite tools, preferably the sqlite3 CLI — card lists (leeches, lapses, almost learned, learned, customized), review history, dataset size — and knows when to offer the Rasbora web app (rasbora.martintapia.com) for viewing a remotely hosted export. Use whenever a .pqb file needs read-only inspection or querying.
 metadata:
   type: reference
 ---
@@ -10,17 +10,20 @@ metadata:
 A `.pqb` is a plain, unencrypted SQLite 3 file. Query it directly:
 
 ```bash
-sqlite3 -json -readonly -safe path/to/export.pqb "SELECT ...;"
+sqlite3 -json -readonly path/to/export.pqb "SELECT ...;"
 ```
 
-Always use `-readonly -safe` — analysis is never a reason to write to the user's export.
+Always use `-readonly` with the CLI, or the equivalent read-only mode in another tool —
+analysis is never a reason to write to the user's export.
 `-json` makes rows easy to pipe into `jq`/a script for anything SQL can't express (see
 "Lapses" below).
 
-**This skill needs a shell and the `sqlite3` CLI.** Check with `sqlite3 --version` first. If
-it is missing, try installing it (e.g. `apt-get install -y sqlite3`, `brew install sqlite`).
-If there is no command line to run it from, or `sqlite3` cannot be installed, this skill
-cannot work — say so to the user rather than guessing at the file's contents.
+**The `sqlite3` CLI is recommended.** Check with `sqlite3 --version` first when a shell is
+available. If it is missing, try installing it where permitted (e.g.
+`apt-get install -y sqlite3`, `brew install sqlite`). If there is no shell or the CLI cannot
+be installed or used, another SQLite-compatible tool may be used in read-only mode to
+complete the task. Adapt the examples below to that tool. If no read-only SQLite access is
+available, explain the limitation to the user rather than guessing at the file's contents.
 
 Every query in this document is illustrative, not a checklist to run in order or in full.
 They exist to show the schema, the joins and the traps in working form so you can get to a
@@ -43,15 +46,15 @@ stat -c '%y' path/to/export.pqb
 
 # When Pleco itself thinks the export was created (its own internal record — a distinct,
 # older fact from the file's mtime above)
-sqlite3 -json -readonly -safe export.pqb \
+sqlite3 -json -readonly export.pqb \
   "SELECT propid, datetime(cast(propvalue AS INTEGER),'unixepoch') AS at
    FROM pleco_flash_properties WHERE propid = 'FileCreated';"
 
 # The most recent review logged in ANY scorefile — scores tables are dynamically named,
 # so discover them first, never assume pleco_flash_scores_1
-for t in $(sqlite3 -readonly -safe export.pqb \
+for t in $(sqlite3 -readonly export.pqb \
   "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'pleco_flash_scores_%';"); do
-  sqlite3 -readonly -safe export.pqb \
+  sqlite3 -readonly export.pqb \
     "SELECT '$t', datetime(max(lastreviewedtime),'unixepoch') FROM $t;"
 done
 ```
@@ -110,16 +113,16 @@ Every card-list question below is scoped to one profile's scorefile and categori
 or count read without one describes nothing.
 
 ```bash
-PROFILE=<id>   # from: sqlite3 -json -readonly -safe export.pqb "select id,name from pleco_flash_profiles;"
+PROFILE=<id>   # from: sqlite3 -json -readonly export.pqb "select id,name from pleco_flash_profiles;"
 
 # scorefile table this profile reads/writes
-SCOREFILE_ID=$(sqlite3 -readonly -safe export.pqb \
+SCOREFILE_ID=$(sqlite3 -readonly export.pqb \
   "SELECT propvalue FROM pleco_flash_profilesettings
    WHERE propset=$PROFILE AND propid='pro_scorefile';" | tr -d ',')
 SCORES="pleco_flash_scores_$SCOREFILE_ID"
 
 # categories it draws from, plus their descendants (nesting is rare but the schema allows it)
-CATS=$(sqlite3 -readonly -safe export.pqb "
+CATS=$(sqlite3 -readonly export.pqb "
 WITH RECURSIVE cats(id) AS (
   SELECT value FROM json_each('[' || rtrim((
     SELECT propvalue FROM pleco_flash_profilesettings
@@ -130,10 +133,10 @@ WITH RECURSIVE cats(id) AS (
 SELECT group_concat(id) FROM cats;")
 
 # score bounds this profile scores against
-SCOREMIN=$(sqlite3 -readonly -safe export.pqb \
+SCOREMIN=$(sqlite3 -readonly export.pqb \
   "SELECT propvalue FROM pleco_flash_profilesettings
    WHERE propset=$PROFILE AND propid='pro_scoreautomin';" | tr -d ',')
-SCOREMAX=$(sqlite3 -readonly -safe export.pqb \
+SCOREMAX=$(sqlite3 -readonly export.pqb \
   "SELECT propvalue FROM pleco_flash_profilesettings
    WHERE propset=$PROFILE AND propid='pro_scoreautomax';" | tr -d ',')
 ```
@@ -186,7 +189,7 @@ Then, per candidate, with the two numbers the user gets to choose (defaults: `ru
 ```bash
 # band start = max across the profile's pro_scorefilter_*_starts settings (5 test types,
 # take the highest of each list's own max — see the trap above on comma-terminated lists)
-BAND_START=$(sqlite3 -readonly -safe export.pqb "
+BAND_START=$(sqlite3 -readonly export.pqb "
 SELECT max(v) FROM (
   SELECT max(cast(x.value AS INTEGER)) AS v
   FROM pleco_flash_profilesettings s, json_each('[' || rtrim(s.propvalue, ',') || ']') x
