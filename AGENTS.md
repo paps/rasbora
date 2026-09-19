@@ -207,6 +207,7 @@ src/
     days.ts             Fractional-day formatting, including near-zero signs
     chinese.ts          Headword splitting and numbered-pinyin → tone marks
   pages/                One file per route, plus its queries
+    About.tsx
     ProfileInfo.tsx     + ProfileInfo.db.ts
     CardCount.tsx       + CardCount.db.ts
     LearningDistribution.tsx + LearningDistribution.db.ts
@@ -228,12 +229,11 @@ under `src/pages/`, a `<Route>`, and an entry in `Layout.tsx`'s `PAGES` list.
 Page titles are just a `<Title>` at the top of each page, so there is no title
 plumbing to keep in sync.
 
-`/` is the one route that is not a plain page: a four-line `Landing` component
-renders `ProfileInfo` when there is an export and redirects to `/load` when
-there is not. `Layout` waits for restoration before mounting the routes, so a
-returning reader is not redirected while the saved file is still loading.
-`Landing` is the only place that chooses a page from `database` rather than
-showing the requested page's empty state.
+`/` renders `About.tsx`, the first item in the sidebar and the one page that is
+about the app rather than an export. `ProfileInfo.tsx` lives at `/profile`.
+`Layout` still waits for restoration before mounting routes so `LinkedExport`
+can validate incoming constraints against the saved export before any page
+effects run.
 
 `LinkedExport.tsx` gates all routes inside Layout, after saved-file restoration.
 It reads optional `profileId` and `lastSessionStart` parameters through the pure
@@ -273,8 +273,7 @@ puts them whatever the page below is doing. The `<Select>` takes the rest of the
 row up to a `maw`, so a long profile name reads in full on a desktop and still
 fits beside the mark on a phone.
 
-`LoadFile.tsx` is where both of the controls that left went, and it is the page
-the app lands on when there is no saved export to restore. It holds the
+`LoadFile.tsx` is where both of the controls that left went. It holds the
 `FileButton` that opens the picker, **Forget file**, the import or removal error
 if there is one, and the 繁/简 `<SegmentedControl>` under a heading that says
 in English what it does —
@@ -313,7 +312,7 @@ nothing to read says so in a sentence instead. That is not a courtesy: routes
 answer when typed in, so a page has to handle `database === null` and
 `profile === null` anyway, and a disabled link would only hide the explanation.
 
-`ProfileInfo.tsx` is what `/` renders once a file is in, and describes the
+`ProfileInfo.tsx` is what `/profile` renders, and describes the
 selected profile and nothing else: what it reviews into, what it draws from, and
 its session settings (the documented ones spelled out, all ~150 raw in an
 `<Accordion>`). Everything on it moves when the profile picker moves, which is

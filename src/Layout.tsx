@@ -21,8 +21,9 @@ interface Page {
 
 /** The sidebar, in order. Every path here also needs a route in `App.tsx`. */
 const PAGES: Page[] = [
+  { path: "/", label: "About 🙂" },
   { path: "/load", label: "Load Pleco file" },
-  { path: "/", label: "Profile info" },
+  { path: "/profile", label: "Profile info" },
   { path: "/card-count", label: "Card count" },
   { path: "/learning-distribution", label: "Learning distribution" },
   { path: "/incoming-reviews", label: "Incoming reviews" },
@@ -55,8 +56,7 @@ interface LayoutProps {
  * has to be reachable from all of them. The file and the written form used to
  * sit beside it and no longer do — they are chosen once rather than while
  * reading, and three controls plus a burger and the mark do not fit across a
- * phone. They live on `Load Pleco file` instead, which is also where the app
- * lands with nothing imported.
+ * phone. They live on `Load Pleco file` instead.
  *
  * Nothing is pushed to the right edge for the same reason. A right-aligned
  * group is only ever as far right as the layout viewport, which a card table
@@ -152,7 +152,7 @@ const Layout = ({ children }: LayoutProps) => {
             {storageWarning}
           </Alert>
         )}
-        {/* Wait before mounting routes so Landing cannot redirect a saved file to /load. */}
+        {/* Wait before mounting routes so link constraints see the restored export. */}
         {isRestoring ? (
           <Text c="dimmed" role="status">
             Restoring saved flashcards…

@@ -1,9 +1,10 @@
 import { MantineProvider } from "@mantine/core";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router";
+import { BrowserRouter, Route, Routes } from "react-router";
 import Layout from "@/Layout";
 import LinkedExport from "@/LinkedExport";
 import DatabaseProvider from "@/database/DatabaseProvider";
 import DictionaryProvider from "@/cc-cedict/DictionaryProvider";
+import About from "@/pages/About";
 import AlmostLearnedCards from "@/pages/AlmostLearnedCards";
 import CardCount from "@/pages/CardCount";
 import CustomizedCards from "@/pages/CustomizedCards";
@@ -19,19 +20,6 @@ import ProfileInfo from "@/pages/ProfileInfo";
 import ViewCard from "@/pages/ViewCard";
 import Streaks from "@/pages/Streaks";
 import ScriptProvider from "@/script/ScriptProvider";
-import { useDatabase } from "@/database/context";
-
-/**
- * What `/` shows: the profile, once there is an export to read it from, and the
- * loader when no export is available. Layout waits for the saved file and
- * profile to be restored before mounting routes, so a returning reader stays
- * on the profile page instead of being redirected while storage is loading.
- */
-const Landing = () => {
-  const { database } = useDatabase();
-
-  return database ? <ProfileInfo /> : <Navigate to="/load" replace />;
-};
 
 // `ScriptProvider` and `DictionaryProvider` sit outside `DatabaseProvider`
 // because both are standing app-wide facts, not the export: the written form is
@@ -52,8 +40,9 @@ const App = () => (
             <Layout>
               <LinkedExport>
                 <Routes>
-                  <Route path="/" element={<Landing />} />
+                  <Route path="/" element={<About />} />
                   <Route path="/load" element={<LoadFile />} />
+                  <Route path="/profile" element={<ProfileInfo />} />
                   <Route path="/card-count" element={<CardCount />} />
                   <Route
                     path="/learning-distribution"

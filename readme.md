@@ -19,7 +19,7 @@ A **profile** is what you select before starting a review session, and everythin
 
 So a profile is the top of the tree, and settings, scores and card selection all hang below it. Nothing in the export is meaningful on its own — a score without the profile that produced it says nothing.
 
-Rasbora therefore reads the export through exactly one profile at a time. You load a file on the `Load Pleco file` page, which is where the app opens when there is no saved file, and then pick a profile at the top of the window — it stays visible everywhere, and every page answers for that profile alone: `Profile info` describes it, `Card count` charts the cards it draws from, and the card lists all read its scorefile only.
+Rasbora therefore reads the export through exactly one profile at a time. You load a file on the `Load Pleco file` page and then pick a profile at the top of the window — it stays visible everywhere, and every page answers for that profile alone: `Profile info` describes it, `Card count` charts the cards it draws from, and the card lists all read its scorefile only. The root page is `About 🙂`, so it is useful before an export has been loaded too.
 
 ## Links to a specific export
 
