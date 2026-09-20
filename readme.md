@@ -44,7 +44,7 @@ Every page accepts optional `profileId` and `lastSessionStart` query parameters:
 
 ```text
 /streaks?run=4&profileId=2&lastSessionStart=1789722000
-/card?profileId=2
+/card?search=xue2&profileId=2
 /incoming-reviews?lastSessionStart=1789722000
 ```
 
@@ -57,7 +57,7 @@ it is one of them; otherwise the first in Pleco's order wins. Values must be
 nonnegative decimal integers; empty, repeated, or malformed parameters are
 rejected. Missing timestamps do not match zero.
 
-Pages can carry parameters of their own beside these, and two do.
+Pages can carry parameters of their own beside these, and three do.
 
 **Streaks** takes `run`, the run of correct answers to list, and the optional
 `runTo` raises it into a range, so `/streaks?run=4&runTo=10` lists every card
@@ -72,6 +72,14 @@ three days overdue through a week out, and `/due?days=-3` lists that one day
 exactly, which is what the Incoming reviews chart links to. A `daysTo` below
 `days`, or a value that is not a whole number within 36,500 days, is ignored.
 With neither parameter — `/due` — the page lists every card already overdue.
+
+**Search for a card** takes `search`, the text to look up, in exactly the
+forms the field itself accepts: `/card?search=學`, `/card?search=xue2`,
+`/card?search=11770`. Nothing is rejected — a search that finds nothing says
+so on the page, the way a typed one does — and `/card` with no parameter opens
+the empty field. Typing updates the parameter once you pause, at the same
+moment the cards below appear, so the address is the search you are reading
+and is ready to be copied or sent. Clearing the field leaves `/card`.
 
 Validation waits for saved-file restoration and any import already in progress.
 The destination page stays hidden until the link is checked. Successful links
