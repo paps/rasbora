@@ -416,6 +416,42 @@ three, an `Alert` above the results gives the real count and asks for a
 narrower search; the cap is the same "a truncated list must not read as a
 complete one" rule the card lists follow, at a different scale.
 
+**The search is in the address, as `search`.** `/card?search=xue2` opens the
+page already showing those cards, which is what makes a single card linkable
+at all: the skill in `.agents/skills/` exists so an agent can read an export
+itself, and without a parameter here the best it could do was name a card and
+leave the reader to retype it. It is written with `replace: true` for the
+reason `Streaks` writes its range that way — a search is one view being
+adjusted, not a page visited per word, so Back stays one press from wherever
+the reader came from.
+
+Two ways it is not the ranges on `Streaks` and `Due cards`:
+
+- **There is nothing to validate, and so nothing is rejected.** `run` and
+  `days` name a bucket that has to exist for the list under it to be honest,
+  which is why an unusable value there falls back rather than listing nothing.
+  A search is not a bucket: one that matches nothing is an answer, and the
+  page already has the words for it. `searchCards` trims what it is handed and
+  reads the empty string as no search at all, so no value needs stopping here
+  first.
+- **The value flows one way, and that is not a preference.** Those pages read
+  their controls straight out of the address, which a stepper can afford: it
+  emits one value per click and can wait for the router to hand it back. A
+  keyboard cannot. A field whose value returns through the router loses the
+  letters typed before the re-render — typing `pingchang` into one lands
+  `phang` in the address, reproducibly, which is how this was caught. So the
+  field owns its state, `useState(linked)` reads the address once for the
+  search a link arrived with, and an effect mirrors the value back out through
+  the same debounce the query uses. Both settle together: the reader who stops
+  typing gets the cards and a URL worth copying at the same moment, and one
+  mid-word costs neither a scan nor a history entry. An empty field writes no
+  parameter rather than an empty one, so clearing it leaves `/card`.
+
+One consequence of that one-way flow, and it is the right one: following the
+sidebar link while a search is showing rewrites the address back to the search
+rather than clearing the field. The page kept its state across that navigation
+before it had a parameter too — what changed is that the address now says so.
+
 Its search is the part with something to say, and it lives in
 `SearchCard.db.ts`:
 

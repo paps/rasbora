@@ -41,13 +41,12 @@
 - [ ] Update skill with this information, so that an AI agent can also estimate the value properly
 - [ ] Add this next review information when you're looking at an individual flashcard
 
-- [ ] Open `Search for a card` from a direct link with a querystring
-      (assuming Pleco file still in cache) — the page holds its search in
-      component state for now, so a search is not linkable and does not
-      survive a reload
+- [x] Open `Search for a card` from a direct link with a querystring
+      (assuming Pleco file still in cache) — shipped as `/card?search=學`,
+      written by the field as you type, so a search is linkable, survives a
+      reload, and is something an agent can hand you
 
 - [ ] Rename `Learned cards` to `Cards to revive` (or find the right SRS name
       for it) and sort it oldest first. Update the page accordingly: the goal is
       to bring back into review the cards that weren't actually learned, or were
       forgotten, after years+ of non use
-
