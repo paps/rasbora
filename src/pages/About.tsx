@@ -42,10 +42,8 @@ const About = () => (
     </Text>
 
     <Text>
-      Rasbora only exists because Pleco is such an extraordinary app. Thank you
-      to Michael Love, who founded Pleco Software in 2000, and to everyone who
-      has helped build it. Pleco makes learning Chinese far more effective and
-      enjoyable.
+      Rasbora only exists because Pleco is such an extraordinary app. It makes
+      learning Chinese far more effective and enjoyable.
     </Text>
 
     <Text>
@@ -53,8 +51,7 @@ const About = () => (
       <Anchor component={Link} to="/load">
         load a Pleco export
       </Anchor>
-      . I have only tested Rasbora with an export from Pleco for Android version
-      3.2.
+      .
     </Text>
 
     <Alert
@@ -78,7 +75,8 @@ const About = () => (
             Suggest definition updates for the worst leeches
           </List.Item>
           <List.Item>
-            Organize a card review plan over the next few weeks if you’re late
+            Organize a personalized review plan over the next few weeks if
+            you’re late reviewing cards
           </List.Item>
           <List.Item>
             Compare your last 10 exports to see if you’re improving review speed
@@ -138,6 +136,11 @@ const About = () => (
         Reddit post
       </Anchor>
     </Group>
+
+    <Alert color="yellow" role="note">
+      Disclaimer: as of now, Rasbora has only been tested with exports from
+      Pleco for Android version 3.2.
+    </Alert>
   </Stack>
 );
 
