@@ -15,7 +15,7 @@
  * answers for one scorefile instead of all of them, and a profile's two links
  * to the rest of the export are both indirect.
  *
- * `pleco-export-format.md` describes the schema and lists the traps. It is
+ * `agent-notes/pleco-export-format.md` describes the schema and lists the traps. It is
  * still the authority; this file only implements the traps that are too easy
  * to walk into by hand.
  */
