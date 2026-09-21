@@ -53,7 +53,8 @@ const About = () => (
       <Anchor component={Link} to="/load">
         load a Pleco export
       </Anchor>
-      .
+      . I have only tested Rasbora with an export from Pleco for Android version
+      3.2.
     </Text>
 
     <Alert
