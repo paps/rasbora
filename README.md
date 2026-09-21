@@ -34,7 +34,7 @@ Find **leeches** you keep getting wrong and **lapses** you used to remember. Ope
 
 Give your agent the [Pleco flashcards skill][skill] and your export, then ask questions such as “Which words do I keep forgetting?” The skill helps your agent read the export and link you to cards in Rasbora.
 
-[Usage guide](docs/usage.md) · [Development](AGENTS.md#commands) · [Report a problem](https://github.com/paps/rasbora/issues)
+[Development](AGENTS.md#commands) · [Report a problem](https://github.com/paps/rasbora/issues)
 
 Dictionary definitions come from [CC-CEDICT](https://www.mdbg.net/chinese/dictionary?page=cc-cedict), licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
 
