@@ -3,7 +3,7 @@
 import type { Database } from "sql.js";
 import { asCount, readCardPointsPerDay, rowsOf } from "@/database/plecoFile";
 import type { Profile } from "@/database/plecoFile";
-import { nextReviewTime } from "@/database/reviewSchedule";
+import { nextReviewTime, wholeDaysUntil } from "@/database/reviewSchedule";
 
 /** Series keys for estimates that are already due and those still ahead. */
 export const DUE_SERIES = "due";
@@ -73,9 +73,10 @@ export const readIncomingReviews = (
       continue;
     }
 
-    // `now` is Unix seconds captured when the page opens. Floor preserves
-    // overdue signs: -0.2 days belongs to -1; 0 means the next 24 hours.
-    const day = Math.floor((due - now) / 86_400);
+    // `now` is Unix seconds captured when the page opens. The floor, which
+    // preserves overdue signs, is shared with `Due cards`: a bar has to open
+    // exactly the cards it counted.
+    const day = wholeDaysUntil(due, now);
     counts.set(day, (counts.get(day) ?? 0) + cards);
     if (day < 0) dueCards += cards;
     firstDay = Math.min(firstDay, day);

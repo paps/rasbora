@@ -8,8 +8,8 @@ import {
   Title,
 } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
-import { useMemo, useState, type ReactNode } from "react";
-import { Link } from "react-router";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Link, useSearchParams } from "react-router";
 import Flashcard from "@/components/Flashcard";
 import { useDatabase } from "@/database/context";
 import type { Profile } from "@/database/plecoFile";
@@ -17,6 +17,11 @@ import { SEARCH_CARD_LIMIT, searchCards } from "@/pages/SearchCard.db";
 
 /**
  * How long the reader has to stop typing before the export is searched.
+ *
+ * It paces the address as well as the query, which is why both settle at the
+ * same moment: a reader who has stopped typing gets the cards and a URL worth
+ * copying together, and one who is mid-word costs neither a scan nor a history
+ * entry.
  *
  * The other page with a control on it, `Lapses`, re-filters rows it
  * already holds and needs no such thing. This one runs two full scans of the
@@ -26,6 +31,30 @@ import { SEARCH_CARD_LIMIT, searchCards } from "@/pages/SearchCard.db";
  * that a reader who has finished typing does not notice.
  */
 const SEARCH_DELAY = 250;
+
+/**
+ * The querystring key the search lives in.
+ *
+ * The search is in the address, for the reasons the `Streaks` range is: what
+ * the reader is looking at survives a reload and can be sent to someone. Here
+ * that last part is the whole point — an agent reading an export through the
+ * bundled skill can answer "which card?" with a link that opens the card,
+ * rather than with a word the reader has to retype into this field.
+ *
+ * Unlike `run` or `days` there is nothing to validate. Those name a bucket
+ * that has to exist for a list to be honest; this one is a search, and a
+ * search that matches nothing is an answer rather than a broken address. The
+ * query layer already trims what it is given and treats the empty string as no
+ * search at all, so every value reaching here is one it can be handed.
+ *
+ * It also differs in which way the value flows, and that is not a preference.
+ * `Streaks` reads its controls straight from the address because a stepper
+ * emits one value per click; a keyboard does not wait, and a field whose value
+ * comes back through the router drops the letters typed before the re-render —
+ * `pingchang` arrives as `phang`. So the field holds its own state and the
+ * address follows it, one way, from the same debounce the query uses.
+ */
+const SEARCH_PARAM = "search";
 
 /**
  * Looking one card up and reading it whole.
@@ -68,8 +97,30 @@ const emptyReason = (profile: Profile, search: string): ReactNode => {
 
 const SearchCard = () => {
   const { database, profile } = useDatabase();
-  const [search, setSearch] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const linked = searchParams.get(SEARCH_PARAM) ?? "";
+  // The address is read once, for the search a link arrived with. After that
+  // the field is the one writing.
+  const [search, setSearch] = useState(linked);
   const [debounced] = useDebouncedValue(search, SEARCH_DELAY);
+
+  /**
+   * Mirrors the settled search into the address, so the URL a reader copies is
+   * the search they are reading.
+   *
+   * An empty field writes no parameter rather than an empty one, leaving
+   * `/card` — the address the sidebar link would have given them. Replaced
+   * rather than pushed, as on `Streaks`: a search is one view being adjusted,
+   * not a page visited per word, so Back stays one press from wherever the
+   * reader came from rather than walking back through what they just typed.
+   */
+  useEffect(() => {
+    if (debounced === linked) return;
+
+    setSearchParams(debounced === "" ? {} : { [SEARCH_PARAM]: debounced }, {
+      replace: true,
+    });
+  }, [debounced, linked, setSearchParams]);
 
   const found = useMemo(
     () =>
