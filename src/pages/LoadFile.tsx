@@ -169,10 +169,11 @@ const LoadFile = () => {
       <Stack gap="xs" align="flex-start">
         <Text size="sm" c="dimmed">
           Rasbora reads a Pleco flashcard export — the <b>.pqb</b> file Pleco
-          writes from <b>Flashcards → Import/Export → Export cards</b>. It is
-          read in your browser and never uploaded. Your file and selected
-          profile are saved in this browser and restored when you reload or open
-          another tab. Loading another file replaces the saved copy.
+          writes from <b>Flashcards → Import/Export → Export cards</b>.{" "}
+          <b>It is read in your browser and never uploaded.</b> Your file and
+          selected profile are saved in this browser and restored when you
+          reload or open another tab. Loading another file replaces the saved
+          copy.
         </Text>
 
         <FileButton accept=".pqb" onChange={importChosenFile}>
@@ -194,7 +195,7 @@ const LoadFile = () => {
         >
           <TextInput
             label="File URL"
-            description="Paste a direct download URL or a Google Drive file link shared with Anyone with the link."
+            description='Paste a direct download URL or a Google Drive file link shared with "Anyone with the link".'
             type="url"
             required
             value={url}
@@ -213,7 +214,7 @@ const LoadFile = () => {
             </Button>
           </Group>
           <Text size="sm" c="dimmed">
-            Downloads go directly to your browser. Other hosts must allow
+            <b>Downloads go directly to your browser.</b> Other hosts must allow
             browser access; links requiring sign-in are not supported. The
             downloaded file is saved here just like a local file. To get an
             updated export, load its URL again.
