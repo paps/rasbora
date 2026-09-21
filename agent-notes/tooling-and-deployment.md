@@ -31,3 +31,9 @@ They do not overlap by accident, so please do not try to consolidate them:
 - **`eslint-plugin-react-refresh`** owns fast-refresh correctness. `@eslint-react` has no equivalent rule, so this cannot be folded in.
 
 `@eslint-react`'s `recommended-typescript` preset also enables 9 hook rules that duplicate `eslint-plugin-react-hooks`. The block of `"off"` entries in `eslint.config.js` exists to silence those duplicates — removing it makes every hook problem get reported twice.
+
+## Analytics
+
+`index.html` uses the project-supplied PostHog HTML snippet with the EU ingestion host, public project token, and `defaults: "2026-05-30"`. Keep the integration minimal: use PostHog's defaults and project settings rather than adding client-side feature overrides or event filtering. No npm package or React provider is needed. The loader runs only on `https://rasbora.martintapia.com`, so local development and preview deployments do not load PostHog.
+
+When changing analytics, validate the inline script as well as running the usual checks: ESLint and TypeScript do not check inline HTML scripts. Check that localhost/previews inject no script. A blocked analytics script must leave the app usable.
