@@ -4,7 +4,7 @@
  * A Pleco card carries both — `hw` is simplified, `althw` traditional — and a
  * learner reads one of them, not whichever the export happened to put first.
  * The choice is therefore app-wide, like the selected profile: a card shown in
- * a table and the same card opened in a drawer have to agree, and a page that
+ * a table and the same card opened in a dialog have to agree, and a page that
  * forgot to ask would quietly render the other script.
  *
  * It lives here rather than in `src/database/` because it is not a fact about

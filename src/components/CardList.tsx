@@ -1,4 +1,4 @@
-import { Drawer, Group, Pagination, Table } from "@mantine/core";
+import { Group, Modal, Pagination, Table } from "@mantine/core";
 import { useState, type ReactNode } from "react";
 import Flashcard, { type FlashcardData } from "@/components/Flashcard";
 import { splitHeadword } from "@/components/chinese";
@@ -26,7 +26,7 @@ interface CardListProps<T extends FlashcardData> {
 }
 
 /**
- * A list of cards that opens one in a drawer: the position, the headword in
+ * A list of cards that opens one in a dialog: the position, the headword in
  * the chosen script, its pinyin, then whatever columns the page adds.
  *
  * Every page that answers "which cards?" renders this, so that a card list
@@ -52,7 +52,7 @@ const CardList = <T extends FlashcardData>({
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
   // The open card is looked up in the current list rather than kept in state,
-  // so switching profile can never leave the drawer showing tallies read from
+  // so switching profile can never leave the dialog showing tallies read from
   // the scorefile of the profile before it.
   const selected = cards.find((card) => card.id === selectedId) ?? null;
   const pageCount = Math.max(1, Math.ceil(cards.length / PAGE_SIZE));
@@ -128,17 +128,21 @@ const CardList = <T extends FlashcardData>({
         </Group>
       )}
 
-      <Drawer
+      <Modal
         opened={selected !== null}
         onClose={() => {
           setSelectedId(null);
         }}
-        position="right"
         title="Card details"
-        padding="lg"
+        centered
+        size="lg"
+        xOffset="xs"
+        yOffset="xs"
+        padding="md"
+        closeButtonProps={{ "aria-label": "Close card details", size: "xl" }}
       >
         {selected && <Flashcard card={selected} />}
-      </Drawer>
+      </Modal>
     </>
   );
 };

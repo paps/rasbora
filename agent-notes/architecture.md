@@ -18,7 +18,7 @@ If a new feature seems to need export-wide numbers, that is a signal worth quest
 
 A Pleco card carries both written forms — `hw` is simplified, `althw` traditional — and a learner reads one of them. Which one is app-wide state, held by `ScriptProvider` and picked on the `Load Pleco file` page.
 
-It is global for the same reason the profile is: the same card appears in a table and again in a drawer, and the two have to agree. A page that had to ask for the script could forget to, and would then render a card in the form the rest of the app is not using.
+It is global for the same reason the profile is: the same card appears in a table and again in a dialog, and the two have to agree. A page that had to ask for the script could forget to, and would then render a card in the form the rest of the app is not using.
 
 Three things follow, and they are the ones to keep in mind when touching this:
 

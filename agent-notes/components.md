@@ -18,7 +18,9 @@ It reads two globals for itself. `useScript()`, which decides which form the big
 
 ## CardList
 
-`CardList.tsx` is the other half of that: the table every card page renders, holding the position, the headword in the chosen script, the pinyin, the time until review, then whatever columns the page hands it, plus the paging and the `<Drawer>` that opens a `Flashcard`. Six pages ask "which cards?" and they differ in the question, not in the table — so the table is one component, and a seventh page gets the same page size, the same first columns and the same click behaviour for free. It is the caller's list that is rendered, in the caller's order: capping a long list and saying so is the page's job, since only the page knows what was left out.
+`CardList.tsx` is the other half of that: the table every card page renders, holding the position, the headword in the chosen script, the pinyin, the time until review, then whatever columns the page hands it, plus the paging and the `<Modal>` that opens a `Flashcard`. Six pages ask "which cards?" and they differ in the question, not in the table — so the table is one component, and a seventh page gets the same page size, the same first columns and the same click behaviour for free. It is the caller's list that is rendered, in the caller's order: capping a long list and saying so is the page's job, since only the page knows what was left out.
+
+The card dialog is centered and uses Mantine’s `lg` width, constrained to the viewport with `xs` (10 px) outer margins. On phones these small margins keep it visibly separate from the page. Mantine handles internal scrolling and the sticky header, so the enlarged, labelled X stays reachable throughout long review histories. Keep the margins rather than switching to full-screen mode.
 
 ## ReviewDue and day formatting
 

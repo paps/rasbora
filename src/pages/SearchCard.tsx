@@ -63,7 +63,7 @@ const SEARCH_PARAM = "search";
  * a table, because the question is about a set and a row is enough to compare
  * one member against another. This page asks the opposite question — "that one,
  * what does it say?" — so there is no table. Each hit is the same `Flashcard`
- * the drawer opens, which is the point: a card looks the same wherever it is
+ * the dialog opens, which is the point: a card looks the same wherever it is
  * shown, and here it is shown without having to find it in a list first.
  *
  * That is also why the results are capped at three rather than paged. The
