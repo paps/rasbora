@@ -24,8 +24,6 @@ They do not overlap by accident, so please do not try to consolidate them:
 
 ## Analytics
 
-`index.html` uses the project-supplied PostHog HTML snippet with the EU ingestion host and public project token. The loader runs only on `https://rasbora.martintapia.com`, so local development and preview deployments neither load PostHog nor send events. No npm package or React provider is needed. PostHog's `history_change` page-view capture handles client-side navigation.
-
-Page views use PostHog's standard event properties, including full URLs and query strings; there is no custom event filter. Autocapture, page-leave events, dead clicks, session replay, exceptions, heatmaps, performance capture, and surveys are disabled; person profiles are never created. PostHog's default persistence still remembers anonymous visitors, with its cookie scoped to this subdomain.
+`index.html` uses the project-supplied PostHog HTML snippet with the EU ingestion host, public project token, and `defaults: "2026-05-30"`. Keep the integration minimal: use PostHog's defaults and project settings rather than adding client-side feature overrides or event filtering. No npm package or React provider is needed. The loader runs only on `https://rasbora.martintapia.com`, so local development and preview deployments do not load PostHog.
 
 When changing analytics, validate the inline script as well as running the usual checks: ESLint and TypeScript do not check inline HTML scripts. Check that localhost/previews inject no script. A blocked analytics script must leave the app usable.
