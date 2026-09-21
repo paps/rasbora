@@ -20,9 +20,9 @@ const About = () => (
         rel="noopener noreferrer"
       >
         Martin
-      </Anchor>
-      . I made Rasbora for people like me who have a lot of flashcards to review
-      in{" "}
+      </Anchor>{" "}
+      👋️ I made Rasbora for people like me who have a lot of flashcards to
+      review in{" "}
       <Anchor
         href="https://www.pleco.com/"
         target="_blank"
