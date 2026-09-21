@@ -112,6 +112,18 @@ const About = () => (
       .
     </Text>
 
+    <Text>
+      Contributions to{" "}
+      <Anchor
+        href="https://github.com/paps/rasbora"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Rasbora’s GitHub repository
+      </Anchor>{" "}
+      are welcome.
+    </Text>
+
     <Text>These links are placeholders until the posts are ready:</Text>
     <Group gap="lg">
       <Anchor

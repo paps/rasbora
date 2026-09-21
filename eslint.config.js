@@ -7,7 +7,7 @@ export default [
   {
     // `cc-cedict` is standalone Node build tooling, linted no more than the
     // `*.js` config files are — it is not part of the app's TypeScript project.
-    ignores: ["dist", ".wrangler", "*.js", "cc-cedict"],
+    ignores: ["dist", ".wrangler", "*.js", "cc-cedict", "worktrees/**"],
   },
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,

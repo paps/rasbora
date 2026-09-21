@@ -17,7 +17,7 @@
 
 Note what is _not_ a reason to add to `plecoFile.ts`: several pages needing it. Shared code here earns its place by correctness — **a per-page version would be wrong, not just repeated.** A query stays with its page however data-layerish it feels. Its predecessor `plecoDatabase.ts` filled up because "it belongs in the data layer" was reason enough, which is what a grab bag sounds like from the inside.
 
-[pleco-export-format.md](../pleco-export-format.md) stays the authority on the schema, and its gotchas checklist now has to be respected in each `.db.ts` rather than in one place. `plecoFile.ts` implements only the traps that are too easy to walk into by hand; read the checklist before writing a new query.
+[pleco-export-format.md](pleco-export-format.md) stays the authority on the schema, and its gotchas checklist now has to be respected in each `.db.ts` rather than in one place. `plecoFile.ts` implements only the traps that are too easy to walk into by hand; read the checklist before writing a new query.
 
 **A page query takes the profile.** `readCardsOverTime(database, profile)`, `readLeeches(database, profile)`: the scope comes in as an argument rather than being decided inside the SQL, so a page cannot accidentally answer for the whole export. A page that has no profile in view renders its "import a set of flashcards" sentence instead of querying — which is a link to `/load`, since that is the one thing the reader can do about it.
 
