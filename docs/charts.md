@@ -1,0 +1,154 @@
+# Charts
+
+`@mantine/charts` (and its `recharts` peer) is installed for the Card count,
+Learning distribution and Incoming reviews pages. These are the only reason
+either package is here, so keep chart work on `<LineChart>`, `<BarChart>` and
+friends rather than dropping to raw recharts.
+
+The split is the same on all three: the `.db.ts` shapes the data and names the
+buckets, the `.tsx` picks the colours. A chart colour is a rendering decision,
+so a query never returns one.
+
+## Card count
+
+`CardCount.db.ts` shapes the data and names the series; `CardCount.tsx` picks
+the colours. Four things there are load-bearing:
+
+- **The chart is the profile's, not the file's.** Only the categories the
+  profile draws from get a line, and the total counts cards in those categories
+  — distinctly, since a card in two of them is still one card. There is no
+  "uncategorised" series any more: within a profile, every card in scope is in
+  one of its categories by definition.
+- **The series count is capped.** A profile can load dozens of categories, and
+  a line each would be unreadable, so the biggest six keep their own line and
+  the rest are summed into "Other categories" — named in the caption under the
+  chart, because a silently dropped category reads as a category with no cards.
+- **`CATEGORY_COLORS` was checked, not chosen by eye.** The order is
+  colourblind-safe as a set and every entry clears the lightness and chroma
+  bands against a white surface. Reordering it or adding to it silently
+  invalidates that, so re-check it if you do. The six need no per-scheme
+  treatment — the weakest on a dark page is blue.7 at 3.70:1, better than
+  yellow.8's 2.48:1 on a white one.
+- **`FIXED_COLORS` does follow the scheme, because both of its entries are
+  neutrals.** The total is deliberately not a hue, so it cannot be read as a
+  category — and that is exactly what makes it invert: `gray.7` goes from
+  8.18:1 on white to 1.90:1 on dark, which is the chart's most important line
+  all but gone. It reads as `dark.1` there instead, at 7.83:1, with "Other
+  categories" moving violet.7 → violet.3 for the same reason.
+
+The chart can only say when a card was _created_: the export keeps no history
+of category membership, so a card counts towards the categories it is in today.
+That caveat is in the caption and should stay there.
+
+## Learning distribution
+
+`LearningDistribution.tsx` is the deck's shape in one bar chart: one bar per
+run of correct answers the profile's cards are currently on, counted back from
+the last review to the failure that ended the previous run. Read left to right
+it is a pile of unlearned cards, then learning in progress, then a tail of
+cards the profile has not caught out in a long time.
+
+Four things there are load-bearing:
+
+- **"New" is its own bar, before the numbers, and must stay that way.** A card
+  the profile has never reviewed and a card that just failed its last review
+  are both on a run of zero, and one bar for both makes the left end mean
+  nothing: in the sample export's big profile all 909 cards at zero have been
+  reviewed, while in its small one 263 of the 283 there never have. So the
+  query returns `streak: null` for them, the tick reads `New`, and the caption
+  gives both counts in the same sentence.
+- **Each bar is split by what the run is _made of_, and that is the page's
+  point rather than decoration.** A run of correct answers is not a run of
+  perfect ones. `4` ("barely remembered") and `5` ("remembered") are in Pleco's
+  correct half, so they extend the run — but `pro_scoreintervalmult4` is 90
+  against `pro_scoreintervalmult6` at 110, and a `4` also takes
+  `pro_scorediffchange4` off the card's difficulty, which is the very
+  multiplier the interval grows by (`difficulty / pro_scorediffdivisor`). A run
+  of them decays its own multiplier towards the difficulty floor, so the card
+  keeps coming back in weeks while the run grows without bound. Measured by
+  diffing two dated snapshots of the sample export: a `6` multiplies the score
+  by 3.11 and a failure resets it to 100, so the 512-day ceiling arrives in six
+  perfect answers — and in that profile **no run of eleven or more is made of
+  perfect answers alone**, against a longest run of 21. Without the split the
+  right tail reads as mastery when it is closer to the opposite.
+- **A run of zero is neither kind, and gets its own neutral series.** An empty
+  run would answer "every answer was perfect" vacuously, which is why `runOf`
+  returns `perfect: false` for it and `LAPSED_SERIES` exists. It is the one
+  series drawn in a neutral rather than a hue, and so the only one that follows
+  the colour scheme: a card that just failed is the _absence_ of a run, not a
+  third quality of one.
+- **Every run between 0 and the longest gets a bar, including the empty ones.**
+  Same reason the Card count chart draws quiet months: a skipped bucket would
+  compress the axis and misreport where the deck sits. There is no cap at the
+  right end — the run cannot outgrow the review log, which is 83 reviews at its
+  longest in any export seen so far and 21 in the profile this was built
+  against.
+
+**Selecting a bar opens the cards it counts**, which is wired twice because
+neither half covers the other's case. `barProps` catches a hit on a bar and is
+the only one that works under a finger — recharts fills the chart-level active
+state from mouse movement, so a tap, which has none, arrives with nothing to
+say; it stops propagation so the two never both fire. `barChartProps` catches
+the rest of the column, which is what makes the tail reachable with a mouse,
+those bars being a couple of pixels tall. Which segment was hit is ignored:
+a bar opens every card it counts and `Streaks` carries the perfect/weaker split
+as its `Quality` column instead. The `New` bar opens `New cards` rather than a
+run of zero, for the reason it is its own bar at all. A chart is not something a
+keyboard can select from, so both pages are in the sidebar and the caption says
+so.
+
+Note what the page does **not** do. There are no counts printed above the bars:
+Mantine cannot label a stacked bar, and `minBarSize` is not a way round the
+tail being only a few cards tall either — recharts hands that callback the
+stack's cumulative top rather than the segment's own value, so a 2px floor
+draws a sliver of "includes a weaker answer" under every bucket that has none.
+The tooltip carries the exact numbers, and a tail that rounds to nothing on a
+linear axis is telling the truth: it is 129 cards out of 15,004.
+
+## Learning distribution colours
+
+`LearningDistribution.tsx` draws the stacked bar chart, and its colours were
+checked the same way. Three of its four are hues — `orange.8`, `blue.7` and
+`teal.8`, all drawn from the six above but re-measured as their own set rather
+than assumed safe for their provenance: worst all-pairs ΔE 9.5 under
+protanopia and 19.6 in normal vision, each clearing 3:1 on both pages.
+`perfect` and `weaker` are the pair that actually sit against each other inside
+a bar, at ΔE 18.7 protan / 19.6 normal.
+
+Their weak spot is tritanopia, where blue and teal fall to ΔE 3.8, and that is
+covered by **stacking order** rather than by hue: `perfect` is always the
+segment on the baseline and `weaker` always the one above it, so the split
+survives with no colour vision at all. Keep that order if you touch the series
+list. The fourth, `lapsed`, is a neutral and therefore the only one that
+follows the colour scheme, for the same reason `FIXED_COLORS` does above.
+
+## Incoming reviews
+
+`IncomingReviews.tsx` draws one bar per whole day until the estimated next
+review, from the earliest to the latest in the selected profile. Its query uses
+`nextReviewTime()` and the profile's own points per day, and receives the clock
+captured on page mount in Unix seconds. It rounds down, so -0.2 days is -1 and
+0 means the next 24 hours. Every intervening day stays on the axis, including
+empty days; there is no weekly grouping or range cap. A left join retains
+never-reviewed cards in the total, and cards without usable scheduling data are
+counted below the chart rather than assigned an invented day. Category
+membership must not count a card twice. Negative-day buckets are the `due`
+series in fixed `red.8`; zero and positive days are `upcoming` in fixed
+`blue.7`. The due-card figure above the chart is accumulated from exactly the
+same negative buckets, so it must equal the sum of every red bar. Day zero is
+not part of it: it means due within the next 24 hours, not already due.
+
+**Selecting a bar opens the cards it counts**, on `Due cards`, at that one day
+— `/due?days=-3` — and it is wired twice for the reasons the same click is on
+`Learning distribution`: `barProps` is the half that survives a tap, and
+`barChartProps` catches the rest of the column, which is what makes a day
+holding three cards reachable with a mouse. Which series was hit is ignored,
+as there too: a day opens every card it counts, and only the day the range
+turns on could hold both series anyway. The due-card heading is a link as
+well, to `/due` with no parameters, which is that page's own default — and it
+keeps `red.8` through `c="inherit"` rather than taking the link colour, since
+that red is the same data the bars carry. A chart is not something a keyboard
+can select from, so `Due cards` is in the sidebar and the caption says so.
+
+The destination lists and their URL ranges are documented under
+[Card lists](pages.md#card-lists).
