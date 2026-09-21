@@ -118,7 +118,7 @@ See [incoming-link validation](imports-and-storage.md#incoming-link-validation) 
 
 **Only what changes while reading belongs up here.** The profile does: the same page answers differently under another profile, so it has to be reachable from every one of them. The file and the written form do not — you pick a file when you arrive and a script because of where you are learning — so they live on `Load Pleco file`, which is what the title bar being full at 360 px was telling us. Ask that question before adding a second control, not how many will fit.
 
-**Nothing is pushed to the right edge, either.** A right-aligned group is only ever as far right as the layout viewport, and a card table wider than the screen widens that on a phone — so the controls ended up off the right edge on exactly the screens with the least room to spare. Left-aligned, they sit where the mark puts them whatever the page below is doing. The `<Select>` takes the rest of the row up to a `maw`, so a long profile name reads in full on a desktop and still fits beside the mark on a phone.
+**Nothing is pushed to the right edge, either.** The header stays left-aligned beside the mark. The `<Select>` takes the rest of the row up to a `maw`, with `miw={0}` so its input can shrink to fit a phone. Wide card tables scroll inside `CardList` rather than stretching the page and moving the header or dialog beyond the screen.
 
 `Layout.tsx`'s `PAGES` list is the sidebar, and **no link is ever disabled** — a page with nothing to read says so in a sentence instead. That is not a courtesy: routes answer when typed in, so a page has to handle `database === null` and `profile === null` anyway, and a disabled link would only hide the explanation.
 

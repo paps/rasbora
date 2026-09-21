@@ -70,57 +70,67 @@ const CardList = <T extends FlashcardData>({
         for `verticalSpacing="xs"`, which is 10 px against the default 7, and
         that is 3 px twice on every row of a list that is mostly rows.
       */}
-      <Table highlightOnHover withTableBorder>
-        <Table.Thead>
-          <Table.Tr>
-            {/*
-              Wide enough for the four digits the 1,000-row cap allows, and no
-              wider. The 60 px it used to claim was space the headword and the
-              pinyin were being squeezed out of.
-            */}
-            <Table.Th w={44}>#</Table.Th>
-            <Table.Th>Headword</Table.Th>
-            <Table.Th>Pinyin</Table.Th>
-            <Table.Th>Next review</Table.Th>
-            {columns.map((column) => (
-              <Table.Th key={column.key} ta={column.align ?? "right"}>
-                {column.header}
-              </Table.Th>
-            ))}
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {visible.map((card, index) => {
-            const syllables = splitHeadword(card.hw, card.althw, card.pron);
+      <Table.ScrollContainer
+        minWidth={0}
+        type="native"
+        miw={0}
+        maw="100%"
+        tabIndex={0}
+        role="region"
+        aria-label="Card list"
+      >
+        <Table highlightOnHover withTableBorder>
+          <Table.Thead>
+            <Table.Tr>
+              {/*
+                Wide enough for the four digits the 1,000-row cap allows, and no
+                wider. The 60 px it used to claim was space the headword and the
+                pinyin were being squeezed out of.
+              */}
+              <Table.Th w={44}>#</Table.Th>
+              <Table.Th>Headword</Table.Th>
+              <Table.Th>Pinyin</Table.Th>
+              <Table.Th>Next review</Table.Th>
+              {columns.map((column) => (
+                <Table.Th key={column.key} ta={column.align ?? "right"}>
+                  {column.header}
+                </Table.Th>
+              ))}
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {visible.map((card, index) => {
+              const syllables = splitHeadword(card.hw, card.althw, card.pron);
 
-            return (
-              <Table.Tr
-                key={card.id}
-                onClick={() => {
-                  setSelectedId(card.id);
-                }}
-                style={{ cursor: "pointer" }}
-              >
-                <Table.Td>{start + index + 1}</Table.Td>
-                <Table.Td>
-                  {syllables.map((syllable) => syllable[script]).join("")}
-                </Table.Td>
-                <Table.Td>
-                  {syllables.map((syllable) => syllable.pinyin).join(" ")}
-                </Table.Td>
-                <Table.Td>
-                  <ReviewDue seconds={card.nextReview} />
-                </Table.Td>
-                {columns.map((column) => (
-                  <Table.Td key={column.key} ta={column.align ?? "right"}>
-                    {column.cell(card)}
+              return (
+                <Table.Tr
+                  key={card.id}
+                  onClick={() => {
+                    setSelectedId(card.id);
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
+                  <Table.Td>{start + index + 1}</Table.Td>
+                  <Table.Td>
+                    {syllables.map((syllable) => syllable[script]).join("")}
                   </Table.Td>
-                ))}
-              </Table.Tr>
-            );
-          })}
-        </Table.Tbody>
-      </Table>
+                  <Table.Td>
+                    {syllables.map((syllable) => syllable.pinyin).join(" ")}
+                  </Table.Td>
+                  <Table.Td>
+                    <ReviewDue seconds={card.nextReview} />
+                  </Table.Td>
+                  {columns.map((column) => (
+                    <Table.Td key={column.key} ta={column.align ?? "right"}>
+                      {column.cell(card)}
+                    </Table.Td>
+                  ))}
+                </Table.Tr>
+              );
+            })}
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
 
       {pageCount > 1 && (
         <Group justify="center">
