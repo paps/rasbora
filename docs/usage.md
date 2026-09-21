@@ -1,11 +1,8 @@
-# Rasbora
+# Using Rasbora
 
-Rasbora is a companion app for the [Pleco](https://www.pleco.com/), the most famous Chinese dictionnary app for Chinese learners.
+[Open Rasbora](https://rasbora.martintapia.com) · [Back to the README](../README.md)
 
-Rasbora works by ingesting a Pleco flashcard database export. It then provides the following features:
-
-- Flashcard dashboard with statistics
-- Flashcard AI analysis
+This reference covers profiles, imports, sharing links, and how to read the charts and card lists. For a quick introduction, start with the README.
 
 ## Everything flows from a profile
 
@@ -73,15 +70,7 @@ For a Drive link, build the query with `new URLSearchParams({ fromUrl: driveShar
 
 The opening link starts one import after saved-file restoration finishes, using the same validation, errors, and IndexedDB save as **Load from URL**. An empty `fromUrl` does nothing. Reloading or reopening a link containing `fromUrl` requests a fresh download; open `/load` without it to use the saved copy. An unsuccessful automatic import leaves the previous export intact, and the form lets you correct the URL or retry manually.
 
-### Configuring Google Drive downloads
-
-1. In a Google Cloud project, enable the **Google Drive API** and create a dedicated API key for Rasbora. Public files can be accessed with an API key; OAuth credentials and a service account are not needed.
-2. Restrict the key to the **Google Drive API** and to Rasbora's website using **Websites (HTTP referrers)** restrictions. Include the deployed origin and its `/*` path pattern. Add `http://localhost:5173` and `http://localhost:5173/*` if testing locally.
-3. Set `GOOGLE_DRIVE_API_KEY` at the top of `src/pages/LoadFile.remote.ts` to that key and commit it, then deploy by updating the `prod` branch from main. No environment variables or separate configuration files are needed.
-
-This public browser key lives in the repository and is visible in the built JavaScript and network requests. Keep the API and website restrictions above. The app sends it only to the Drive API. Without it, direct URLs and local imports still work, while Drive links explain that Drive loading is not configured. Google permissions and download/API quotas still apply.
-
-See Google's [API key setup](https://developers.google.com/workspace/guides/create-credentials), [key restrictions](https://docs.cloud.google.com/docs/authentication/api-keys), [file downloads](https://developers.google.com/workspace/drive/api/guides/manage-downloads), and [resource keys](https://developers.google.com/workspace/drive/api/guides/resource-keys).
+For app maintainers, see [Configuring Google Drive downloads](../agent-notes/tooling-and-deployment.md#configuring-google-drive-downloads).
 
 ## Remembering your file
 
@@ -140,7 +129,3 @@ Multi-word phrases and cards you made yourself are often not in CC-CEDICT, and s
 
 [CC-CEDICT]: https://www.mdbg.net/chinese/dictionary?page=cc-cedict
 [CC BY-SA 4.0]: https://creativecommons.org/licenses/by-sa/4.0/
-
-## Checking changes
-
-Run `npm run check`, `npm run format`, and `npx vite build`.

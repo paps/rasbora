@@ -16,7 +16,7 @@ It downloads the latest CC-CEDICT from MDBG, parses it, and writes `src/cc-cedic
 
 ## Licensing
 
-CC-CEDICT is distributed under [CC BY-SA 4.0]. Shipping it obliges attribution and carrying the same licence, which the app does: every card that shows a gloss credits CC-CEDICT, and `readme.md` names it. The generated file also stores the source, licence and CC-CEDICT build date in its `meta` table.
+CC-CEDICT is distributed under [CC BY-SA 4.0]. Shipping it obliges attribution and carrying the same licence, which the app does: every card that shows a gloss credits CC-CEDICT, and [the README](../README.md) names it. The generated file also stores the source, licence and CC-CEDICT build date in its `meta` table.
 
 [CC-CEDICT]: https://www.mdbg.net/chinese/dictionary?page=cc-cedict
 [CC BY-SA 4.0]: https://creativecommons.org/licenses/by-sa/4.0/

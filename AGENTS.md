@@ -2,7 +2,7 @@
 
 A single page app built with React, TypeScript, Vite, Mantine, sql.js, ESLint and Prettier. Everything is bog standard and must stay that way. Follow best practices at all times.
 
-See [readme.md](readme.md) for what the app is meant to do, and [pleco-export-format.md](agent-notes/pleco-export-format.md) for the shape of the Pleco flashcard export it ingests.
+See [README.md](README.md) for what the app is meant to do, and [pleco-export-format.md](agent-notes/pleco-export-format.md) for the shape of the Pleco flashcard export it ingests.
 
 ## Everything flows from a profile
 
