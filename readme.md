@@ -23,18 +23,9 @@ Rasbora therefore reads the export through exactly one profile at a time. You lo
 
 ## The AI agent skill
 
-Rasbora ships an agent skill: [`.agents/skills/pleco-flashcards/SKILL.md`][skill],
-a single Markdown file that teaches any AI agent — whichever one you use — how to
-read a Pleco `.pqb` export for itself. It documents the schema, the traps in it
-(dynamically named score tables, comma-terminated settings, newest-first review
-history) and working queries for the same lists the card pages show.
+Rasbora ships an agent skill: [`.agents/skills/pleco-flashcards/SKILL.md`][skill], a single Markdown file that teaches any AI agent — whichever one you use — how to read a Pleco `.pqb` export for itself. It documents the schema, the traps in it (dynamically named score tables, comma-terminated settings, newest-first review history) and working queries for the same lists the card pages show.
 
-Give the file to your agent, point it at your export, and you can ask questions
-about your own flashcards in plain language, including ones no page here
-answers. The skill also knows about this app, so an agent working from a Google
-Drive or other public link can hand you a `/load?fromUrl=…` link straight into
-Rasbora. The two go together: the agent answers a question, Rasbora shows the
-cards. The **About** page links to the file.
+Give the file to your agent, point it at your export, and you can ask questions about your own flashcards in plain language, including ones no page here answers. The skill also knows about this app, so an agent working from a Google Drive or other public link can hand you a `/load?fromUrl=…` link straight into Rasbora. The two go together: the agent answers a question, Rasbora shows the cards. The **About** page links to the file.
 
 [skill]: https://raw.githubusercontent.com/paps/rasbora/refs/heads/main/.agents/skills/pleco-flashcards/SKILL.md
 
@@ -48,151 +39,59 @@ Every page accepts optional `profileId` and `lastSessionStart` query parameters:
 /incoming-reviews?lastSessionStart=1789722000
 ```
 
-`profileId` must exist in the loaded export and selects that profile.
-`lastSessionStart` is the exact Unix-seconds value of a profile's `laststart`
-column in the export, not a formatted date or milliseconds. With both parameters,
-both must match the same profile. With only `lastSessionStart`, any profile can
-match, and Rasbora selects it. If several match, the selected profile wins when
-it is one of them; otherwise the first in Pleco's order wins. Values must be
-nonnegative decimal integers; empty, repeated, or malformed parameters are
-rejected. Missing timestamps do not match zero.
+`profileId` must exist in the loaded export and selects that profile. `lastSessionStart` is the exact Unix-seconds value of a profile's `laststart` column in the export, not a formatted date or milliseconds. With both parameters, both must match the same profile. With only `lastSessionStart`, any profile can match, and Rasbora selects it. If several match, the selected profile wins when it is one of them; otherwise the first in Pleco's order wins. Values must be nonnegative decimal integers; empty, repeated, or malformed parameters are rejected. Missing timestamps do not match zero.
 
 Pages can carry parameters of their own beside these, and three do.
 
-**Streaks** takes `run`, the run of correct answers to list, and the optional
-`runTo` raises it into a range, so `/streaks?run=4&runTo=10` lists every card
-on a run of 4 through 10. `run` on its own lists that one exact run, which is
-what the Learning distribution chart links to. A `runTo` below `run`, or a
-value that is not a whole number from 0 to 100, is ignored and leaves the
-single run showing.
+**Streaks** takes `run`, the run of correct answers to list, and the optional `runTo` raises it into a range, so `/streaks?run=4&runTo=10` lists every card on a run of 4 through 10. `run` on its own lists that one exact run, which is what the Learning distribution chart links to. A `runTo` below `run`, or a value that is not a whole number from 0 to 100, is ignored and leaves the single run showing.
 
-**Due cards** takes `days` and the optional `daysTo` the same way, and both
-can be negative: `/due?days=-3&daysTo=7` lists every card estimated due from
-three days overdue through a week out, and `/due?days=-3` lists that one day
-exactly, which is what the Incoming reviews chart links to. A `daysTo` below
-`days`, or a value that is not a whole number within 36,500 days, is ignored.
-With neither parameter — `/due` — the page lists every card already overdue.
+**Due cards** takes `days` and the optional `daysTo` the same way, and both can be negative: `/due?days=-3&daysTo=7` lists every card estimated due from three days overdue through a week out, and `/due?days=-3` lists that one day exactly, which is what the Incoming reviews chart links to. A `daysTo` below `days`, or a value that is not a whole number within 36,500 days, is ignored. With neither parameter — `/due` — the page lists every card already overdue.
 
-**Search for a card** takes `search`, the text to look up, in exactly the
-forms the field itself accepts: `/card?search=學`, `/card?search=xue2`,
-`/card?search=11770`. Nothing is rejected — a search that finds nothing says
-so on the page, the way a typed one does — and `/card` with no parameter opens
-the empty field. Typing updates the parameter once you pause, at the same
-moment the cards below appear, so the address is the search you are reading
-and is ready to be copied or sent. Clearing the field leaves `/card`.
+**Search for a card** takes `search`, the text to look up, in exactly the forms the field itself accepts: `/card?search=學`, `/card?search=xue2`, `/card?search=11770`. Nothing is rejected — a search that finds nothing says so on the page, the way a typed one does — and `/card` with no parameter opens the empty field. Typing updates the parameter once you pause, at the same moment the cards below appear, so the address is the search you are reading and is ready to be copied or sent. Clearing the field leaves `/card`.
 
-Validation waits for saved-file restoration and any import already in progress.
-The destination page stays hidden until the link is checked. Successful links
-consume these two parameters while preserving the path and other parameters,
-so subsequent profile choices work normally.
+Validation waits for saved-file restoration and any import already in progress. The destination page stays hidden until the link is checked. Successful links consume these two parameters while preserving the path and other parameters, so subsequent profile choices work normally.
 
-If either constraint fails, or no export is loaded, Rasbora unloads the current
-export and forgets its saved browser copy, using the same protection against
-removing a newer export saved by another tab as **Forget file**. It opens
-`/load` with a prominent error and drops the original destination and all query
-parameters, including `fromUrl`. Load the intended export there, then click the
-original link again. Loading a replacement does not automatically return to the
-old destination or validate it against the discarded link. If browser storage
-prevents deletion, the current tab still unloads the export and explains that
-its saved copy may return on reload.
+If either constraint fails, or no export is loaded, Rasbora unloads the current export and forgets its saved browser copy, using the same protection against removing a newer export saved by another tab as **Forget file**. It opens `/load` with a prominent error and drops the original destination and all query parameters, including `fromUrl`. Load the intended export there, then click the original link again. Loading a replacement does not automatically return to the old destination or validate it against the discarded link. If browser storage prevents deletion, the current tab still unloads the export and explains that its saved copy may return on reload.
 
 ## Loading from a URL
 
-On **Load Pleco file**, paste a direct HTTP(S) download URL or a public Google
-Drive file sharing link into **File URL**, then choose **Load from URL**.
-Downloads go directly from the host to your browser; Rasbora has no backend
-or download proxy. Other hosts must allow cross-origin browser requests (CORS).
-On an HTTPS deployment, browsers also block insecure HTTP downloads. Links
-requiring sign-in are not supported. If a host blocks browser access, download
-the file yourself and use the local file picker.
+On **Load Pleco file**, paste a direct HTTP(S) download URL or a public Google Drive file sharing link into **File URL**, then choose **Load from URL**. Downloads go directly from the host to your browser; Rasbora has no backend or download proxy. Other hosts must allow cross-origin browser requests (CORS). On an HTTPS deployment, browsers also block insecure HTTP downloads. Links requiring sign-in are not supported. If a host blocks browser access, download the file yourself and use the local file picker.
 
-For Google Drive, set the file's general access to **Anyone with the link** and
-allow viewers to download it. Paste the complete sharing link, including its
-`resourcekey` parameter if present. Rasbora reads the original file name and
-bytes through the Drive API, without asking the reader to sign in. This needs
-the app-level API key described below.
+For Google Drive, set the file's general access to **Anyone with the link** and allow viewers to download it. Paste the complete sharing link, including its `resourcekey` parameter if present. Rasbora reads the original file name and bytes through the Drive API, without asking the reader to sign in. This needs the app-level API key described below.
 
-The downloaded file uses the same validation and IndexedDB storage as a local
-import. A failed download or invalid export leaves the current and saved file
-intact. Reloads and new tabs restore the saved bytes and profile without
-contacting the URL again. There is no automatic sync: load the URL again to
-import a newer export. Explicit URL loads request a fresh download.
+The downloaded file uses the same validation and IndexedDB storage as a local import. A failed download or invalid export leaves the current and saved file intact. Reloads and new tabs restore the saved bytes and profile without contacting the URL again. There is no automatic sync: load the URL again to import a newer export. Explicit URL loads request a fresh download.
 
-A **Loaded from a URL** panel shows the original source as a clickable link.
-The URL is saved alongside the file in IndexedDB and remains visible after
-reloads and in new tabs. For Drive imports, this is the original sharing link,
-not the API request containing Rasbora's key. A failed import preserves the
-previous source along with its file. Loading a local file or choosing
-**Forget file** clears the source. Older saved files without source information
-still restore normally, with no panel.
+A **Loaded from a URL** panel shows the original source as a clickable link. The URL is saved alongside the file in IndexedDB and remains visible after reloads and in new tabs. For Drive imports, this is the original sharing link, not the API request containing Rasbora's key. A failed import preserves the previous source along with its file. Loading a local file or choosing **Forget file** clears the source. Older saved files without source information still restore normally, with no panel.
 
-You can also open `/load?fromUrl=…` to start a download automatically, with the
-URL already filled into the form. Encode the complete source URL as the query
-parameter value, especially if it contains `&`, `+`, or `#`. For example:
+You can also open `/load?fromUrl=…` to start a download automatically, with the URL already filled into the form. Encode the complete source URL as the query parameter value, especially if it contains `&`, `+`, or `#`. For example:
 
 ```text
 /load?fromUrl=https%3A%2F%2Ffiles.example%2Fflashcards.pqb
 ```
 
-For a Drive link, build the query with
-`new URLSearchParams({ fromUrl: driveSharingLink }).toString()` to preserve all
-of its parameters, including `resourcekey`.
+For a Drive link, build the query with `new URLSearchParams({ fromUrl: driveSharingLink }).toString()` to preserve all of its parameters, including `resourcekey`.
 
-The opening link starts one import after saved-file restoration finishes, using
-the same validation, errors, and IndexedDB save as **Load from URL**. An empty
-`fromUrl` does nothing. Reloading or reopening a link containing `fromUrl`
-requests a fresh download; open `/load` without it to use the saved copy. An
-unsuccessful automatic import leaves the previous export intact, and the form
-lets you correct the URL or retry manually.
+The opening link starts one import after saved-file restoration finishes, using the same validation, errors, and IndexedDB save as **Load from URL**. An empty `fromUrl` does nothing. Reloading or reopening a link containing `fromUrl` requests a fresh download; open `/load` without it to use the saved copy. An unsuccessful automatic import leaves the previous export intact, and the form lets you correct the URL or retry manually.
 
 ### Configuring Google Drive downloads
 
-1. In a Google Cloud project, enable the **Google Drive API** and create a
-   dedicated API key for Rasbora. Public files can be accessed with an API key;
-   OAuth credentials and a service account are not needed.
-2. Restrict the key to the **Google Drive API** and to Rasbora's website using
-   **Websites (HTTP referrers)** restrictions. Include the deployed origin and
-   its `/*` path pattern. Add `http://localhost:5173` and
-   `http://localhost:5173/*` if testing locally.
-3. Set `GOOGLE_DRIVE_API_KEY` at the top of
-   `src/pages/LoadFile.remote.ts` to that key and commit it, then deploy by
-   updating the `prod` branch from main. No environment variables or separate
-   configuration files are needed.
+1. In a Google Cloud project, enable the **Google Drive API** and create a dedicated API key for Rasbora. Public files can be accessed with an API key; OAuth credentials and a service account are not needed.
+2. Restrict the key to the **Google Drive API** and to Rasbora's website using **Websites (HTTP referrers)** restrictions. Include the deployed origin and its `/*` path pattern. Add `http://localhost:5173` and `http://localhost:5173/*` if testing locally.
+3. Set `GOOGLE_DRIVE_API_KEY` at the top of `src/pages/LoadFile.remote.ts` to that key and commit it, then deploy by updating the `prod` branch from main. No environment variables or separate configuration files are needed.
 
-This public browser key lives in the repository and is visible in the built
-JavaScript and network requests. Keep the API and website restrictions above.
-The app sends it only to the Drive API. Without it, direct URLs and
-local imports still work, while Drive links explain that Drive loading is not
-configured. Google permissions and download/API quotas still apply.
+This public browser key lives in the repository and is visible in the built JavaScript and network requests. Keep the API and website restrictions above. The app sends it only to the Drive API. Without it, direct URLs and local imports still work, while Drive links explain that Drive loading is not configured. Google permissions and download/API quotas still apply.
 
-See Google's [API key setup](https://developers.google.com/workspace/guides/create-credentials),
-[key restrictions](https://docs.cloud.google.com/docs/authentication/api-keys),
-[file downloads](https://developers.google.com/workspace/drive/api/guides/manage-downloads),
-and [resource keys](https://developers.google.com/workspace/drive/api/guides/resource-keys).
+See Google's [API key setup](https://developers.google.com/workspace/guides/create-credentials), [key restrictions](https://docs.cloud.google.com/docs/authentication/api-keys), [file downloads](https://developers.google.com/workspace/drive/api/guides/manage-downloads), and [resource keys](https://developers.google.com/workspace/drive/api/guides/resource-keys).
 
 ## Remembering your file
 
-After an import, Rasbora saves the original Pleco file and your selected profile
-in your browser. Reloading or opening another tab on the same site restores
-both automatically, without uploading or downloading the export. Importing a
-new file replaces the saved copy and selects its first profile. Existing tabs
-keep their current file and profile until reloaded; their profile changes cannot
-overwrite the selection for a newer import.
+After an import, Rasbora saves the original Pleco file and your selected profile in your browser. Reloading or opening another tab on the same site restores both automatically, without uploading or downloading the export. Importing a new file replaces the saved copy and selects its first profile. Existing tabs keep their current file and profile until reloaded; their profile changes cannot overwrite the selection for a newer import.
 
-Use **Forget file** on the Load Pleco file page to remove that export from
-browser storage and close it in the current tab. Other open tabs
-keep their in-memory copy, but cannot save it again just by changing profiles.
-The original file on your device is untouched.
+Use **Forget file** on the Load Pleco file page to remove that export from browser storage and close it in the current tab. Other open tabs keep their in-memory copy, but cannot save it again just by changing profiles. The original file on your device is untouched.
 
-Storage belongs to this site in this browser profile. Clearing site data,
-private browsing ending, or browser storage eviction can remove the saved copy;
-keep your original Pleco export. If saving fails, the imported file still works
-in the current tab and Rasbora explains that it could not be remembered.
+Storage belongs to this site in this browser profile. Clearing site data, private browsing ending, or browser storage eviction can remove the saved copy; keep your original Pleco export. If saving fails, the imported file still works in the current tab and Rasbora explains that it could not be remembered.
 
-The bundled CC-CEDICT dictionary and SQLite engine use the browser's HTTP cache
-with Cloudflare's default revalidation policy. On repeat visits, the browser
-checks whether a cached asset has changed and reuses its local copy when the
-server confirms it has not. Changed assets get new content-hashed URLs.
+The bundled CC-CEDICT dictionary and SQLite engine use the browser's HTTP cache with Cloudflare's default revalidation policy. On repeat visits, the browser checks whether a cached asset has changed and reuses its local copy when the server confirms it has not. Changed assets get new content-hashed URLs.
 
 ## The card lists
 
@@ -207,9 +106,7 @@ Six pages answer "which cards?", and each opens a card's details when you select
 
 ## Time until review
 
-The selected profile's **Card points per day** (`pro_cardpointsday`) converts
-scores into review intervals. It is configuration, not a constant: 100 in the
-sample export does not mean every profile uses 100.
+The selected profile's **Card points per day** (`pro_cardpointsday`) converts scores into review intervals. It is configuration, not a constant: 100 in the sample export does not mean every profile uses 100.
 
 ```text
 intervalDays = score / pro_cardpointsday
@@ -217,48 +114,17 @@ nextReviewUnixSeconds = lastreviewedtime + intervalDays × 86400
 daysRemaining = (nextReviewUnixSeconds − currentUnixSeconds) / 86400
 ```
 
-Use the card's score and last review date from the profile's scorefile, and the
-points-per-day setting from the profile itself. Two profiles can share a
-scorefile but use different rates. The interval starts at the **last review**,
-not when the score last changed or the file was exported. One day is 86,400
-seconds, not a calendar-day boundary.
+Use the card's score and last review date from the profile's scorefile, and the points-per-day setting from the profile itself. Two profiles can share a scorefile but use different rates. The interval starts at the **last review**, not when the score last changed or the file was exported. One day is 86,400 seconds, not a calendar-day boundary.
 
-A score of 250 at 100 points per day gives a 2.5-day interval. Three days after
-its last review, the card shows **-0.5 days**: half a day overdue. Even cards at
-the score ceiling can become overdue; the ceiling caps the interval and does
-not retire the card. These are estimates from saved state, not a prediction of
-session selection. Reviews after export are unknown until a new file is loaded.
+A score of 250 at 100 points per day gives a 2.5-day interval. Three days after its last review, the card shows **-0.5 days**: half a day overdue. Even cards at the score ceiling can become overdue; the ceiling caps the interval and does not retire the card. These are estimates from saved state, not a prediction of session selection. Reviews after export are unknown until a new file is loaded.
 
-Values strictly between -10 and 10 days round to one decimal with trailing
-zeros omitted; all other values round to whole days. A nonzero magnitude
-under 0.1 days reads **<0.1 days** or **-<0.1 days**, so rounding never hides the
-overdue sign. Negative is red, positive green, and exactly zero neutral. Hover,
-focus or tap reveals the estimated due date. The clock is read when the display
-mounts; a page left open does not tick. Reopening it recalculates against
-current time, not export time.
+Values strictly between -10 and 10 days round to one decimal with trailing zeros omitted; all other values round to whole days. A nonzero magnitude under 0.1 days reads **<0.1 days** or **-<0.1 days**, so rounding never hides the overdue sign. Negative is red, positive green, and exactly zero neutral. Hover, focus or tap reveals the estimated due date. The clock is read when the display mounts; a page left open does not tick. Reopening it recalculates against current time, not export time.
 
-Missing scores, NULL/zero last-review timestamps, and missing, invalid or
-nonpositive points-per-day settings show **—**, never an invented date.
+Missing scores, NULL/zero last-review timestamps, and missing, invalid or nonpositive points-per-day settings show **—**, never an invented date.
 
-**Incoming reviews** charts all cards in the selected profile with an estimated
-review date, one bar per day from the earliest estimate to the latest. Days are
-rounded down: 2.7 days goes in **2**, and -0.2 days goes in **-1**. Negative
-days are overdue; **0** means due within the next 24 hours. Empty days stay on
-the axis, with no weekly grouping or limit on the range. Negative-day bars are
-red, and their sum is shown above the chart as the number of cards due for
-review; that count is a link to **Due cards**, which with no range shows
-exactly those cards. Selecting a bar opens the same page at that one day.
-Cards without enough data for an estimate are counted below the chart.
-Like the individual card countdowns, the chart uses the time when the page
-opens and does not tick.
+**Incoming reviews** charts all cards in the selected profile with an estimated review date, one bar per day from the earliest estimate to the latest. Days are rounded down: 2.7 days goes in **2**, and -0.2 days goes in **-1**. Negative days are overdue; **0** means due within the next 24 hours. Empty days stay on the axis, with no weekly grouping or limit on the range. Negative-day bars are red, and their sum is shown above the chart as the number of cards due for review; that count is a link to **Due cards**, which with no range shows exactly those cards. Selecting a bar opens the same page at that one day. Cards without enough data for an estimate are counted below the chart. Like the individual card countdowns, the chart uses the time when the page opens and does not tick.
 
-**Profile info** summarizes cards per session, the new-card limit, and the
-review interval range in days. The interval range divides score bounds by the
-profile's points per day; it is not a countdown because settings have no
-card's last-review date to subtract. Technical settings remain available in
-the raw settings accordion. **Start date** on Profile info and Load Pleco file
-labels their existing profile creation and `FileCreated` timestamps respectively; it is not
-the export's download date.
+**Profile info** summarizes cards per session, the new-card limit, and the review interval range in days. The interval range divides score bounds by the profile's points per day; it is not a countdown because settings have no card's last-review date to subtract. Technical settings remain available in the raw settings accordion. **Start date** on Profile info and Load Pleco file labels their existing profile creation and `FileCreated` timestamps respectively; it is not the export's download date.
 
 ## Traditional or simplified
 

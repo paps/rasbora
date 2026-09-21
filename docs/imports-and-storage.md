@@ -2,72 +2,18 @@
 
 ## Saving, restoring, and replacing an export
 
-The original export and selected profile are saved in **IndexedDB**, through
-`src/database/savedImport.ts`. `DatabaseProvider` restores them on mount, opens
-an independent in-memory sql.js database for each tab, and owns its cleanup.
-Pages still receive the same database and profile; they never access storage.
-The layout shows a restoring message before rendering pages, so the import
-prompt does not flash during startup.
+The original export and selected profile are saved in **IndexedDB**, through `src/database/savedImport.ts`. `DatabaseProvider` restores them on mount, opens an independent in-memory sql.js database for each tab, and owns its cleanup. Pages still receive the same database and profile; they never access storage. The layout shows a restoring message before rendering pages, so the import prompt does not flash during startup.
 
-A successful new import atomically replaces the saved file and selects its
-first profile. Validation and profile resolution happen before that write, so
-an invalid import leaves both the current database and saved file intact.
-Profile selection is a separate small record: changing profiles never rewrites
-the file. Every import has a unique ID, checked in the same transaction when
-saving a profile or forgetting a file, so an older tab cannot change the saved
-selection for a newer export. Existing tabs keep their current views until
-reloaded; new tabs restore the last saved file and profile.
+A successful new import atomically replaces the saved file and selects its first profile. Validation and profile resolution happen before that write, so an invalid import leaves both the current database and saved file intact. Profile selection is a separate small record: changing profiles never rewrites the file. Every import has a unique ID, checked in the same transaction when saving a profile or forgetting a file, so an older tab cannot change the saved selection for a newer export. Existing tabs keep their current views until reloaded; new tabs restore the last saved file and profile.
 
-Remote imports enter the same lifecycle: `importFile()` accepts either a local
-`File` or a function that downloads one. The provider invokes that function
-inside its busy guard, before validation and the existing atomic save, so local
-imports, remote imports, forgetting, and profile changes cannot race in a tab.
-`LoadFile.remote.ts` owns URL handling beside the page. It uses direct browser
-fetches and the Google Drive API for public sharing links. The public browser
-key is committed as `GOOGLE_DRIVE_API_KEY` in `LoadFile.remote.ts`, restricted
-to the Drive API and this site. There is no backend or proxy.
-The source URL is saved alongside the file in the same IndexedDB transaction
-and exposed as `sourceUrl` by the provider for the Load page's info panel. It
-is the original input link, never the Drive API URL containing the app key.
-The separate `source` record carries the import ID: profile changes leave it
-alone, and an older app tab that replaces the file cannot leave a stale URL
-attached to the new import. Local imports store a null source; forgetting clears
-it with the file. Missing source metadata on older imports means no panel.
-The saved record still holds the file bytes, never a URL to refetch; restoration
-never contacts the remote host. Opening `/load?fromUrl=…` is a separate explicit
-import request: the page reads it on mount, prefills the URL field, and starts
-one import after restoration. It waits for any current import and guards
-against effect replay and completion causing repeat downloads. The parameter
-stays in the address so reopening or reloading that link requests a fresh copy.
-Google Cloud setup is documented in [readme.md](../readme.md).
+Remote imports enter the same lifecycle: `importFile()` accepts either a local `File` or a function that downloads one. The provider invokes that function inside its busy guard, before validation and the existing atomic save, so local imports, remote imports, forgetting, and profile changes cannot race in a tab. `LoadFile.remote.ts` owns URL handling beside the page. It uses direct browser fetches and the Google Drive API for public sharing links. The public browser key is committed as `GOOGLE_DRIVE_API_KEY` in `LoadFile.remote.ts`, restricted to the Drive API and this site. There is no backend or proxy. The source URL is saved alongside the file in the same IndexedDB transaction and exposed as `sourceUrl` by the provider for the Load page's info panel. It is the original input link, never the Drive API URL containing the app key. The separate `source` record carries the import ID: profile changes leave it alone, and an older app tab that replaces the file cannot leave a stale URL attached to the new import. Local imports store a null source; forgetting clears it with the file. Missing source metadata on older imports means no panel. The saved record still holds the file bytes, never a URL to refetch; restoration never contacts the remote host. Opening `/load?fromUrl=…` is a separate explicit import request: the page reads it on mount, prefills the URL field, and starts one import after restoration. It waits for any current import and guards against effect replay and completion causing repeat downloads. The parameter stays in the address so reopening or reloading that link requests a fresh copy. Google Cloud setup is documented in [readme.md](../readme.md).
 
-Storage failures are reported separately from import errors: the file can stay
-usable in this tab even when saving fails. **Forget file**, on the Load Pleco
-file page, removes that export from storage and closes the current tab's copy.
-Browser storage can be cleared or evicted, and private browsing is usually
-temporary. The script preference remains independent in localStorage:
-see [the script preference](architecture.md#which-script-cards-are-written-in).
+Storage failures are reported separately from import errors: the file can stay usable in this tab even when saving fails. **Forget file**, on the Load Pleco file page, removes that export from storage and closes the current tab's copy. Browser storage can be cleared or evicted, and private browsing is usually temporary. The script preference remains independent in localStorage: see [the script preference](architecture.md#which-script-cards-are-written-in).
 
 ## Incoming-link validation
 
-`LinkedExport.tsx` gates all routes inside Layout, after saved-file restoration.
-It reads optional `profileId` and `lastSessionStart` parameters through the pure
-resolver in `linkTarget.ts`. Profile metadata carries the raw `laststart` as
-`lastSessionStart`, including zero and preserving NULL. Both constraints must
-match the same profile; a timestamp alone searches all profiles and selects a
-match, preferring the current profile on ties, then Pleco's order. Malformed,
-empty and repeated values fail rather than silently dropping a constraint.
+`LinkedExport.tsx` gates all routes inside Layout, after saved-file restoration. It reads optional `profileId` and `lastSessionStart` parameters through the pure resolver in `linkTarget.ts`. Profile metadata carries the raw `laststart` as `lastSessionStart`, including zero and preserving NULL. Both constraints must match the same profile; a timestamp alone searches all profiles and selects a match, preferring the current profile on ties, then Pleco's order. Malformed, empty and repeated values fail rather than silently dropping a constraint.
 
-A successful link selects the matching profile and consumes only these two
-parameters. A mismatch immediately unloads the export through
-`forgetFile({ unloadImmediately: true })`, attempts the same guarded IndexedDB
-removal as the normal Forget action, and replaces the URL with plain `/load`.
-The navigation state carries only a `wrongExport` flag for the Load page's alert;
-the original destination and query parameters are deliberately lost. The user
-loads a file and follows the original link again. Routes do not mount while
-validation is pending, so a rejected `/load?fromUrl=…` cannot start a download.
-Storage deletion failure leaves the tab unloaded and reports a warning; the
-ordinary Forget button keeps its existing retry behavior on failure.
+A successful link selects the matching profile and consumes only these two parameters. A mismatch immediately unloads the export through `forgetFile({ unloadImmediately: true })`, attempts the same guarded IndexedDB removal as the normal Forget action, and replaces the URL with plain `/load`. The navigation state carries only a `wrongExport` flag for the Load page's alert; the original destination and query parameters are deliberately lost. The user loads a file and follows the original link again. Routes do not mount while validation is pending, so a rejected `/load?fromUrl=…` cannot start a download. Storage deletion failure leaves the tab unloaded and reports a warning; the ordinary Forget button keeps its existing retry behavior on failure.
 
-The [Load Pleco file page](pages.md#load-pleco-file) presents these actions
-and their errors. [Architecture](architecture.md#routing) describes the route gate.
+The [Load Pleco file page](pages.md#load-pleco-file) presents these actions and their errors. [Architecture](architecture.md#routing) describes the route gate.
