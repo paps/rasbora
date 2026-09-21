@@ -14,7 +14,7 @@ The **Light or dark** control is last on the page, and is there for the reason t
 
 It also describes the file: format version, who wrote it, when, and how many cards, categories, profiles and reviewed cards are in it. That section used to be the last thing on `Profile info`, and it was the one thing on that page that did not move when the profile picker did — two sections about a profile, then a table about the file, under a title saying "Profile info". Here it is about the page's own subject, and the two pages point at each other in a sentence so the split reads as a split rather than a loss.
 
-Load Pleco file and Profile info each write their own `<Table>`, and the two are **not** to be merged into a shared component. A label-and-value table is Mantine markup, not something this app owns; the moment it becomes a component it starts growing props for whatever the next page wants of it. `src/components/` is for what has to look the same everywhere — a flashcard does, because it is the same card in a list and in a drawer. Two tables that happen to have two columns are not the same thing twice.
+Load Pleco file and Profile info each write their own `<Table>`, and the two are **not** to be merged into a shared component. A label-and-value table is Mantine markup, not something this app owns; the moment it becomes a component it starts growing props for whatever the next page wants of it. `src/components/` is for what has to look the same everywhere — a flashcard does, because it is the same card in a list and in a dialog. Two tables that happen to have two columns are not the same thing twice.
 
 The script control says what it is twice over, and both are needed: `VisuallyHidden` gives each button its accessible name, which a screen reader announces instead of a bare 繁, while the tooltip tells a sighted reader who cannot read the characters. A tooltip is not an accessible name and a hidden name never shows on screen, so neither one covers for the other.
 
@@ -32,9 +32,9 @@ Card count, Learning distribution, and Incoming reviews are documented in [Chart
 
 ## Search for a card
 
-`SearchCard.tsx` is the one card page that is not a list, and it is in the sidebar between the profile pages and the six that are — a lookup rather than a question about a set. Everything else that shows cards answers "which cards?" and renders `CardList` for it; this one asks "that one, what does it say?", so it renders `Flashcard` directly, the same display the drawer opens.
+`SearchCard.tsx` is the one card page that is not a list, and it is in the sidebar between the profile pages and the six that are — a lookup rather than a question about a set. Everything else that shows cards answers "which cards?" and renders `CardList` for it; this one asks "that one, what does it say?", so it renders `Flashcard` directly, the same display the dialog opens.
 
-Its title says **Search for a card** rather than naming the reading, because searching is the part the reader does: the display below is the same `Flashcard` three other pages already open in a drawer, and what this page adds is the way in. Its route stays `/card`, which is about the destination and not about how you got there, so links already shared keep working.
+Its title says **Search for a card** rather than naming the reading, because searching is the part the reader does: the display below is the same `Flashcard` three other pages already open in a dialog, and what this page adds is the way in. Its route stays `/card`, which is about the destination and not about how you got there, so links already shared keep working.
 
 **It shows three cards at most, and says so when more match.** The display is tall — a card with a few hundred reviews is a few hundred bars — so a fourth result would push the first off the screen, and a reader scrolling past three whole cards is reading a list, which the other six pages already are. Past three, an `Alert` above the results gives the real count and asks for a narrower search; the cap is the same "a truncated list must not read as a complete one" rule the card lists follow, at a different scale.
 

@@ -16,7 +16,7 @@ const COLUMNS: CardColumn<FlashcardData>[] = [
     cell: (card) => (
       // Two lines at most: these run to paragraphs with embedded newlines, and
       // one row of the table is a place to recognise a card rather than to
-      // read it. The drawer shows the definition whole.
+      // read it. The dialog shows the definition whole.
       <Text size="sm" lineClamp={2} style={{ whiteSpace: "pre-line" }}>
         {card.defn}
       </Text>

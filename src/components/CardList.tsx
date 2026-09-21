@@ -1,4 +1,4 @@
-import { Drawer, Group, Pagination, Table } from "@mantine/core";
+import { Group, Modal, Pagination, Table } from "@mantine/core";
 import { useState, type ReactNode } from "react";
 import Flashcard, { type FlashcardData } from "@/components/Flashcard";
 import { splitHeadword } from "@/components/chinese";
@@ -26,7 +26,7 @@ interface CardListProps<T extends FlashcardData> {
 }
 
 /**
- * A list of cards that opens one in a drawer: the position, the headword in
+ * A list of cards that opens one in a dialog: the position, the headword in
  * the chosen script, its pinyin, then whatever columns the page adds.
  *
  * Every page that answers "which cards?" renders this, so that a card list
@@ -52,7 +52,7 @@ const CardList = <T extends FlashcardData>({
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
   // The open card is looked up in the current list rather than kept in state,
-  // so switching profile can never leave the drawer showing tallies read from
+  // so switching profile can never leave the dialog showing tallies read from
   // the scorefile of the profile before it.
   const selected = cards.find((card) => card.id === selectedId) ?? null;
   const pageCount = Math.max(1, Math.ceil(cards.length / PAGE_SIZE));
@@ -70,57 +70,67 @@ const CardList = <T extends FlashcardData>({
         for `verticalSpacing="xs"`, which is 10 px against the default 7, and
         that is 3 px twice on every row of a list that is mostly rows.
       */}
-      <Table highlightOnHover withTableBorder>
-        <Table.Thead>
-          <Table.Tr>
-            {/*
-              Wide enough for the four digits the 1,000-row cap allows, and no
-              wider. The 60 px it used to claim was space the headword and the
-              pinyin were being squeezed out of.
-            */}
-            <Table.Th w={44}>#</Table.Th>
-            <Table.Th>Headword</Table.Th>
-            <Table.Th>Pinyin</Table.Th>
-            <Table.Th>Next review</Table.Th>
-            {columns.map((column) => (
-              <Table.Th key={column.key} ta={column.align ?? "right"}>
-                {column.header}
-              </Table.Th>
-            ))}
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {visible.map((card, index) => {
-            const syllables = splitHeadword(card.hw, card.althw, card.pron);
+      <Table.ScrollContainer
+        minWidth={0}
+        type="native"
+        miw={0}
+        maw="100%"
+        tabIndex={0}
+        role="region"
+        aria-label="Card list"
+      >
+        <Table highlightOnHover withTableBorder>
+          <Table.Thead>
+            <Table.Tr>
+              {/*
+                Wide enough for the four digits the 1,000-row cap allows, and no
+                wider. The 60 px it used to claim was space the headword and the
+                pinyin were being squeezed out of.
+              */}
+              <Table.Th w={44}>#</Table.Th>
+              <Table.Th>Headword</Table.Th>
+              <Table.Th>Pinyin</Table.Th>
+              <Table.Th>Next review</Table.Th>
+              {columns.map((column) => (
+                <Table.Th key={column.key} ta={column.align ?? "right"}>
+                  {column.header}
+                </Table.Th>
+              ))}
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {visible.map((card, index) => {
+              const syllables = splitHeadword(card.hw, card.althw, card.pron);
 
-            return (
-              <Table.Tr
-                key={card.id}
-                onClick={() => {
-                  setSelectedId(card.id);
-                }}
-                style={{ cursor: "pointer" }}
-              >
-                <Table.Td>{start + index + 1}</Table.Td>
-                <Table.Td>
-                  {syllables.map((syllable) => syllable[script]).join("")}
-                </Table.Td>
-                <Table.Td>
-                  {syllables.map((syllable) => syllable.pinyin).join(" ")}
-                </Table.Td>
-                <Table.Td>
-                  <ReviewDue seconds={card.nextReview} />
-                </Table.Td>
-                {columns.map((column) => (
-                  <Table.Td key={column.key} ta={column.align ?? "right"}>
-                    {column.cell(card)}
+              return (
+                <Table.Tr
+                  key={card.id}
+                  onClick={() => {
+                    setSelectedId(card.id);
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
+                  <Table.Td>{start + index + 1}</Table.Td>
+                  <Table.Td>
+                    {syllables.map((syllable) => syllable[script]).join("")}
                   </Table.Td>
-                ))}
-              </Table.Tr>
-            );
-          })}
-        </Table.Tbody>
-      </Table>
+                  <Table.Td>
+                    {syllables.map((syllable) => syllable.pinyin).join(" ")}
+                  </Table.Td>
+                  <Table.Td>
+                    <ReviewDue seconds={card.nextReview} />
+                  </Table.Td>
+                  {columns.map((column) => (
+                    <Table.Td key={column.key} ta={column.align ?? "right"}>
+                      {column.cell(card)}
+                    </Table.Td>
+                  ))}
+                </Table.Tr>
+              );
+            })}
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
 
       {pageCount > 1 && (
         <Group justify="center">
@@ -128,17 +138,21 @@ const CardList = <T extends FlashcardData>({
         </Group>
       )}
 
-      <Drawer
+      <Modal
         opened={selected !== null}
         onClose={() => {
           setSelectedId(null);
         }}
-        position="right"
         title="Card details"
-        padding="lg"
+        centered
+        size="lg"
+        xOffset="var(--mantine-spacing-xs)"
+        yOffset="var(--mantine-spacing-xs)"
+        padding="md"
+        closeButtonProps={{ "aria-label": "Close card details", size: "xl" }}
       >
         {selected && <Flashcard card={selected} />}
-      </Drawer>
+      </Modal>
     </>
   );
 };

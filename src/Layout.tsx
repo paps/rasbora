@@ -58,11 +58,9 @@ interface LayoutProps {
  * reading, and three controls plus a burger and the mark do not fit across a
  * phone. They live on `Load Pleco file` instead.
  *
- * Nothing is pushed to the right edge for the same reason. A right-aligned
- * group is only ever as far right as the layout viewport, which a card table
- * wider than the screen quietly widens on a phone — so the controls went off
- * the edge on exactly the screens with the least room. Left-aligned, they sit
- * next to the mark and wrap into the space they need.
+ * The profile picker takes the remaining width beside the mark and title.
+ * Its minimum width is zero so its input can shrink to fit a phone. Wide card
+ * tables scroll inside CardList rather than widening the page behind it.
  *
  * Sidebar links are never disabled. A page that has no export to read says so
  * itself, which it has to do anyway: its route still answers when typed in.
@@ -113,6 +111,7 @@ const Layout = ({ children }: LayoutProps) => {
               // profile name actually needs. On a phone that is the rest of
               // the row; on a desktop it stops growing well short of it.
               flex={1}
+              miw={0}
               maw={220}
               aria-label="Profile"
               placeholder="Profile"
