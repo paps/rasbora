@@ -21,3 +21,11 @@ They do not overlap by accident, so please do not try to consolidate them:
 - **`eslint-plugin-react-refresh`** owns fast-refresh correctness. `@eslint-react` has no equivalent rule, so this cannot be folded in.
 
 `@eslint-react`'s `recommended-typescript` preset also enables 9 hook rules that duplicate `eslint-plugin-react-hooks`. The block of `"off"` entries in `eslint.config.js` exists to silence those duplicates — removing it makes every hook problem get reported twice.
+
+## Analytics
+
+`index.html` uses the project-supplied PostHog HTML snippet with the EU ingestion host and public project token. The loader runs only on `https://rasbora.martintapia.com`, so local development and preview deployments neither load PostHog nor send events. No npm package or React provider is needed. PostHog's `history_change` page-view capture handles client-side navigation.
+
+Only `$pageview` events are sent. `before_send` allows basic browser/device metadata and anonymous SDK identifiers, then rebuilds the current URL without its query or fragment. Referrers, campaign properties, nested initial/session URLs, and arbitrary custom properties are excluded: Rasbora links can contain remote file URLs, card searches, and profile constraints. Autocapture, session replay, exceptions, heatmaps, performance capture, and surveys are disabled; person profiles are never created. PostHog's default persistence still remembers anonymous visitors, with its cookie scoped to this subdomain.
+
+When changing analytics, validate the inline script and its event filter as well as running the usual checks: ESLint and TypeScript do not check inline HTML scripts. Check that localhost/previews inject no script and that page-view payloads exclude sensitive query, referrer, and nested session values. A blocked analytics script must leave the app usable.
