@@ -12,6 +12,16 @@ The app is static, so Cloudflare serves `dist/` and no Worker code runs: `wrangl
 
 That trigger is configured in the Cloudflare dashboard, not in this repository, which is why there is no CI file here. To confirm a deploy landed, check that the live JavaScript bundle contains a string from the change rather than trusting the push alone.
 
+## Configuring Google Drive downloads
+
+1. In a Google Cloud project, enable the **Google Drive API** and create a dedicated API key for Rasbora. Public files can be accessed with an API key; OAuth credentials and a service account are not needed.
+2. Restrict the key to the **Google Drive API** and to Rasbora's website using **Websites (HTTP referrers)** restrictions. Include the deployed origin and its `/*` path pattern. Add `http://localhost:5173` and `http://localhost:5173/*` if testing locally.
+3. Set `GOOGLE_DRIVE_API_KEY` at the top of `src/pages/LoadFile.remote.ts` to that key and commit it, then deploy by updating the `prod` branch from main. No environment variables or separate configuration files are needed.
+
+This public browser key lives in the repository and is visible in the built JavaScript and network requests. Keep the API and website restrictions above. The app sends it only to the Drive API. Without it, direct URLs and local imports still work, while Drive links explain that Drive loading is not configured. Google permissions and download/API quotas still apply.
+
+See Google's [API key setup](https://developers.google.com/workspace/guides/create-credentials), [key restrictions](https://docs.cloud.google.com/docs/authentication/api-keys), [file downloads](https://developers.google.com/workspace/drive/api/guides/manage-downloads), and [resource keys](https://developers.google.com/workspace/drive/api/guides/resource-keys).
+
 ## Why there are three React ESLint plugins
 
 They do not overlap by accident, so please do not try to consolidate them:

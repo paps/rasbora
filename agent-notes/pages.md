@@ -68,6 +68,8 @@ The other six pages all answer "which cards?", so they all render `CardList` and
 - **Due cards** — estimated due within a band of days, the band being the reader's to pick and either end of it able to be negative. It is the list behind a bar of the `Incoming reviews` chart, so **a range of one day stays exact** for the reason a range of one run does on `Streaks`, and both sides floor through `wholeDaysUntil` in `src/database/reviewSchedule.ts` rather than each dividing by 86,400 themselves. Its controls live in the querystring for the same reason `Streaks`' do. Sitting beside `Streaks` rather than in the "most work needed first" run, since a band of days is no one point along it.
 - **Customized cards** — carrying a definition the user wrote. This one is about the card rather than the review state, so its scorefile join is a `left join` and a card the profile has never shown still appears.
 
+Range links use `/streaks?run=4&runTo=10` for runs 4–10 and `/due?days=-3&daysTo=7` for three days overdue through seven days ahead. Runs accept whole numbers from 0 to 100; days accept whole numbers from -36,500 to 36,500.
+
 Two things about the range on `Streaks` are worth keeping straight, because the page has two readers with different questions:
 
 - **`run` alone still means one run, and `runTo` is optional.** `runTo` is a second parameter rather than a range syntax inside `run`, so every address written before it existed opens what it always did, and `bucketLink` on the chart keeps emitting `?run=N`. That is not backwards compatibility for its own sake: the chart's promise is that a bar of 530 opens 530 cards, and a link that could widen on its own would break it.
