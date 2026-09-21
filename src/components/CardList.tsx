@@ -136,8 +136,8 @@ const CardList = <T extends FlashcardData>({
         title="Card details"
         centered
         size="lg"
-        xOffset="xs"
-        yOffset="xs"
+        xOffset="var(--mantine-spacing-xs)"
+        yOffset="var(--mantine-spacing-xs)"
         padding="md"
         closeButtonProps={{ "aria-label": "Close card details", size: "xl" }}
       >
