@@ -1,132 +1,155 @@
 ---
 name: pleco-flashcards
-description: Analyze a Pleco flashcard export (.pqb) directly with read-only SQLite tools, preferably the sqlite3 CLI — card lists (leeches, lapses, almost learned, learned, customized), review history, dataset size — and knows when to offer the Rasbora web app (rasbora.martintapia.com) for viewing a remotely hosted export. Use whenever a .pqb file needs read-only inspection or querying.
+description: Help a learner understand their Pleco flashcards from a .pqb export, find words needing practice, estimate upcoming reviews, and open relevant cards and views in Rasbora.
 metadata:
   type: reference
 ---
 
-# Pleco flashcard exports (.pqb)
+# Help with Pleco flashcards
 
-A `.pqb` is a plain, unencrypted SQLite 3 file. Query it directly:
+Answer the learner's question directly: which words need attention, what their review patterns show, or when cards are likely to come up again. Use the export as evidence and offer a useful next step when it follows from the findings.
 
-```bash
-sqlite3 -json -readonly path/to/export.pqb "SELECT ...;"
-```
+Pleco is a Chinese dictionary and flashcard app; a `.pqb` export contains the learner's cards, study profiles, and saved review history. Work from the export the user provides. This file contains all the analysis guidance and examples needed; no Rasbora repository, companion files, or running website is required to analyze the export.
 
-Always use `-readonly` with the CLI, or the equivalent read-only mode in another tool — analysis is never a reason to write to the user's export. `-json` makes rows easy to pipe into `jq`/a script for anything SQL can't express (see "Lapses" below).
+Rasbora is an optional web app at `https://rasbora.martintapia.com` for exploring that export through charts, card lists, and individual cards with definitions and review history. Introduce it briefly when first offering a link; the user may never have used it.
 
-**The `sqlite3` CLI is recommended.** Check with `sqlite3 --version` first when a shell is available. If it is missing, try installing it where permitted (e.g. `apt-get install -y sqlite3`, `brew install sqlite`). If there is no shell or the CLI cannot be installed or used, another SQLite-compatible tool may be used in read-only mode to complete the task. Adapt the examples below to that tool. If no read-only SQLite access is available, explain the limitation to the user rather than guessing at the file's contents.
+## How to answer
 
-Every query in this document is illustrative, not a checklist to run in order or in full. They exist to show the schema, the joins and the traps in working form so you can get to a real query fast — write whatever SQL actually answers the question in front of you, adapt or drop pieces of these as needed, and don't feel bound to these five particular lists; they're examples of the kind of question this file answers, not the extent of it.
+- Lead with the finding and identify the study profile by name. Show words in the user's preferred script, with readable pinyin and relevant review information.
+- Keep SQL, table names, internal IDs, raw settings, and tool setup internal unless the user asks for them or they explain a limitation. This applies to progress updates as well as the final answer.
+- Prefer “estimated due in 3 days,” “forgotten 8 times,” or “4 correct answers in a row” to raw scores and encoded history. Use only the detail needed for the question.
+- Give a manageable selection of cards unless the user wants a full list. Say how many match and whether you are showing only a subset; link to the relevant Rasbora view when useful.
+- Distinguish evidence from interpretation. A long correct streak can include “barely remembered” answers; a maximum score does not establish mastery. Suggested mnemonics or explanations are study help, not facts recorded in the export.
+- Most cards have no exported definition. Distinguish the user's notes from meanings supplied through another source or your own explanation.
 
-If the export came from Google Drive or another public URL, the user can also browse it in the Rasbora web app with one link — see §6.
+## Read the export
 
-## 0. First thing, every time: print freshness, then pick a profile
+A `.pqb` is a SQLite database. Use `sqlite3 -json -readonly` when available, or another existing SQLite tool in read-only mode. Never modify the export. If you cannot read it, explain the limitation without guessing at its contents.
 
-Before answering anything else, always run and show the user both dates below. Looking at a stale export is the single most likely mistake — the file on disk may be weeks or months older than the reader thinks.
+Use the [technical reference at the end of this file](#technical-reference) for schema details, example SQL, review calculations, and link construction. Its examples are internal working material, not a checklist or a response template; adapt them to the question.
 
-```bash
-# When this export file was last written to disk
-stat -c '%y' path/to/export.pqb
+Resolve the selected profile once and reuse it. If several profiles exist and the conversation does not identify one, ask which the user studies with. Scope every card query to that profile's categories and scorefile; without a profile, explain what is missing rather than substituting whole-export totals. Whole-file questions are the exception.
 
-# When Pleco itself thinks the export was created (its own internal record — a distinct,
-# older fact from the file's mtime above)
-sqlite3 -json -readonly export.pqb \
-  "SELECT propid, datetime(cast(propvalue AS INTEGER),'unixepoch') AS at
-   FROM pleco_flash_properties WHERE propid = 'FileCreated';"
+Check the latest recorded review in scope to understand freshness. Mention it when it affects the answer, especially estimates about what is due now. Neither the file's modification time nor `FileCreated` proves when the snapshot was exported. Do not prepend a diagnostic report to every answer.
 
-# The most recent review logged in ANY scorefile — scores tables are dynamically named,
-# so discover them first, never assume pleco_flash_scores_1
-for t in $(sqlite3 -readonly export.pqb \
-  "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'pleco_flash_scores_%';"); do
-  sqlite3 -readonly export.pqb \
-    "SELECT '$t', datetime(max(lastreviewedtime),'unixepoch') FROM $t;"
-done
-```
+Review history is newest-first: grades 1–3 are incorrect, 4–6 correct, and only 6 means “remembered perfectly.” Individual reviews have no timestamps, so the export cannot reconstruct a daily study log.
 
-Then **resolve and state which profile** every subsequent answer is scoped to (ask the user if more than one exists and they haven't said). Nothing below means anything without one — see §2.
+## Estimate reviews
 
-## 1. Schema, in brief
+Use the selected profile's `pro_cardpointsday`: interval in days = score / points per day. Add that interval to the last review, then subtract current time to estimate time remaining. Negative means overdue. Missing or invalid scheduling data means unknown; never assume a rate of 100.
 
-| table | role |
+Describe dates as estimates from the saved reviews. For links to day buckets, round days remaining down: -0.2 belongs to -1; day 0 means the next 24 hours. The [review estimates reference](#review-estimates-and-due-ranges) gives the exact arithmetic and examples.
+
+## Link to Rasbora
+
+Rasbora reads the export in the user's browser and keeps it there; nothing is uploaded to Rasbora. Answer the question yourself and offer a relevant link alongside the answer.
+
+**Every Rasbora page link except `/load` must include both `profileId` and `lastSessionStart` from the selected profile.** Read `id` and the exact raw `laststart` value from `pleco_flash_profiles`; keep the timestamp in Unix seconds, including zero. Do not round it, substitute another date, or omit these parameters on pages without card filters, including `/`. If metadata is missing or unusable, do not fabricate a targeted link; offer `/load` and explain that a matching export is needed.
+
+Use `https://rasbora.martintapia.com` plus one of these paths. The table shows page-specific parameters; append both profile parameters to every non-load path.
+
+| What the learner wants | Path and supported page parameters |
 | --- | --- |
-| `pleco_flash_cards` | the vocabulary items: `hw` (simplified), `althw` (traditional), `pron` (numbered pinyin), `defn` (user's own note, NULL on ~97.6% of cards), `created`, `modified` |
-| `pleco_flash_categories` | user's folders, `parent` for nesting (`-2` = root) |
-| `pleco_flash_categoryassigns` | card ↔ category, columns `card`, `cat` |
-| `pleco_flash_profiles` | study configs, `id`, `name` |
-| `pleco_flash_profilesettings` | key/value bag, `(propset=profile id, propid, propvalue)` |
-| `pleco_flash_scores_<N>` | **one per scorefile**, `N` = `pleco_flash_scorefiles.id` — review state: `card`, `score`, `difficulty`, `history`, `correct`, `incorrect`, `reviewed`, `firstreviewedtime`, `lastreviewedtime`, `scoreinctime`, `scoredectime` |
-| `pleco_flash_properties` | file-level metadata (`FormatString`, `FormatVersion`, `FileCreated`, ...) |
+| About Rasbora | `/` |
+| Load a local or remote export | `/load`, optionally `?fromUrl=<encoded source URL>`; no profile parameters |
+| Profile and session settings | `/profile` |
+| Cards added over time | `/card-count` |
+| Current correct streaks across the deck | `/learning-distribution` |
+| Upcoming and overdue reviews | `/incoming-reviews` |
+| One specific card | `/card?search=<card ID>` |
+| Search by characters or pinyin | `/card?search=<encoded text>` |
+| Never-reviewed cards | `/new` |
+| Most frequently forgotten words | `/leeches` |
+| Correct runs broken by recent failures | `/lapses` |
+| Cards with a correct streak of a chosen length | `/streaks?run=4`, optionally `&runTo=10` |
+| Overdue cards, or a chosen due-date range | `/due` for all overdue; `/due?days=-3`, optionally `&daysTo=7` |
+| Cards with user-written definitions | `/customized` |
 
-`hw`/`althw`/`pron` are `@`-delimited per syllable, index-aligned (`锻@炼` / `鍛@煉` / `duan4@lian4`). Not needed for the card lists below, only if you're rendering headwords.
+Use a card's ID for an exact link because headwords can be duplicated; label it with the word, not the ID. Streak and day ranges include both ends. Lapse controls are not URL parameters; do not invent filter parameters for that page or other pages.
 
-### Traps (all verified against real exports)
+Before offering page links to a first-time user, explain that they need to load the same export in Rasbora using `/load`, then open the page link. Reading the export with this skill does not load it into their browser. Page links use the export already loaded in the browser. A profile/session mismatch clears that loaded copy and opens `/load`; the user must load the matching export and follow the original link again. These parameters check profile/session metadata, not file identity byte for byte.
 
-- **Score tables are discovered at runtime, never hardcoded.** IDs are sparse; find them via `sqlite_master`, as in §0.
-- **Multi-valued settings are comma-_terminated_, not comma-separated** (`"1,"`, `"100,200,"`). Strip a trailing comma before splitting, or wrap in `[...]` for `json_each` (see §2).
-- **`pro_scorefile` is the scorefile id — it is not the profile's own id.** Always follow it; never assume `scores_<profile.id>`.
-- **`history` reads newest-first**, one digit per review, Pleco's six-point grade — not a correct/incorrect flag:
+For a remote export, offer a separate `/load?fromUrl=…` link once. Encode the entire source URL. Public Drive file links work when shared with “Anyone with the link”; preserve any `resourcekey` and never change sharing without being asked. Other hosts must permit direct HTTPS browser downloads. Mention that opening a load link fetches a fresh copy and replaces the browser's current export. For a local file, use `/load` and its file picker.
 
-  | digit | meaning                                       | counts as |
-  | ----- | --------------------------------------------- | --------- |
-  | 1     | don't know                                    | incorrect |
-  | 2     | forgotten _(default wrong answer)_            | incorrect |
-  | 3     | almost remembered                             | incorrect |
-  | 4     | barely remembered                             | correct   |
-  | 5     | remembered                                    | correct   |
-  | 6     | remembered perfectly _(default right answer)_ | correct   |
+---
 
-  `correct == count('4'|'5'|'6')`, `incorrect == count('1'|'2'|'3')`, `reviewed == len(history)`.
+## Technical reference
 
-- **Score bounds (`pro_scoreautomin`/`pro_scoreautomax`) are per-profile settings, not constants** — read them, don't assume 100/51200. The scale is doublings (100→200 is the same step as 25600→51200).
-- **A timestamp of `0` means "never", same as NULL** — don't let it read as 1970.
-- `defn` non-empty is the _only_ meaning a Pleco export carries — real dictionary definitions are references into Pleco's own (unexported) dictionaries.
+**For the agent's internal use; do not include this reference or its technical details in learner-facing answers unless requested.**
 
-## 2. Resolving a profile
+Read the sections needed for the task. Queries are adaptable examples rather than required steps or a limit on what can be asked.
 
-Every card-list question below is scoped to one profile's scorefile and categories — a score or count read without one describes nothing.
+### Contents
 
-```bash
-PROFILE=<id>   # from: sqlite3 -json -readonly export.pqb "select id,name from pleco_flash_profiles;"
+- [Schema and profile resolution](#schema-and-profile-resolution)
+- [Card lists, search, and counts](#card-lists-search-and-counts)
+- [Streaks and lapses](#streaks-and-lapses)
+- [Review estimates and due ranges](#review-estimates-and-due-ranges)
+- [Rasbora links](#rasbora-links)
 
-# scorefile table this profile reads/writes
-SCOREFILE_ID=$(sqlite3 -readonly export.pqb \
-  "SELECT propvalue FROM pleco_flash_profilesettings
-   WHERE propset=$PROFILE AND propid='pro_scorefile';" | tr -d ',')
-SCORES="pleco_flash_scores_$SCOREFILE_ID"
+### Schema and profile resolution
 
-# categories it draws from, plus their descendants (nesting is rare but the schema allows it)
-CATS=$(sqlite3 -readonly export.pqb "
+A profile is a Pleco study configuration. Its categories select which cards are in scope, and its scorefile holds those cards' review state. Profiles can share a scorefile while having different settings; resolve both relationships rather than assuming one profile means one separate set of scores.
+
+Open with `sqlite3 -json -readonly export.pqb 'SELECT …'`, or an existing SQLite driver in read-only mode. For Python, `sqlite3.connect(Path(path).resolve().as_uri() + '?mode=ro', uri=True)` opens read-only. Do not install tools if an available reader suffices.
+
+| Table | Relevant columns |
+| --- | --- |
+| `pleco_flash_cards` | `id`, `hw` (simplified), `althw` (traditional), `pron` (numbered pinyin), `defn` (user's note), `created`, `modified` |
+| `pleco_flash_categories` | `id`, `name`, `parent` (`-2` = root) |
+| `pleco_flash_categoryassigns` | `card`, `cat` |
+| `pleco_flash_profiles` | `id`, `name`, `laststart`, `sort` |
+| `pleco_flash_profilesettings` | `propset` (profile ID), `propid`, `propvalue` |
+| `pleco_flash_scorefiles` | `id`, `name` |
+| `pleco_flash_scores_<N>` | `card`, `score`, `difficulty`, `history`, `correct`, `incorrect`, `reviewed`, `firstreviewedtime`, `lastreviewedtime`, `scoreinctime`, `scoredectime` |
+| `pleco_flash_properties` | `propid`, `propvalue` (including `FormatString`, `FormatVersion`, `FileCreated`) |
+
+Headwords and pinyin use aligned `@` syllable separators. Remove them for displayed characters and replace them with spaces for pinyin; fall back to `hw` when `althw` is empty. Headwords are not unique. Dictionary references are not definitions: only nonempty `defn` carries meaning in the export.
+
+Review timestamps are Unix seconds; NULL or zero means unknown/never, not 1970. `laststart` has a separate use in links: preserve its exact raw value, including zero. `FileCreated` is database metadata, not a reliable snapshot export date.
+
+```sql
+SELECT propid, propvalue FROM pleco_flash_properties
+WHERE propid IN ('FormatString', 'FormatVersion');
+
+SELECT id, name, laststart FROM pleco_flash_profiles ORDER BY sort, id;
+
+SELECT name FROM sqlite_master
+WHERE type = 'table' AND name GLOB 'pleco_flash_scores_[0-9]*';
+
+SELECT propid, propvalue FROM pleco_flash_profilesettings
+WHERE propset = :profile_id
+  AND propid IN ('pro_scorefile', 'pro_categories', 'pro_cardpointsday',
+                'pro_scoreautomin', 'pro_scoreautomax',
+                'pro_cardcount', 'pro_limitunlearnedmaxcards');
+```
+
+Expected format string: `Pleco SQL Flashcard Database`; the documented schema is version 8. Inspect schema differences before applying examples to another version. Profile info can use these settings for cards per session, new-card cap, and interval bounds (score bounds divided by points per day).
+
+Settings can be comma-terminated (`1,` or `100,200,`). Split, trim, discard empty tokens, and validate numbers. `pro_scorefile` names the scorefile ID, **not** the profile ID. Resolve it to a discovered table with a numeric suffix; IDs are sparse. Validate points per day as a finite positive number rather than relying on SQLite's permissive text casts.
+
+Expand the profile's selected categories to include descendants. In this example, bind `:category_ids_json` to a JSON array of the validated IDs from `pro_categories`:
+
+```sql
 WITH RECURSIVE cats(id) AS (
-  SELECT value FROM json_each('[' || rtrim((
-    SELECT propvalue FROM pleco_flash_profilesettings
-    WHERE propset=$PROFILE AND propid='pro_categories'), ',') || ']')
+  SELECT value FROM json_each(:category_ids_json)
   UNION
   SELECT c.id FROM pleco_flash_categories c JOIN cats ON c.parent = cats.id
 )
-SELECT group_concat(id) FROM cats;")
-
-# score bounds this profile scores against
-SCOREMIN=$(sqlite3 -readonly export.pqb \
-  "SELECT propvalue FROM pleco_flash_profilesettings
-   WHERE propset=$PROFILE AND propid='pro_scoreautomin';" | tr -d ',')
-SCOREMAX=$(sqlite3 -readonly export.pqb \
-  "SELECT propvalue FROM pleco_flash_profilesettings
-   WHERE propset=$PROFILE AND propid='pro_scoreautomax';" | tr -d ',')
+SELECT id, name FROM pleco_flash_categories WHERE id IN (SELECT id FROM cats);
 ```
 
-State `$SCORES`, `$CATS`, `$SCOREMIN`/`$SCOREMAX` back to the user once, so it's clear what scope the rest of the session is answering in.
+Below, `$SCORES` and `$CATS` are substitution markers, not SQL bind parameters: replace them with the validated table name and comma-separated integer category IDs. Bind `:named` values through your SQLite reader. Do not interpolate user search text. An empty category set means no cards. If there is no scorefile, omit its join and return unknown review fields: scoped cards can still be counted, searched, or customized, and all are new.
 
-The `c.id IN (SELECT card FROM pleco_flash_categoryassigns WHERE cat IN ($CATS))` clause below is what scopes every query to the profile's cards.
+### Card lists, search, and counts
 
-## 3. Five example card lists, hardest → done
+Use `IN` for category membership so cards in multiple categories count once. Keep that scope even when filtering by a specific card ID. Queries with `LIMIT 1000` mirror the app's list cap; compute the full matching count before limiting when reporting totals. Do not limit candidates before filtering or aggregating in a script.
 
-Worked examples of the shape a "which cards?" question takes — not the only five questions worth asking, and not required reading in order. Reuse the joins, adapt the thresholds, or write something with none of these five patterns if that's what the question calls for.
-
-**Leeches** — failed most often:
+#### Most frequently forgotten (leeches)
 
 ```sql
-SELECT c.id, c.hw, c.althw, c.pron, s.correct, s.incorrect, s.reviewed, s.score, s.history
+SELECT c.id, c.hw, c.althw, c.pron, s.correct, s.incorrect,
+       s.reviewed, s.score, s.history, s.lastreviewedtime
 FROM pleco_flash_cards c JOIN $SCORES s ON s.card = c.id
 WHERE s.incorrect > 0
   AND c.id IN (SELECT card FROM pleco_flash_categoryassigns WHERE cat IN ($CATS))
@@ -134,116 +157,157 @@ ORDER BY s.incorrect DESC, s.reviewed DESC, c.id
 LIMIT 1000;
 ```
 
-**Lapses** — a run of correct answers broken by a recent failure. This needs to walk the `history` digit string, which SQL can't do cheaply — pull candidates once, then filter in a script instead:
+#### Never reviewed (new cards)
+
+An empty history counts as new even when a score row exists.
 
 ```sql
-SELECT c.id, c.hw, c.althw, c.pron, s.score, s.history, s.lastreviewedtime
-FROM pleco_flash_cards c JOIN $SCORES s ON s.card = c.id
-WHERE s.incorrect > 0 AND s.correct > 0 AND coalesce(s.history,'') <> ''
+SELECT c.id, c.hw, c.althw, c.pron, c.created
+FROM pleco_flash_cards c LEFT JOIN $SCORES s ON s.card = c.id
+WHERE coalesce(s.history, '') = ''
+  AND c.id IN (SELECT card FROM pleco_flash_categoryassigns WHERE cat IN ($CATS))
+ORDER BY nullif(c.created, 0) IS NULL, c.created, c.id
+LIMIT 1000;
+```
+
+#### User-written definitions (customized cards)
+
+```sql
+SELECT c.id, c.hw, c.althw, c.pron, c.defn, s.history, s.lastreviewedtime
+FROM pleco_flash_cards c LEFT JOIN $SCORES s ON s.card = c.id
+WHERE trim(coalesce(c.defn, '')) <> ''
+  AND c.id IN (SELECT card FROM pleco_flash_categoryassigns WHERE cat IN ($CATS))
+ORDER BY coalesce(nullif(s.lastreviewedtime, 0), nullif(c.modified, 0)) IS NULL,
+         coalesce(nullif(s.lastreviewedtime, 0), nullif(c.modified, 0)), c.id
+LIMIT 1000;
+```
+
+#### Single-card details and search
+
+```sql
+SELECT c.id, c.hw, c.althw, c.pron, c.defn, c.created, c.modified,
+       s.score, s.history, s.correct, s.incorrect, s.reviewed,
+       s.firstreviewedtime, s.lastreviewedtime
+FROM pleco_flash_cards c LEFT JOIN $SCORES s ON s.card = c.id
+WHERE c.id = :card_id
   AND c.id IN (SELECT card FROM pleco_flash_categoryassigns WHERE cat IN ($CATS));
 ```
 
-Then, per candidate, with the two numbers the user gets to choose (defaults: `runLength = 3`, `recentWindow = 10`):
+For a character search, replace `c.id = :card_id` with `instr(replace(c.hw, '@', ''), :text) > 0 OR instr(replace(c.althw, '@', ''), :text) > 0`, enclosing the entire OR expression in parentheses before the category condition. For pinyin, normalize both stored readings and the search: lowercase, remove separators/punctuation, and fold `ü` to `u`. Compare without tones unless all syllables supply tones; then compare numbered tones. The website accepts tone-marked, numbered, or toneless pinyin and shows at most three matches. Link by ID when identifying one card.
 
-1. Look at the first `min(recentWindow, len(history))` characters (newest-first).
-2. Find the _oldest_ incorrect one (`1`/`2`/`3`) in that window — call its index `failure`.
-3. Count the correct digits (`4`/`5`/`6`) immediately after `failure` (i.e. more recent than it) — that's the broken run.
-4. The card is a lapse if that run `>= runLength`.
-
-**Almost learned** — in the top score band, not yet at the ceiling:
-
-```bash
-# band start = max across the profile's pro_scorefilter_*_starts settings (5 test types,
-# take the highest of each list's own max — see the trap above on comma-terminated lists)
-BAND_START=$(sqlite3 -readonly export.pqb "
-SELECT max(v) FROM (
-  SELECT max(cast(x.value AS INTEGER)) AS v
-  FROM pleco_flash_profilesettings s, json_each('[' || rtrim(s.propvalue, ',') || ']') x
-  WHERE s.propset = $PROFILE AND s.propid LIKE 'pro\_scorefilter\_%\_starts' ESCAPE '\'
-  GROUP BY s.propid
-);")
-```
+#### Counts and latest recorded review
 
 ```sql
-SELECT c.id, c.hw, c.althw, c.pron, s.score, s.lastreviewedtime
-FROM pleco_flash_cards c JOIN $SCORES s ON s.card = c.id
-WHERE s.score >= $BAND_START AND s.score < $SCOREMAX
-  AND c.id IN (SELECT card FROM pleco_flash_categoryassigns WHERE cat IN ($CATS))
-ORDER BY (s.lastreviewedtime IS NULL OR s.lastreviewedtime = 0), s.lastreviewedtime, c.id
-LIMIT 1000;
-```
-
-**Learned** — at the ceiling, oldest-reviewed first (Pleco has nowhere further to space them):
-
-```sql
-SELECT c.id, c.hw, c.althw, c.pron, s.score, s.lastreviewedtime
-FROM pleco_flash_cards c JOIN $SCORES s ON s.card = c.id
-WHERE s.score >= $SCOREMAX
-  AND c.id IN (SELECT card FROM pleco_flash_categoryassigns WHERE cat IN ($CATS))
-ORDER BY (s.lastreviewedtime IS NULL OR s.lastreviewedtime = 0), s.lastreviewedtime, c.id
-LIMIT 1000;
-```
-
-**Customized** — carries the user's own `defn`. Scorefile is `LEFT JOIN`ed, since a card the profile never reviewed can still have a note:
-
-```sql
-SELECT c.id, c.hw, c.althw, c.pron, c.defn, c.created, c.modified, s.score, s.lastreviewedtime
+SELECT count(*) AS cards,
+       sum(CASE WHEN coalesce(s.history, '') = '' THEN 1 ELSE 0 END) AS new_cards,
+       sum(CASE WHEN coalesce(s.history, '') <> '' THEN 1 ELSE 0 END) AS reviewed_cards,
+       max(nullif(s.lastreviewedtime, 0)) AS latest_review
 FROM pleco_flash_cards c LEFT JOIN $SCORES s ON s.card = c.id
-WHERE trim(coalesce(c.defn,'')) <> ''
-  AND c.id IN (SELECT card FROM pleco_flash_categoryassigns WHERE cat IN ($CATS))
-ORDER BY coalesce(nullif(s.lastreviewedtime,0), nullif(c.modified,0)) IS NULL,
-         coalesce(nullif(s.lastreviewedtime,0), nullif(c.modified,0)), c.id
-LIMIT 1000;
+WHERE c.id IN (SELECT card FROM pleco_flash_categoryassigns WHERE cat IN ($CATS));
 ```
 
-Cap each list at 1,000 rows and say so when the true count is larger — a silently truncated list reads as a complete one.
+Treat NULL sums on an empty set as zero. Counting all rows of `$SCORES` would include cards outside the profile and can include unreviewed cards. Only an explicit question about the file warrants whole-export counts of cards, categories, or profiles.
 
-## 4. Combining questions
-
-Anything the `WHERE` clauses above can express combines by AND-ing them directly (e.g. "a lapse _and_ customized" = the customized query's `WHERE` plus `AND s.incorrect > 0 AND s.correct > 0`, still filtered afterwards for the actual broken-run check). For "a lapse and X", get the lapse ids from the script step first, then add `AND c.id IN (...)` to X's query.
-
-## 5. Dataset size
-
-Plain counts, still scoped to the profile unless the question is explicitly about the whole file:
+#### Cards added over time
 
 ```sql
-SELECT count(*) FROM pleco_flash_cards c
+SELECT strftime('%Y-%m', c.created, 'unixepoch') AS month, count(*) AS added
+FROM pleco_flash_cards c
+WHERE c.created > 0
+  AND c.id IN (SELECT card FROM pleco_flash_categoryassigns WHERE cat IN ($CATS))
+GROUP BY month ORDER BY month;
+```
+
+Fill missing months with zero and accumulate for a cumulative total. For category series, join category assignments and group by category and month; the overall total still counts each card once. This measures card creation under **current** category membership, not study activity or historical category membership. Count undated cards separately.
+
+### Streaks and lapses
+
+Grades are newest-first: `1` don't know, `2` forgotten (default wrong), `3` almost remembered, `4` barely remembered, `5` remembered, `6` remembered perfectly (default right). Grades 1–3 count as incorrect and 4–6 as correct. The history records sequence, not dates for each review; do not infer daily activity from it.
+
+Read candidates once for streaks, the learning distribution, or lapses:
+
+```sql
+SELECT c.id, c.hw, c.althw, c.pron, c.defn,
+       coalesce(s.history, '') AS history, s.score, s.lastreviewedtime
+FROM pleco_flash_cards c LEFT JOIN $SCORES s ON s.card = c.id
 WHERE c.id IN (SELECT card FROM pleco_flash_categoryassigns WHERE cat IN ($CATS));
-
-SELECT count(*) FROM $SCORES;                          -- cards this scorefile has ever reviewed
-SELECT count(*) FROM pleco_flash_categories;
-SELECT count(*) FROM pleco_flash_profiles;
 ```
 
-Whole-file numbers (total cards across every profile, total categories, etc.) are fine when the user is explicitly asking about the file rather than about what they study — just say which one you're answering.
+Example Python for a current streak and the app's lapse definition:
 
-## 6. Offering the Rasbora web app for a remote file
+```python
+def streak(history):
+    length = 0
+    while length < len(history) and history[length] in '456':
+        length += 1
+    perfect = length > 0 and all(grade == '6' for grade in history[:length])
+    return length, perfect
 
-[Rasbora](https://rasbora.martintapia.com) is a web app that reads a Pleco export in the browser and shows much of what this skill queries — profile info, card counts over time, most of the card lists above, a full view of any card (with CC-CEDICT meanings and review history) — with a profile picker in the title bar. Nothing is uploaded to a server: the file is downloaded straight into the browser and kept in its local storage.
 
-It can load an export from a URL in one click:
-
+def lapse(history, run_length=4, recent_window=3):
+    failures = [i for i, grade in enumerate(history[:recent_window]) if grade in '123']
+    if not failures:
+        return None
+    failure = failures[-1]  # Oldest failure within the recent window.
+    broken_run, _ = streak(history[failure + 1:])  # Older reviews, before that failure.
+    return (broken_run, failure + 1) if broken_run >= run_length else None
 ```
-https://rasbora.martintapia.com/load?fromUrl=<percent-encoded URL of the .pqb>
+
+For the learning distribution, count empty histories as **new**, separately from reviewed cards with a streak of zero. Group positive streaks by length and whether every grade in the streak is 6. Include empty intermediate lengths. For `/streaks`, exclude new cards, filter to the inclusive requested length range, and sort by estimated due time ascending (unknown last), then ID.
+
+For lapses, defaults are a broken run of at least **4** correct answers and a failure within the last **3** reviews. Sort by broken-run length descending, last-review time descending, then ID. The second tuple value is reviews since the break, including the failure. Custom thresholds are supported by the page's controls but not its URL.
+
+Combine questions by adding SQL predicates or filtering the candidate rows before sorting and limiting. For example, a customized lapse needs nonempty `defn` as well as a qualifying broken run. Scores at or near a profile's ceiling can be queried with `pro_scoreautomax` and its score-band settings, but these are not “learned” website pages or proof of mastery.
+
+### Review estimates and due ranges
+
+Read `pro_cardpointsday` through the selected profile, even when another profile shares its scorefile. Use one current Unix-seconds timestamp for an analysis. With a finite nonnegative score, finite positive rate, and finite positive last-review timestamp:
+
+```text
+interval_days = score / points_per_day
+due_unix_seconds = lastreviewedtime + interval_days * 86400
+days_remaining = (due_unix_seconds - now_unix_seconds) / 86400
+day_bucket = floor(days_remaining)
 ```
 
-Opening that link downloads the file and imports it (replacing any file already loaded there). It accepts:
+Missing/invalid values leave the estimate unknown. Do not use score-change dates, `FileCreated`, or filesystem dates in this calculation. A score of 250 at 100 points per day gives a 2.5-day interval; three days after review it is 0.5 days overdue, in bucket -1. Day 0 is due within the next 24 hours. Estimates do not account for reviews after export or Pleco's session-selection rules.
 
-- **Google Drive file links shared with "Anyone with the link"** — e.g. `https://drive.google.com/file/d/<FILE_ID>/view?usp=sharing`, including `open?id=`, `uc?id=` and links carrying a `resourcekey`. Folder links do not work, and neither does a file restricted to specific people (the app has no sign-in).
-- **Any other direct download URL** whose host allows cross-origin browser requests (CORS). Links that require sign-in or return a web page instead of the file do not work.
+After validating and binding `:points_per_day` and `:now`, this query returns scheduling candidates without requiring SQLite's optional math functions:
 
-**When to propose it:** whenever the `.pqb` you are analysing came from Google Drive (e.g. you fetched it through a Drive connector, or the user gave you a Drive link) or from another public URL, offer the link once, alongside your answer — for example after the freshness dates in §0, or when the user's question is one of the card lists the app already shows. It is an offer, not a substitute: still answer the question yourself.
+```sql
+SELECT c.id, c.hw, c.althw, c.pron,
+       s.lastreviewedtime + (1.0 * s.score / :points_per_day) * 86400 AS due,
+       (s.lastreviewedtime - :now) / 86400.0
+         + 1.0 * s.score / :points_per_day AS days_remaining
+FROM pleco_flash_cards c JOIN $SCORES s ON s.card = c.id
+WHERE s.score IS NOT NULL AND s.score >= 0 AND s.lastreviewedtime > 0
+  AND c.id IN (SELECT card FROM pleco_flash_categoryassigns WHERE cat IN ($CATS))
+ORDER BY due, c.id;
+```
 
-How to build the link:
+For incoming reviews, group candidates by `math.floor(days_remaining)` and fill intermediate days with zeros; count unknown estimates separately against the full scoped card count. For a due range `from_day..to_day`, retain `from_day <= days_remaining < to_day + 1`, which matches the inclusive bucket range. Without a range, `/due` means all candidates with `days_remaining < 0`. Apply any list limit after filtering; the app shows at most 1,000.
 
-1. Start from the file's shareable URL. For Drive, if you only have the file id, use `https://drive.google.com/file/d/<FILE_ID>/view` (append `?resourcekey=<KEY>` if the file has one).
-2. **Percent-encode the whole URL** before putting it in `fromUrl` — otherwise the source link's own `?`/`&` parameters get swallowed by Rasbora's URL:
-   ```bash
-   python3 -c 'import sys, urllib.parse; print("https://rasbora.martintapia.com/load?fromUrl=" + urllib.parse.quote(sys.argv[1], safe=""))' \
-     'https://drive.google.com/file/d/<FILE_ID>/view?usp=sharing'
-   ```
-3. For Drive, check the sharing if you can (a Drive connector's permissions tool: look for `type: anyone`). If it is not shared with "Anyone with the link", say that the link will only work once they change the file's sharing to that — never change the sharing yourself without being asked, since it makes the file readable by anyone holding the link.
+### Rasbora links
 
-Tell the user that the app shows one profile at a time (picked in its title bar), that the link fetches a fresh copy each time it is opened, and that it replaces whatever file was loaded there before in that browser.
+Use the [page map above](#link-to-rasbora). **Include both profile parameters on every non-load page**, including About and Profile info. Use `id` as `profileId` and raw `laststart` as `lastSessionStart` from the same selected profile row. Both must be nonnegative integers; do not replace a missing timestamp with zero. These constraints select the profile and reject a mismatched loaded export. They are not a unique file fingerprint.
 
-For a purely local file there is no link to give; the user can still open https://rasbora.martintapia.com/load and pick the file from their device.
+Example construction from already-read values (Python):
+
+```python
+from urllib.parse import urlencode
+
+base = 'https://rasbora.martintapia.com'
+context = {'profileId': profile_id, 'lastSessionStart': laststart}
+card_url = base + '/card?' + urlencode({'search': card_id, **context})
+due_url = base + '/due?' + urlencode({'days': -3, 'daysTo': 7, **context})
+streak_url = base + '/streaks?' + urlencode({'run': 4, 'runTo': 10, **context})
+profile_url = base + '/profile?' + urlencode(context)
+about_url = base + '/?' + urlencode(context)
+load_url = base + '/load?' + urlencode({'fromUrl': source_url})
+```
+
+Streak bounds are integers 0–100; default is exactly 4. Day bounds are integers -36,500–36,500; no bounds means all overdue. A single lower bound selects one exact bucket. Keep the upper bound at least the lower one; invalid ranges fall back in the app. The app recomputes due times when a page opens, so cards at a boundary may move since analysis. Only `/card` accepts `search`; do not imply that `/lapses` or `/leeches` can reproduce arbitrary analysis filters through query parameters.
+
+For a Drive file, use its shareable file URL, such as `https://drive.google.com/file/d/<FILE_ID>/view`, preserving `resourcekey` if present. Public file links using `open?id=` or `uc?id=` also work; folders and sign-in-only files do not. Connector access does not imply public browser access. Check sharing when available; if restricted, explain the public-link requirement or offer local loading without changing permissions. Other direct HTTPS URLs require browser cross-origin access. Encode the complete source URL through `urlencode`, including any `&`, `+`, or `#`.
+
+`fromUrl` belongs only on `/load`; keep loading separate from navigation. A non-load link uses the saved export. If the profile/session constraints fail, Rasbora clears the loaded copy and redirects to `/load`, losing the destination; the user must load the matching file and reopen the original link. Explain that recovery only when relevant. A load link fetches again every time it opens and replaces the previously loaded file.
