@@ -1,8 +1,6 @@
 ---
 name: pleco-flashcards
 description: Help a learner understand their Pleco flashcards from a .pqb export, find words needing practice, estimate upcoming reviews, and open relevant cards and views in Rasbora.
-metadata:
-  type: reference
 ---
 
 # Help with Pleco flashcards
