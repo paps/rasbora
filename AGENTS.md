@@ -37,7 +37,7 @@ Project management is often done through GitHub issues using the `gh` CLI. Agent
 
 ## Git worktrees
 
-Unless explicitly specified otherwise, place new Git worktrees in `worktrees/` at the root of the main repository checkout (for example, `worktrees/my-change/`). If you are already in a linked worktree, use the main checkout's directory rather than nesting worktrees. Only `worktrees/.gitignore` belongs in Git; the worktree contents stay local.
+Unless explicitly specified otherwise, place new Git worktrees in a sibling directory to the repo (i.e. in `..` relative to this present file) while preserving the repo name at the beginning of the directory name, for example: `reponame-worktreename`.
 
 ## Commands
 
