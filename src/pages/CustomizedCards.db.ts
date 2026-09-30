@@ -8,7 +8,6 @@ import {
   readCardPointsPerDay,
   asCount,
   asText,
-  firstValueOf,
   rowsOf,
 } from "@/database/plecoFile";
 import type { Profile } from "@/database/plecoFile";
@@ -31,17 +30,19 @@ const asTime = (value: SqlValue | null): number | null => {
 const asScore = (value: SqlValue | null): number | null =>
   typeof value === "number" ? value : null;
 
+export type CustomizedCardType = "content" | "usr" | "all";
+
 export interface CustomizedCards {
-  /** Cards with a definition of the user's own. Capped. */
+  /** Custom content or USR-linked cards matching the selected type. Capped. */
   cards: FlashcardData[];
   /** How many there are in all, which may be more than were returned. */
   total: number;
 }
 
 /**
- * The cards with a nonblank inline definition, regardless of any dictionary
- * reference they also carry. Definitions held only in Pleco dictionaries or
- * user dictionaries (USR) are not included in the flashcard export.
+ * Cards with custom content or definitions held in a user dictionary (USR).
+ * Inline content takes precedence, making the two filtered groups disjoint.
+ * Filter before counting and capping so each view gets its own full total.
  *
  * A definition belongs to the card rather than to a scorefile, so the review
  * state is joined in rather than required: a card the profile has never put in
@@ -57,6 +58,7 @@ export interface CustomizedCards {
 export const readCustomizedCards = (
   database: Database,
   profile: Profile,
+  type: CustomizedCardType,
 ): CustomizedCards => {
   const table = profile.scorefile?.table ?? null;
   const pointsPerDay = readCardPointsPerDay(database, profile);
@@ -78,21 +80,33 @@ export const readCustomizedCards = (
     table === null
       ? "nullif(c.modified, 0)"
       : "coalesce(nullif(s.lastreviewedtime, 0), nullif(c.modified, 0))";
-  const scope = `where trim(coalesce(c.defn, '')) <> ''
-     and c.id in (select card from pleco_flash_categoryassigns
+  const scope = `where c.id in (select card from pleco_flash_categoryassigns
                   where cat in (${profile.categoryIds.join(", ")}))`;
 
+  // Read this profile's rows in display order, then classify with the same
+  // creator helper and whitespace handling as Flashcard. Applying the limit
+  // afterwards prevents one type from crowding the other out of its view.
+  const rows = rowsOf(
+    database,
+    `select c.id, c.hw, c.althw, c.pron, coalesce(c.defn, '') as defn,
+            c.created, c.modified, ${review}, c.dictcreator
+     from pleco_flash_cards c
+     ${join}
+     ${scope}
+     order by ${age} is null, ${age}, c.id`,
+  ).filter((row) => {
+    const hasContent = asText(row[4] ?? null).trim() !== "";
+    const isUsr = !hasContent && isUserDictionaryReference(row[16] ?? null);
+
+    return type === "content"
+      ? hasContent
+      : type === "usr"
+        ? isUsr
+        : hasContent || isUsr;
+  });
+
   return {
-    cards: rowsOf(
-      database,
-      `select c.id, c.hw, c.althw, c.pron, coalesce(c.defn, '') as defn,
-              c.created, c.modified, ${review}, c.dictcreator
-       from pleco_flash_cards c
-       ${join}
-       ${scope}
-       order by ${age} is null, ${age}, c.id
-       limit ${String(CUSTOMIZED_LIMIT)}`,
-    ).map((row) => ({
+    cards: rows.slice(0, CUSTOMIZED_LIMIT).map((row) => ({
       id: asCount(row[0] ?? null),
       hw: asText(row[1] ?? null),
       althw: asText(row[2] ?? null),
@@ -115,11 +129,6 @@ export const readCustomizedCards = (
         pointsPerDay,
       ),
     })),
-    total: asCount(
-      firstValueOf(
-        database,
-        `select count(*) from pleco_flash_cards c ${scope}`,
-      ),
-    ),
+    total: rows.length,
   };
 };
