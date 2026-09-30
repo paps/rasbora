@@ -2,6 +2,8 @@
 
 Analysis of `flashbackup-2608061921.pqb`, a real Pleco export (Android, 14,887 cards, 2021-10-09 → 2026-08-05). Everything below was verified against that file. Claims that are inference rather than measurement are marked **(inferred)**.
 
+The dictionary-reference rules below were subsequently clarified by the user for issue #47 and checked against `flashbackup-2609271408.pqb` (15,484 cards). Counts elsewhere still describe the original export.
+
 A single export is one user's whole flashcard state, so treat the observations here as descriptive of _this_ file — a second sample may widen some of the ranges.
 
 ## 1. Container
@@ -99,11 +101,17 @@ They contain embedded newlines, mixed Chinese/pinyin/English, ad-hoc numbering, 
 
 - `wordlength` — character count. 1: 1,250 · 2: 9,754 · 3: 2,425 · 4: 1,235 · 5: 125 · 6: 52 · 7: 25 · 8: 16 · 9: 2 · 10: 3.
 - `lang` — `4096` on every row. Presumably a Chinese constant **(inferred)**.
-- `dictcreator` / `dictid` — identify the source dictionary. Five distinct pairs here, two covering 95% of cards. `(-1, -1)` on 352 cards and `(19089542, -1256948559)` on 292 mark user-created cards **(inferred — `19089542` also appears as `FileCreator`)**.
-- `dictentry` — offset into that dictionary. Meaningless without Pleco's data files.
+- `dictcreator` / `dictid` — identify the source dictionary. `dictcreator = 0` marks normal Pleco dictionary references, which can have multiple distinct `dictid` values. `-1` marks no dictionary reference. Other integer creator values identify a user dictionary (USR); do not hardcode an observed creator or dictionary ID, require positive IDs, or require the creator to match `FileCreator`. Missing or malformed creator values do not establish a USR link. See the definition precedence below.
+- `dictentry` — identifies an entry in the referenced dictionary. Meaningless without that dictionary's data; `-1` accompanies standalone custom content in the samples.
 - `altdictrefs` — NULL on all 14,887 rows.
 - `created` / `modified` — Unix seconds.
 - 61 headwords are duplicated, so **`hw` is not a key**.
+
+### Definition precedence and user dictionary references
+
+For card display, a nonblank inline `defn` means custom content and takes precedence over dictionary metadata. Otherwise, a real `dictcreator` identifies a USR-linked card whose definition Rasbora cannot display yet; absent a real creator, treat it as a normal Pleco dictionary card. NULL, empty strings and whitespace-only definitions are empty. CC-CEDICT can still supply an independently attributed gloss for either kind of dictionary link.
+
+In the September sample, the user confirmed 絕對有 (card 21385), 軍推 (21849), and 開趴 (21774) as USR links. All have `defn = NULL`, `dictcreator = 19089542`, and `dictid = -1256948559`, with entry IDs 233, 345, and 317 respectively. That dictionary has 435 linked cards: 432 without inline definitions and three with text (浩克, 萊爾富, ＯＫ超商). The latter display their inline definitions without the USR notice. The same export has 474 standalone custom cards with all three dictionary fields set to `-1`, all carrying inline definitions, plus 14,575 links to three normal Pleco dictionaries with `dictcreator = 0` (one also carries inline text).
 
 ## 4. Review state: `pleco_flash_scores_<N>`
 

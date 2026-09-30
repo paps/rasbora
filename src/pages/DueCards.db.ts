@@ -6,6 +6,7 @@ import { nextReviewTime, wholeDaysUntil } from "@/database/reviewSchedule";
 import {
   asCount,
   asText,
+  isUserDictionaryReference,
   readCardPointsPerDay,
   rowsOf,
 } from "@/database/plecoFile";
@@ -139,14 +140,14 @@ export const readDueCandidates = (
     table === null
       ? `select c.id, c.hw, c.althw, c.pron, coalesce(c.defn, '') as defn,
                 c.created, c.modified,
-                0, 0, 0, '', null, null, null, null, null
+                0, 0, 0, '', null, null, null, null, null, c.dictcreator
          from pleco_flash_cards c
          where ${inProfile}`
       : `select c.id, c.hw, c.althw, c.pron, coalesce(c.defn, '') as defn,
                 c.created, c.modified,
                 s.correct, s.incorrect, s.reviewed, coalesce(s.history, ''),
                 s.firstreviewedtime, s.lastreviewedtime,
-                s.scoreinctime, s.scoredectime, s.score
+                s.scoreinctime, s.scoredectime, s.score, c.dictcreator
          from pleco_flash_cards c
          left join ${table} s on s.card = c.id
          where ${inProfile}`,
@@ -178,6 +179,7 @@ export const readDueCandidates = (
       althw: asText(row[2] ?? null),
       pron: asText(row[3] ?? null),
       defn: asText(row[4] ?? null),
+      hasUserDictionaryReference: isUserDictionaryReference(row[16] ?? null),
       created: asTime(row[5] ?? null),
       modified: asTime(row[6] ?? null),
       correct: asCount(row[7] ?? null),

@@ -5,6 +5,7 @@ import type { FlashcardData } from "@/components/Flashcard";
 import { nextReviewTime } from "@/database/reviewSchedule";
 import { runOf } from "@/database/reviewLog";
 import {
+  isUserDictionaryReference,
   readCardPointsPerDay,
   asCount,
   asText,
@@ -130,7 +131,7 @@ export const readStreakCandidates = (
             c.created, c.modified,
             s.correct, s.incorrect, s.reviewed, s.history,
             s.firstreviewedtime, s.lastreviewedtime,
-            s.scoreinctime, s.scoredectime, s.score
+            s.scoreinctime, s.scoredectime, s.score, c.dictcreator
      from pleco_flash_cards c
      join ${table} s on s.card = c.id
      where coalesce(s.history, '') <> ''
@@ -146,6 +147,7 @@ export const readStreakCandidates = (
       althw: asText(row[2] ?? null),
       pron: asText(row[3] ?? null),
       defn: asText(row[4] ?? null),
+      hasUserDictionaryReference: isUserDictionaryReference(row[16] ?? null),
       created: asTime(row[5] ?? null),
       modified: asTime(row[6] ?? null),
       correct: asCount(row[7] ?? null),

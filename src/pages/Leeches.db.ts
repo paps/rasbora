@@ -4,6 +4,7 @@ import type { Database, SqlValue } from "sql.js";
 import type { FlashcardData } from "@/components/Flashcard";
 import { nextReviewTime } from "@/database/reviewSchedule";
 import {
+  isUserDictionaryReference,
   readCardPointsPerDay,
   asCount,
   asText,
@@ -73,7 +74,7 @@ export const readLeeches = (database: Database, profile: Profile): Leeches => {
             c.created, c.modified,
             s.correct, s.incorrect, s.reviewed, coalesce(s.history, '') as history,
             s.firstreviewedtime, s.lastreviewedtime,
-            s.scoreinctime, s.scoredectime, s.score
+            s.scoreinctime, s.scoredectime, s.score, c.dictcreator
      from pleco_flash_cards c
      join ${table} s on s.card = c.id
      where s.incorrect > 0
@@ -87,6 +88,7 @@ export const readLeeches = (database: Database, profile: Profile): Leeches => {
     althw: asText(row[2] ?? null),
     pron: asText(row[3] ?? null),
     defn: asText(row[4] ?? null),
+    hasUserDictionaryReference: isUserDictionaryReference(row[16] ?? null),
     created: asTime(row[5] ?? null),
     modified: asTime(row[6] ?? null),
     correct: asCount(row[7] ?? null),
