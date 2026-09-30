@@ -10,6 +10,7 @@ import {
   Text,
   Title,
 } from "@mantine/core";
+import { useTimeout } from "@mantine/hooks";
 import { useEffect, useRef, useState } from "react";
 import correctSound from "./motivation/duolingo-correct-sound-effect.mp3?url";
 import wrongSound from "./motivation/duolingo-wrong.mp3?url";
@@ -166,6 +167,18 @@ const Motivation = () => {
   const [messageIndex, setMessageIndex] = useState(() =>
     Math.floor(Math.random() * 10),
   );
+  const [completionState, setCompletionState] = useState<
+    "ready" | "loading" | "cooldown"
+  >("ready");
+  // useTimeout keeps the callback current (including corrections during the wait)
+  // and cancels pending work when this page unmounts.
+  const { start: startCompletion } = useTimeout(() => {
+    changeCount(1);
+    setCompletionState("cooldown");
+  }, 500);
+  const { start: startCooldown } = useTimeout(() => {
+    setCompletionState("ready");
+  }, 2000);
   const celebrationRef = useRef<HTMLParagraphElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { counts, error } = progress;
@@ -370,8 +383,15 @@ const Motivation = () => {
           <Button
             size="lg"
             color={count === 0 ? "blue" : level.color}
+            loading={completionState === "loading"}
+            loaderProps={{ type: "oval" }}
+            disabled={completionState === "cooldown"}
+            aria-busy={completionState === "loading"}
             onClick={() => {
-              changeCount(1);
+              if (completionState !== "ready") return;
+              setCompletionState("loading");
+              startCompletion();
+              startCooldown();
             }}
           >
             Session completed +1
