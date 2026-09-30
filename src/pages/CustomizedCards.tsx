@@ -121,9 +121,9 @@ const CustomizedCards = () => {
             );
           }}
           data={[
+            { value: "all", label: "All" },
             { value: "content", label: "Custom content" },
             { value: "usr", label: "USR entries" },
-            { value: "all", label: "All" },
           ]}
         />
       </Group>
