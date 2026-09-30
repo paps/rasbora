@@ -10,8 +10,10 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { useReducedMotion } from "@mantine/hooks";
 import { useEffect, useRef, useState } from "react";
+import correctSound from "./motivation/duolingo-correct-sound-effect.mp3?url";
+import wrongSound from "./motivation/duolingo-wrong.mp3?url";
+import completedSound from "./motivation/duolingo-completed-lesson.mp3?url";
 
 const STORAGE_KEY = "rasbora-review-sessions";
 const DAILY_GOAL = 10;
@@ -165,7 +167,7 @@ const Motivation = () => {
     Math.floor(Math.random() * 10),
   );
   const celebrationRef = useRef<HTMLParagraphElement>(null);
-  const reduceMotion = useReducedMotion();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { counts, error } = progress;
   const count = counts[day] ?? 0;
   const level = levelFor(count);
@@ -180,6 +182,16 @@ const Motivation = () => {
     count === 0 &&
     week[5]?.count === 0 &&
     Object.entries(counts).some(([key, value]) => key < day && value > 0);
+
+  useEffect(() => {
+    const audio = new Audio(correctSound);
+    audio.preload = "auto";
+    audioRef.current = audio;
+    return () => {
+      audio.pause();
+      audioRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     let timeout: ReturnType<typeof setTimeout>;
@@ -245,7 +257,8 @@ const Motivation = () => {
     celebrationRef.current?.getAnimations().forEach((animation) => {
       animation.cancel();
     });
-    if (change > 0 && !reduceMotion) {
+    // This page's celebration intentionally plays even with reduced motion enabled.
+    if (change > 0) {
       celebrationRef.current?.animate(
         [
           { opacity: 0, transform: "translateY(8px) scale(0.7)" },
@@ -259,6 +272,23 @@ const Motivation = () => {
         ],
         { duration: 1000, easing: "ease-out" },
       );
+    }
+
+    const sound =
+      change < 0
+        ? wrongSound
+        : next[currentDay] === DAILY_GOAL
+          ? completedSound
+          : correctSound;
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      // getAttribute preserves the imported URL's relative form for comparison.
+      if (audio.getAttribute("src") !== sound) audio.src = sound;
+      audio.currentTime = 0;
+      void audio.play().catch(() => {
+        // Keep counting usable if the browser blocks playback or audio fails to load.
+      });
     }
   }
 
@@ -302,7 +332,7 @@ const Motivation = () => {
             color={level.color}
             size="xl"
             radius="xl"
-            transitionDuration={reduceMotion ? 0 : 250}
+            transitionDuration={250}
             aria-label="Daily session goal"
             aria-valuetext={`${String(count)} of ${String(DAILY_GOAL)} sessions completed`}
           />
