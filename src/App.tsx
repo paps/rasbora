@@ -12,6 +12,7 @@ import IncomingReviews from "@/pages/IncomingReviews";
 import Lapses from "@/pages/Lapses";
 import LearningDistribution from "@/pages/LearningDistribution";
 import Leeches from "@/pages/Leeches";
+import Motivation from "@/pages/Motivation";
 import NewCards from "@/pages/NewCards";
 import LoadFile from "@/pages/LoadFile";
 import NotFound from "@/pages/NotFound";
@@ -40,6 +41,7 @@ const App = () => (
               <LinkedExport>
                 <Routes>
                   <Route path="/" element={<About />} />
+                  <Route path="/motivation" element={<Motivation />} />
                   <Route path="/load" element={<LoadFile />} />
                   <Route path="/profile" element={<ProfileInfo />} />
                   <Route path="/card-count" element={<CardCount />} />

@@ -22,6 +22,7 @@ interface Page {
 /** The sidebar, in order. Every path here also needs a route in `App.tsx`. */
 const PAGES: Page[] = [
   { path: "/", label: "About 🙂" },
+  { path: "/motivation", label: "Motivation" },
   { path: "/load", label: "Load Pleco file" },
   { path: "/profile", label: "Profile info" },
   { path: "/card-count", label: "Card count" },
