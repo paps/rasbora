@@ -60,6 +60,18 @@ export const asText = (value: SqlValue | null): string => {
 export const asCount = (value: SqlValue | null): number =>
   typeof value === "number" ? value : 0;
 
+/**
+ * A real dictionary creator identifies a user dictionary (USR). Zero marks
+ * Pleco dictionaries; -1 marks no dictionary reference. Missing or malformed
+ * values do not establish a USR link. An inline definition still takes
+ * precedence when displaying the card, even when this reference is present.
+ */
+export const isUserDictionaryReference = (creator: SqlValue): boolean =>
+  typeof creator === "number" &&
+  Number.isInteger(creator) &&
+  creator !== 0 &&
+  creator !== -1;
+
 /* -------------------------------------------------------------------------
  * Opening an export
  *

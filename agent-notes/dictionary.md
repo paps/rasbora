@@ -2,6 +2,8 @@
 
 An export barely contains meanings. `defn` is a user's own note and is NULL on 97.6% of cards; the real definitions are references into Pleco's licensed dictionaries, whose bytes are not in the file. So the meaning has to come from elsewhere, and that is **CC-CEDICT** — a free community dictionary shipped with the app as an indexed SQLite file, `src/cc-cedict/cedict.sqlite`.
 
+Cards can also reference a user dictionary (USR), whose entry text is absent from the flashcard export. A nonblank inline `defn` takes precedence regardless of dictionary metadata. Without one, a real `dictcreator` (an integer other than `0` or `-1`) identifies a USR link, and `Flashcard` explains that Rasbora cannot display that definition yet. Normal Pleco dictionary links can target multiple dictionaries; neither detection nor CC-CEDICT lookup assumes a single `dictid`. A CC-CEDICT match is supplementary and does not suppress the USR notice or recover the user's definition.
+
 Like the script preference and unlike the export, it is app-wide reference data: the same before any import, untouched by one, and read by no query over the export. Hence `src/cc-cedict/`, a `DictionaryProvider` beside `ScriptProvider`, its own `useScript`-shaped `useDictionary()` hook — and, like the script, read by `Flashcard` itself rather than passed in.
 
 Four things to keep in mind when touching this:

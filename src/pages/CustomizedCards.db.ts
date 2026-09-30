@@ -4,6 +4,7 @@ import type { Database, SqlValue } from "sql.js";
 import type { FlashcardData } from "@/components/Flashcard";
 import { nextReviewTime } from "@/database/reviewSchedule";
 import {
+  isUserDictionaryReference,
   readCardPointsPerDay,
   asCount,
   asText,
@@ -38,10 +39,9 @@ export interface CustomizedCards {
 }
 
 /**
- * The cards the user has written a definition on. Pleco leaves `defn` NULL on
- * a card that only points at its own dictionary — 97.6% of this export — so a
- * card with text here is one the user typed something into, and that text is
- * the only meaning the export carries at all.
+ * The cards with a nonblank inline definition, regardless of any dictionary
+ * reference they also carry. Definitions held only in Pleco dictionaries or
+ * user dictionaries (USR) are not included in the flashcard export.
  *
  * A definition belongs to the card rather than to a scorefile, so the review
  * state is joined in rather than required: a card the profile has never put in
@@ -86,7 +86,7 @@ export const readCustomizedCards = (
     cards: rowsOf(
       database,
       `select c.id, c.hw, c.althw, c.pron, coalesce(c.defn, '') as defn,
-              c.created, c.modified, ${review}
+              c.created, c.modified, ${review}, c.dictcreator
        from pleco_flash_cards c
        ${join}
        ${scope}
@@ -98,6 +98,7 @@ export const readCustomizedCards = (
       althw: asText(row[2] ?? null),
       pron: asText(row[3] ?? null),
       defn: asText(row[4] ?? null),
+      hasUserDictionaryReference: isUserDictionaryReference(row[16] ?? null),
       created: asTime(row[5] ?? null),
       modified: asTime(row[6] ?? null),
       correct: asCount(row[7] ?? null),

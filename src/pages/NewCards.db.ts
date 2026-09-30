@@ -2,7 +2,13 @@
 
 import type { Database, SqlValue } from "sql.js";
 import type { FlashcardData } from "@/components/Flashcard";
-import { asCount, asText, firstValueOf, rowsOf } from "@/database/plecoFile";
+import {
+  isUserDictionaryReference,
+  asCount,
+  asText,
+  firstValueOf,
+  rowsOf,
+} from "@/database/plecoFile";
 import type { Profile } from "@/database/plecoFile";
 
 /** How many cards the page lists; see `Streaks.db.ts` for the reason. */
@@ -66,7 +72,7 @@ export const readNewCards = (
   const cards = rowsOf(
     database,
     `select c.id, c.hw, c.althw, c.pron, coalesce(c.defn, '') as defn,
-            c.created, c.modified
+            c.created, c.modified, c.dictcreator
      ${source}
      ${oldestFirst}
      limit ${String(NEW_LIMIT)}`,
@@ -76,6 +82,7 @@ export const readNewCards = (
     althw: asText(row[2] ?? null),
     pron: asText(row[3] ?? null),
     defn: asText(row[4] ?? null),
+    hasUserDictionaryReference: isUserDictionaryReference(row[7] ?? null),
     created: asTime(row[5] ?? null),
     modified: asTime(row[6] ?? null),
     // Everything below is what a never-reviewed card has to say for itself:

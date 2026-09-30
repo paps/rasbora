@@ -4,6 +4,7 @@ import type { Database, SqlValue } from "sql.js";
 import { nextReviewTime } from "@/database/reviewSchedule";
 import type { FlashcardData } from "@/components/Flashcard";
 import {
+  isUserDictionaryReference,
   readCardPointsPerDay,
   asCount,
   asText,
@@ -356,7 +357,7 @@ export const searchCards = (
     cards: rowsOf(
       database,
       `select c.id, c.hw, c.althw, c.pron, coalesce(c.defn, '') as defn,
-              c.created, c.modified, ${review}
+              c.created, c.modified, ${review}, c.dictcreator
        from pleco_flash_cards c
        ${join}
        ${scope}
@@ -369,6 +370,7 @@ export const searchCards = (
       althw: asText(row[2] ?? null),
       pron: asText(row[3] ?? null),
       defn: asText(row[4] ?? null),
+      hasUserDictionaryReference: isUserDictionaryReference(row[16] ?? null),
       created: asTime(row[5] ?? null),
       modified: asTime(row[6] ?? null),
       correct: asCount(row[7] ?? null),

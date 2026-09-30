@@ -39,6 +39,8 @@ export interface FlashcardData {
   pron: string;
   /** User-written note, or the empty string — most cards have none. */
   defn: string;
+  /** A USR dictionary link; a nonblank inline definition takes precedence. */
+  hasUserDictionaryReference: boolean;
   /** When the card was added, in Unix seconds, or null if never recorded. */
   created: number | null;
   /** When the card itself was last edited, in Unix seconds. */
@@ -500,14 +502,19 @@ const Flashcard = ({ card }: FlashcardProps) => {
         ))}
       </Group>
 
-      {card.defn && (
+      {card.defn.trim() !== "" ? (
         <Stack gap={2}>
           <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
             Your note
           </Text>
           <Text style={{ whiteSpace: "pre-line" }}>{card.defn}</Text>
         </Stack>
-      )}
+      ) : card.hasUserDictionaryReference ? (
+        <Text size="sm" c="dimmed">
+          This card links to a user dictionary (USR) entry in Pleco. Rasbora
+          doesn’t support displaying that definition yet.
+        </Text>
+      ) : null}
 
       {/*
         The gloss comes from CC-CEDICT (CC BY-SA 4.0), which the app is obliged
